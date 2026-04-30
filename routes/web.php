@@ -16,6 +16,10 @@ Route::get('/jobs/{jobOffer}', [JobOfferController::class, 'show'])
     ->middleware(['auth', 'verified'])
     ->name('jobs.show');
 
+Route::post('/jobs/{jobOffer}/match', [JobOfferController::class, 'match'])
+    ->middleware(['auth', 'verified'])
+    ->name('jobs.match');
+
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
