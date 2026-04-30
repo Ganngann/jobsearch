@@ -15,7 +15,7 @@ class ForemApiService
      */
     public function searchJobs(array $criteria = [], int $page = 1, int $rows = 20): array
     {
-        $url = "{$this->baseUrl}/Recherches/SearchOffres?page={$page}&row={$rows}";
+        $url = "{$this->baseUrl}/Recherches/Search?page={$page}&row={$rows}";
         
         $payload = [
             'filtres' => $criteria['filtres_grouped'] ?? [],
@@ -36,10 +36,25 @@ class ForemApiService
                     'Referer' => 'https://www.leforem.be/recherche-offres/offres',
                 ])->post($url, $payload);
 
-            return $response->json() ?? [];
+            $data = $response->json() ?? [];
+            $offers = $data['offreEmploiResumees'] ?? $data['offres'] ?? [];
+            
+            // Normalisation des champs pour la vue
+            $normalizedOffers = array_map(function($offer) {
+                return array_merge($offer, [
+                    'idOffreEmploi' => $offer['numero'] ?? $offer['id'] ?? $offer['idOffreEmploi'] ?? '',
+                    'titreOffre' => $offer['titre'] ?? $offer['titreOffre'] ?? '',
+                    'tempsTravail' => $offer['regimeTravail'] ?? $offer['tempsTravail'] ?? 'N/A',
+                ]);
+            }, $offers);
+
+            return [
+                'offres' => $normalizedOffers,
+                'nombreTotalOffres' => $data['total'] ?? $data['nombreTotalOffres'] ?? 0
+            ];
         } catch (\Exception $e) {
             Log::error("Forem Search API Exception: " . $e->getMessage());
-            return [];
+            return ['offres' => [], 'nombreTotalOffres' => 0];
         }
     }
 

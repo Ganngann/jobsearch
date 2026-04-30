@@ -151,6 +151,51 @@
                                         </table>
                                     </div>
 
+                                    <!-- Table Compétences Techniques -->
+                                    @php
+                                        $techSkills = $jobOffer->skills->where('type', 'hard');
+                                    @endphp
+                                    @if($techSkills->count() > 0)
+                                    <div class="overflow-hidden border border-slate-200 rounded-xl mb-6">
+                                        <table class="w-full text-left text-xs">
+                                            <thead class="bg-slate-50 border-b border-slate-200">
+                                                <tr>
+                                                    <th class="px-4 py-3 font-bold text-slate-700">Compétences professionnelles</th>
+                                                    <th class="px-4 py-3 font-bold text-slate-700 text-center">Exigé</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-slate-100">
+                                                @foreach($techSkills as $skill)
+                                                <tr>
+                                                    <td class="px-4 py-3 text-slate-600">{{ $skill->label }}</td>
+                                                    <td class="px-4 py-3 text-center text-slate-600">{{ $skill->pivot->is_required ? 'Oui' : 'Non' }}</td>
+                                                </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    @endif
+
+                                    <!-- Table Études -->
+                                    @if($jobOffer->studies->count() > 0)
+                                    <div class="overflow-hidden border border-slate-200 rounded-xl mb-6">
+                                        <table class="w-full text-left text-xs">
+                                            <thead class="bg-slate-50 border-b border-slate-200">
+                                                <tr>
+                                                    <th class="px-4 py-3 font-bold text-slate-700">Niveau d'études / Diplômes</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-slate-100">
+                                                @foreach($jobOffer->studies as $study)
+                                                <tr>
+                                                    <td class="px-4 py-3 text-slate-600">{{ $study->label }}</td>
+                                                </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    @endif
+
                                     <!-- Table Langues -->
                                     @if($jobOffer->languages->count() > 0)
                                     <div class="overflow-hidden border border-slate-200 rounded-xl mb-6">
