@@ -38,6 +38,15 @@ class JobOfferController extends Controller
     }
 
     /**
+     * Rafraîchit les données de l'offre depuis l'API Forem.
+     */
+    public function refresh(JobOffer $jobOffer)
+    {
+        $this->jobOfferService->syncFullDetails($jobOffer);
+        return back()->with('status', 'Données de l\'offre rafraîchies !');
+    }
+
+    /**
      * Lance le matching (IA) à la demande pour une offre spécifique.
      */
     public function match(JobOffer $jobOffer)
@@ -47,7 +56,7 @@ class JobOfferController extends Controller
         // Si l'offre n'a pas encore ses détails complets, on les récupère d'abord
         if (!$jobOffer->is_detailed) {
             $this->jobOfferService->syncFullDetails($jobOffer);
-            $jobOffer->refresh();
+            $jobOffer->load(['employer', 'metier', 'skills', 'languages', 'permits', 'sectors']);
         }
 
         // On force l'analyse IA
@@ -66,7 +75,8 @@ class JobOfferController extends Controller
         // LAZY LOADING : Si l'offre n'a pas ses détails, on les récupère maintenant
         if (!$jobOffer->is_detailed) {
             $this->jobOfferService->syncFullDetails($jobOffer);
-            $jobOffer->refresh();
+            // On recharge tout pour être sûr d'avoir les relations fraîches (compétences, etc)
+            $jobOffer->load(['employer', 'metier', 'skills', 'languages', 'permits', 'sectors']);
         }
 
         $match = UserMatch::where('user_id', $user->id)

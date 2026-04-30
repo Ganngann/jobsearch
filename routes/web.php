@@ -8,17 +8,12 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/dashboard', [JobOfferController::class, 'dashboard'])
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
-
-Route::get('/jobs/{jobOffer}', [JobOfferController::class, 'show'])
-    ->middleware(['auth', 'verified'])
-    ->name('jobs.show');
-
-Route::post('/jobs/{jobOffer}/match', [JobOfferController::class, 'match'])
-    ->middleware(['auth', 'verified'])
-    ->name('jobs.match');
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/dashboard', [JobOfferController::class, 'dashboard'])->name('dashboard');
+    Route::get('/jobs/{jobOffer}', [JobOfferController::class, 'show'])->name('jobs.show');
+    Route::post('/jobs/{jobOffer}/match', [JobOfferController::class, 'match'])->name('jobs.match');
+    Route::post('/jobs/{jobOffer}/refresh', [JobOfferController::class, 'refresh'])->name('jobs.refresh');
+});
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

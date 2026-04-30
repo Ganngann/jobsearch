@@ -242,6 +242,14 @@
                                     Voir sur Le Forem
                                     <svg class="w-4 h-4 transform group-hover:translate-x-1.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
                                 </a>
+
+                                <form action="{{ route('jobs.refresh', $jobOffer) }}" method="POST" class="mt-4">
+                                    @csrf
+                                    <button type="submit" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                        Rafraîchir les données
+                                    </button>
+                                </form>
                             </div>
                         </div>
 
