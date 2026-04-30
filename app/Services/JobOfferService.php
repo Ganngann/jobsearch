@@ -21,11 +21,12 @@ class JobOfferService
 
     /**
      * Sauvegarde une offre à partir des données de recherche (résumé).
+     * Riche en informations dans l'API du Forem.
      */
     public function saveBasicOffer(array $item)
     {
         return DB::transaction(function () use ($item) {
-            // Employer (Si présent dans le résumé)
+            // Employer
             $employer = null;
             if (isset($item['nomEmployeur'])) {
                 $employer = Employer::updateOrCreate(
@@ -35,18 +36,34 @@ class JobOfferService
             }
 
             // Job Offer
-            return JobOffer::updateOrCreate(
+            $jobOffer = JobOffer::updateOrCreate(
                 ['forem_id' => $item['id']],
                 [
                     'forem_ref' => $item['numero'] ?? null,
                     'title' => $item['titre'] ?? 'Sans titre',
                     'employer_id' => $employer?->id,
-                    'location' => $item['lieuTravail'] ?? null,
-                    'published_at' => now(), // On peut affiner si présent
-                    'expires_at' => isset($item['dateFinDiffusion']) ? \Carbon\Carbon::parse($item['dateFinDiffusion']) : null,
-                    // On ne touche pas à is_detailed si elle existe déjà pour ne pas écraser une offre complète
+                    'location' => $item['lieuxTravail'][0] ?? null,
+                    'locations_json' => $item['lieuxTravail'] ?? [],
+                    'contract_type' => $item['typeContrat'] ?? 'N/A',
+                    'working_regime' => $item['regimeTravail'] ?? 'N/A',
+                    'nombre_postes' => $item['nombrePostes'] ?? 1,
+                    'contact_email' => $item['email'] ?? null,
+                    'is_postulable' => $item['isPostulable'] ?? false,
+                    'published_at' => now(),
+                    'start_date' => isset($item['debut']) ? $this->parseDate($item['debut']) : null,
+                    'expires_at' => isset($item['fin']) ? $this->parseDate($item['fin']) : null,
                 ]
             );
+
+            // Sectors (Si présents)
+            if (isset($item['secteursActivite'])) {
+                foreach ($item['secteursActivite'] as $sectorLabel) {
+                    $sector = \App\Models\Sector::updateOrCreate(['label' => $sectorLabel]);
+                    $jobOffer->sectors()->syncWithoutDetaching([$sector->id]);
+                }
+            }
+
+            return $jobOffer;
         });
     }
 
