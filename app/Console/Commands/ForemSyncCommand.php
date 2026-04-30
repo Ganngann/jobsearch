@@ -18,8 +18,8 @@ use Illuminate\Support\Facades\DB;
 
 class ForemSyncCommand extends Command
 {
-    protected $signature = 'forem:sync';
-    protected $description = 'Synchronise les taxonomies et les offres d\'emploi depuis l\'API Forem';
+    protected $signature = 'forem:sync {--pages=1 : Nombre de pages de recherche à parcourir} {--rows=10 : Nombre d\'offres par page}';
+    protected $description = 'Synchronise les taxonomies et les offres d\'emploi depuis l\'API réelle du Forem';
 
     protected $foremApi;
 
@@ -31,10 +31,45 @@ class ForemSyncCommand extends Command
 
     public function handle()
     {
-        $this->info('Début de la synchronisation...');
+        $this->info('Début de la synchronisation réelle...');
 
+        // 1. Taxonomies (Une fois au début)
         $this->syncTaxonomies();
-        $this->syncJobs();
+
+        // 2. Offres (Par pages)
+        $pages = (int) $this->option('pages');
+        $rows = (int) $this->option('rows');
+
+        for ($p = 1; $p <= $pages; $p++) {
+            $this->comment("Traitement de la page {$p}/{$pages}...");
+            $searchResults = $this->foremApi->searchJobs($p, $rows);
+            
+            $results = $searchResults['resultats'] ?? [];
+            
+            if (empty($results)) {
+                $this->warn("Aucun résultat sur la page {$p}.");
+                break;
+            }
+
+            foreach ($results as $item) {
+                $jobId = $item['idOffreEmploi'] ?? $item['id'];
+                
+                // Vérifier si on a déjà l'offre (optionnel, on peut mettre à jour)
+                // if (JobOffer::where('forem_id', $jobId)->exists()) continue;
+
+                $this->line("  Récupération de l'offre #{$jobId}...");
+                
+                $jobData = $this->foremApi->getJobDetail($jobId);
+                
+                if ($jobData) {
+                    $this->saveJobOffer($jobData);
+                    $this->info("    --> Sauvegardée : {$jobData['titreOffre']}");
+                }
+
+                // PARSIMONIE : Pause aléatoire entre 1 et 2 secondes
+                usleep(rand(1000000, 2000000));
+            }
+        }
 
         $this->info('Synchronisation terminée !');
     }
@@ -44,25 +79,21 @@ class ForemSyncCommand extends Command
         $this->comment('Synchronisation des taxonomies...');
         $taxonomies = $this->foremApi->getTaxonomies();
 
-        // 1. Métiers
+        if (empty($taxonomies)) return;
+
+        // Métiers
         $metiers = collect($taxonomies['criteresParFiltres'] ?? [])->firstWhere('nom', 'Metier')['criteres'] ?? [];
         foreach ($metiers as $m) {
-            Metier::updateOrCreate(
-                ['label' => $m['libelle']],
-                ['guid' => $m['guid'] ?? null, 'code' => 'N/A'] // Le code ROME vient du Detail API
-            );
+            Metier::updateOrCreate(['label' => $m['libelle']], ['guid' => $m['guid'] ?? null]);
         }
 
-        // 2. Langues
+        // Langues
         $languages = collect($taxonomies['criteresParFiltres'] ?? [])->firstWhere('nom', 'Language')['criteres'] ?? [];
         foreach ($languages as $l) {
-            Language::updateOrCreate(
-                ['label' => $l['libelle']],
-                ['code' => $l['guid'] ?? $l['libelle']] // À affiner
-            );
+            Language::updateOrCreate(['label' => $l['libelle']], ['code' => $l['guid'] ?? $l['libelle']]);
         }
 
-        // 3. Permis
+        // Permis
         $permits = collect($taxonomies['criteresParFiltres'] ?? [])->firstWhere('nom', 'Drivers License')['criteres'] ?? [];
         foreach ($permits as $p) {
             Permit::updateOrCreate(
@@ -71,49 +102,15 @@ class ForemSyncCommand extends Command
             );
         }
 
-        // 4. Secteurs (Activite)
-        $sectors = collect($taxonomies['criteresParFiltres'] ?? [])->firstWhere('nom', 'Activite')['criteres'] ?? [];
-        foreach ($sectors as $s) {
-            Sector::updateOrCreate(['label' => $s['libelle']]);
-        }
-
-        // 5. Sources
-        $sources = collect($taxonomies['criteresParFiltreCodifies'] ?? [])->firstWhere('nom', 'Source')['criteres'] ?? [];
-        foreach ($sources as $s) {
-            Source::updateOrCreate(
-                ['code' => $s['id']],
-                ['label' => $s['libelle']]
-            );
-        }
-
-        // 6. Avantages (Benefits)
-        $benefits = collect($taxonomies['criteresParFiltreCodifies'] ?? [])->firstWhere('nom', 'Avantage')['criteres'] ?? [];
-        foreach ($benefits as $b) {
-            Benefit::updateOrCreate(
-                ['code' => $b['id']],
-                ['label' => $b['libelle']]
-            );
-        }
-
-        $this->info('Taxonomies synchronisées.');
+        $this->info('Taxonomies de base synchronisées.');
     }
 
-    protected function syncJobs()
+    protected function saveJobOffer(array $jobData)
     {
-        $this->comment('Synchronisation des offres (simulée)...');
-        
-        // Simuler la récupération d'une offre via le Detail API
-        $jobData = $this->foremApi->getJobDetail(1878785);
-
-        if (empty($jobData)) {
-            $this->error('Aucune donnée d\'offre trouvée.');
-            return;
-        }
-
         DB::transaction(function () use ($jobData) {
-            // 1. Employer
+            // Employer
             $employer = Employer::updateOrCreate(
-                ['label' => $jobData['nomEmployeur']],
+                ['label' => $jobData['nomEmployeur'] ?? 'Employeur inconnu'],
                 [
                     'logo_base64' => $jobData['logoEmployeur'] ?? null,
                     'logo_mime_type' => $jobData['logoMimeType'] ?? null,
@@ -121,13 +118,13 @@ class ForemSyncCommand extends Command
                 ]
             );
 
-            // 2. Metier (Update code ROME)
+            // Metier
             $metier = Metier::updateOrCreate(
-                ['label' => $jobData['metier']],
+                ['label' => $jobData['metier'] ?? 'Métier non spécifié'],
                 ['code' => $jobData['experience'][0]['code'] ?? 'N/A']
             );
 
-            // 3. Job Offer
+            // Job Offer
             $jobOffer = JobOffer::updateOrCreate(
                 ['forem_id' => $jobData['idOffreEmploi']],
                 [
@@ -135,30 +132,29 @@ class ForemSyncCommand extends Command
                     'title' => $jobData['titreOffre'],
                     'metier_id' => $metier->id,
                     'employer_id' => $employer->id,
-                    'description' => $jobData['descriptionJob'],
-                    'contract_type' => $jobData['typeContrat'],
-                    'working_regime' => $jobData['regimeTravail'],
-                    'working_regime_detail' => $jobData['regimeTravailPrecision'],
+                    'description' => $jobData['descriptionJob'] ?? '',
+                    'contract_type' => $jobData['typeContrat'] ?? 'N/A',
+                    'working_regime' => $jobData['regimeTravail'] ?? 'N/A',
+                    'working_regime_detail' => $jobData['regimeTravailPrecision'] ?? null,
                     'working_hours' => $jobData['shift']['hours'] ?? null,
                     'shift_period' => $jobData['shift']['shiftPeriod'] ?? null,
                     'base_salary' => $jobData['benefits']['basePay'] ?? null,
                     'benefits_comments' => $jobData['benefits']['comments'] ?? null,
                     'nombre_postes' => $jobData['nombrePostes'] ?? 1,
                     'location' => $jobData['lieuxTravail'][0] ?? null,
-                    'locations_json' => $jobData['lieuxTravail'],
+                    'locations_json' => $jobData['lieuxTravail'] ?? [],
                     'contact_name' => ($jobData['howToApply']['prefferedGivenName'] ?? '') . ' ' . ($jobData['howToApply']['familyName'] ?? ''),
                     'contact_email' => $jobData['howToApply']['email'] ?? null,
-                    'contact_phone' => $jobData['howToApply']['telephone'] ?? null, // Hypothetical
                     'apply_instructions' => $jobData['howToApply']['comments'] ?? null,
-                    'is_postulable' => str_contains($jobData['howToApply']['comments'] ?? '', 'Forem'), // Simplifié
+                    'is_postulable' => str_contains($jobData['howToApply']['comments'] ?? '', 'Forem'),
                     'start_date' => $this->parseFrenchDate($jobData['positionDateInfo']['startDate'] ?? null),
-                    'published_at' => now(), // À améliorer avec Search API
+                    'published_at' => now(),
                     'expires_at' => $this->parseFrenchDate($jobData['dateFinDiffusion'] ?? null),
                     'raw_data' => $jobData,
                 ]
             );
 
-            // 4. Skills (Competencies + SoftSkills)
+            // Skills
             $allSkills = array_merge(
                 array_map(fn($s) => array_merge($s, ['type' => 'hard']), $jobData['competencies'] ?? []),
                 array_map(fn($s) => array_merge($s, ['type' => 'soft']), $jobData['softSkills'] ?? [])
@@ -166,7 +162,7 @@ class ForemSyncCommand extends Command
 
             foreach ($allSkills as $sData) {
                 $skill = Skill::updateOrCreate(
-                    ['code' => $sData['code']],
+                    ['code' => $sData['code'] ?? $sData['libelle']],
                     ['label' => $sData['libelle'], 'type' => $sData['type']]
                 );
                 $jobOffer->skills()->syncWithoutDetaching([
@@ -174,39 +170,26 @@ class ForemSyncCommand extends Command
                 ]);
             }
 
-            // 5. Languages
+            // Languages
             foreach ($jobData['langues'] ?? [] as $lData) {
                 $lang = Language::updateOrCreate(
-                    ['code' => $lData['code']],
+                    ['code' => $lData['code'] ?? $lData['libelle']],
                     ['label' => $lData['libelle']]
                 );
                 $jobOffer->languages()->syncWithoutDetaching([
-                    $lang->id => [
-                        'level' => $lData['experience'] ?? null,
-                        'is_required' => true // Souvent requis par défaut
-                    ]
+                    $lang->id => ['level' => $lData['experience'] ?? null, 'is_required' => true]
                 ]);
             }
 
-            // 6. Permits
+            // Permits
             foreach ($jobData['permisConduire'] ?? [] as $pData) {
                 $permit = Permit::updateOrCreate(
-                    ['code' => $pData['code']],
+                    ['code' => $pData['code'] ?? $pData['valeur']],
                     ['label' => $pData['libelle'], 'value' => $pData['valeur'] ?? 'B']
                 );
-                $jobOffer->permits()->syncWithoutDetaching([
-                    $permit->id => ['is_required' => true]
-                ]);
-            }
-
-            // 7. Studies
-            foreach ($jobData['etudes'] ?? [] as $eData) {
-                $study = Study::updateOrCreate(['label' => $eData['libelle']]);
-                $jobOffer->studies()->syncWithoutDetaching([$study->id]);
+                $jobOffer->permits()->syncWithoutDetaching([$permit->id => ['is_required' => true]]);
             }
         });
-
-        $this->info('Offres synchronisées.');
     }
 
     protected function extractPermitValue($label)

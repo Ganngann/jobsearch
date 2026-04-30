@@ -7,52 +7,74 @@ use Illuminate\Support\Facades\Log;
 
 class ForemApiService
 {
-    protected string $baseUrl = 'https://api.leforem.be/v1'; // Hypothétique, à ajuster si nécessaire
+    protected string $baseUrl = 'https://www.leforem.be/recherche-offres/api';
+    protected string $userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
     /**
-     * Simulation de la recherche d'offres (Search API)
-     * En production, cela appellerait l'endpoint réel.
+     * Recherche d'offres (Search API)
      */
-    public function searchJobs(array $criteria = []): array
+    public function searchJobs(int $page = 1, int $rows = 20): array
     {
-        // Pour le MVP, on simule ou on lit le fichier exemple si l'API n'est pas dispo
-        // $response = Http::get("{$this->baseUrl}/jobs/search", $criteria);
-        // return $response->json();
+        $url = "{$this->baseUrl}/Recherches/Search";
+        
+        try {
+            $response = Http::withHeaders(['User-Agent' => $this->userAgent])
+                ->get($url, [
+                    'page' => $page,
+                    'row' => $rows,
+                    'sort' => 'DatePublication',
+                ]);
 
-        $path = base_path('docs/api-examples/search-results.json');
-        if (file_exists($path)) {
-            return json_decode(file_get_contents($path), true);
+            if ($response->failed()) {
+                Log::error("Forem Search API Error: {$response->status()}", ['body' => $response->body()]);
+                return [];
+            }
+
+            return $response->json();
+        } catch (\Exception $e) {
+            Log::error("Forem Search API Exception: " . $e->getMessage());
+            return [];
         }
-
-        return [];
     }
 
     /**
-     * Simulation du détail d'une offre (Detail API)
+     * Détail d'une offre (Detail API)
      */
     public function getJobDetail(int $jobId): array
     {
-        // $response = Http::get("{$this->baseUrl}/jobs/{$jobId}");
-        // return $response->json();
+        $url = "{$this->baseUrl}/Diffusion/DetailOffre/{$jobId}";
+        
+        try {
+            $response = Http::withHeaders(['User-Agent' => $this->userAgent])
+                ->get($url);
 
-        $path = base_path('docs/api-examples/job-detail.json');
-        if (file_exists($path)) {
-            return json_decode(file_get_contents($path), true);
+            if ($response->failed()) {
+                Log::error("Forem Detail API Error for ID {$jobId}: {$response->status()}");
+                return [];
+            }
+
+            return $response->json();
+        } catch (\Exception $e) {
+            Log::error("Forem Detail API Exception for ID {$jobId}: " . $e->getMessage());
+            return [];
         }
-
-        return [];
     }
 
     /**
-     * Simulation des facettes/taxonomies (Facettes API)
+     * Facettes / Taxonomies (Criteres API)
      */
     public function getTaxonomies(): array
     {
-        $path = base_path('docs/api-examples/search-by-criteria.json');
-        if (file_exists($path)) {
-            return json_decode(file_get_contents($path), true);
-        }
+        $url = "{$this->baseUrl}/Recherches/SearchNombreParCritere";
+        
+        try {
+            $response = Http::withHeaders(['User-Agent' => $this->userAgent])
+                ->get($url);
 
-        return [];
+            return $response->json();
+        } catch (\Exception $e) {
+            Log::error("Forem Taxonomies API Exception: " . $e->getMessage());
+            return [];
+        }
     }
 }
