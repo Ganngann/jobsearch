@@ -11,15 +11,15 @@
 - Mapping API → DB complet avec gestion des pièges (dates, logos, téléphone).
 - Pile technique définie (Laravel 11, SQLite/MySQL, Gemini 2.5 Flash).
 
-## [ ] Phase 1 : MVP (Backend Focus)
-- Initialisation du projet Laravel 11.
-- Migrations pour toutes les tables (ref, jobs, pivots, users, matches).
-- Models Eloquent avec relations.
-- Commandes Artisan :
-    - `forem:sync` : Fetch Search + Detail, alimentation DB.
-    - `forem:match` : Layer 1 (pré-score) + Layer 2 (IA).
-- Intégration de l'API Gemini 2.5 Flash.
-- Tests unitaires sur le parsing API et le scoring.
+## [x] Phase 1 : MVP (Backend Focus)
+- [x] Initialisation du projet Laravel 11.
+- [x] Migrations pour toutes les tables (ref, job_offers, pivots, users, matches).
+- [x] Models Eloquent avec relations.
+- [x] Commandes Artisan :
+    - [x] `forem:sync` : Fetch Search + Detail, alimentation DB.
+    - [x] `forem:match` : Layer 1 (pré-score) + Layer 2 (IA).
+- [x] Intégration de l'API Gemini 2.0 Flash (Service prêt).
+- [ ] Tests unitaires sur le parsing API et le scoring.
 
 ## [ ] Phase 2 : Interface Utilisateur
 - Dashboard Laravel/Blade + Tailwind CSS.

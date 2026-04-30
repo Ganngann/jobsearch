@@ -169,6 +169,7 @@ return new class extends Migration
             $table->foreignId('skill_id')->constrained('skills')->onDelete('cascade');
             $table->enum('level', ['beginner', 'intermediate', 'advanced', 'expert'])->nullable();
             $table->primary(['user_id', 'skill_id']);
+            $table->timestamps();
         });
 
         Schema::create('user_language', function (Blueprint $table) {
@@ -176,12 +177,14 @@ return new class extends Migration
             $table->foreignId('language_id')->constrained('languages')->onDelete('cascade');
             $table->string('level')->nullable();
             $table->primary(['user_id', 'language_id']);
+            $table->timestamps();
         });
 
         Schema::create('user_permit', function (Blueprint $table) {
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('permit_id')->constrained('permits')->onDelete('cascade');
             $table->primary(['user_id', 'permit_id']);
+            $table->timestamps();
         });
 
         // Matching Table
