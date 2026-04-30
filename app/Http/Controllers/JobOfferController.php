@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\JobOffer;
 use App\Models\UserMatch;
 use App\Services\MatchingService;
+use App\Services\JobOfferService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 

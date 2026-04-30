@@ -238,10 +238,10 @@
                                     </div>
                                 @endif
 
-                                <button class="group w-full py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] transition-all duration-300 shadow-2xl shadow-indigo-900/40 flex items-center justify-center gap-3">
-                                    Postuler via Forem
+                                <a href="https://www.leforem.be/recherche-offres/offre-detail/{{ $jobOffer->forem_id }}" target="_blank" class="group w-full py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] transition-all duration-300 shadow-2xl shadow-indigo-900/40 flex items-center justify-center gap-3">
+                                    Voir sur Le Forem
                                     <svg class="w-4 h-4 transform group-hover:translate-x-1.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
-                                </button>
+                                </a>
                             </div>
                         </div>
 
