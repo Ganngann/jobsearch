@@ -12,7 +12,7 @@ Le processus de matching suit un flux structuré pour garantir précision et per
 - Ce filtre permet de trier rapidement les opportunités les plus pertinentes avant l'analyse coûteuse par l'IA.
 
 ## 3. Layer 2 - Analyse Sémantique (IA)
-- Gemini 1.5 Flash reçoit :
+- Gemini 2.5 Flash reçoit :
     - Le profil textuel de l'utilisateur.
     - La description complète du job.
     - Les compétences identifiées.
