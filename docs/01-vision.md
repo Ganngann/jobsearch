@@ -8,7 +8,7 @@
 - **Base de données** :
     - *Développement* : SQLite
     - *Production (o2switch)* : MySQL
-- **Intelligence Artificielle** : API Google Gemini 1.5 Flash
+- **Intelligence Artificielle** : API Google Gemini 2.5 Flash
 - **Source de données** : API Interne Forem (Discovery & Detail)
 - **Interface** : Tailwind CSS + Blade
 - **Hébergement** : o2switch

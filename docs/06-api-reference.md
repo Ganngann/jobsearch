@@ -15,11 +15,13 @@ Cet endpoint permet de lister les offres d'emploi avec des données résumées.
 ### Analyse des champs clés
 | Champ | Description | Usage dans le projet |
 | :--- | :--- | :--- |
-| `id` / `numero` | Identifiant unique de l'offre | Utilisé pour `forem_ref` dans la table `jobs`. |
-| `titre` | Titre de l'annonce | Nom de l'offre. |
-| `nomEmployeur` | Nom de l'entreprise | Champ `employer`. |
-| `lieuxTravail` | Liste des lieux | Localisation. |
-| `secteursActivite` | Secteurs concernés | Aide à la classification. |
+| `id` / `numero` | Identifiant unique de l'offre | `forem_ref` dans la table `jobs`. |
+| `titre` | Titre de l'annonce | `title` dans `jobs`. |
+| `nomEmployeur` | Nom de l'entreprise | Alimente la table `employers` → FK `employer_id`. |
+| `lieuxTravail` | Liste des lieux | `location` dans `jobs`. |
+| `secteursActivite` | Secteurs concernés | Alimente la table `sectors` → pivot `job_sector`. |
+| `logo` (UUID) | Identifiant du logo | `logo` dans la table `employers`. |
+| `isPostulable` | Postulable via Forem | `is_postulable` dans `jobs`. |
 
 ## 2. Détail de l'offre (Detail)
 Cet endpoint fournit toutes les informations nécessaires à l'analyse sémantique.

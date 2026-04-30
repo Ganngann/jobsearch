@@ -3,9 +3,13 @@
 Le processus de matching suit un flux structuré pour garantir précision et performance.
 
 ## 1. Fetch & Sync
-- Récupération de l'offre via l'API Forem.
-- Si le code métier ou les codes compétences n'existent pas en base, ils sont créés dans les tables de référence (`metiers`, `skills`).
-- L'offre est enregistrée et liée aux compétences via la table pivot `job_skill`.
+- Récupération de l'offre via l'API Forem (Search + DetailOffre).
+- Peuplement des tables de référence si les entrées sont nouvelles :
+    - `metiers` (code ROME + GUID), `skills` (hard & soft)
+    - `employers`, `sources`, `sectors`, `benefits`
+    - `languages`, `permits`
+- L'offre est enregistrée dans `jobs` avec ses clés étrangères.
+- Les pivots sont alimentés : `job_skill`, `job_language`, `job_permit`, `job_benefit`, `job_sector`.
 
 ## 2. Layer 1 - Filtrage Statique
 - Calcul d'un "pré-score" basé sur le nombre de skills en commun entre `user_skills` et `job_skill`.
