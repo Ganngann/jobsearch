@@ -99,9 +99,9 @@ class ForemSyncCommand extends Command
                     'contract_type' => $jobData['typeContrat'] ?? 'N/A',
                     'working_regime' => $jobData['regimeTravail'] ?? 'N/A',
                     'working_regime_detail' => $jobData['regimeTravailPrecision'] ?? null,
-                    'working_hours' => $jobData['shift']['hours'] ?? null,
+                    'working_hours' => $this->sanitizeNumeric($jobData['shift']['hours'] ?? null),
                     'shift_period' => $jobData['shift']['shiftPeriod'] ?? null,
-                    'base_salary' => $jobData['benefits']['basePay'] ?? null,
+                    'base_salary' => $this->sanitizeNumeric($jobData['benefits']['basePay'] ?? null),
                     'benefits_comments' => $jobData['benefits']['comments'] ?? null,
                     'nombre_postes' => $jobData['nombrePostes'] ?? 1,
                     'location' => $jobData['lieuxTravail'][0] ?? null,
@@ -153,6 +153,19 @@ class ForemSyncCommand extends Command
                 $jobOffer->permits()->syncWithoutDetaching([$permit->id => ['is_required' => true]]);
             }
         });
+    }
+
+    protected function sanitizeNumeric($value)
+    {
+        if (!$value) return null;
+        
+        // Remplacer virgule par point
+        $value = str_replace(',', '.', $value);
+        
+        // Garder uniquement les chiffres et le point décimal
+        $value = preg_replace('/[^0-9.]/', '', $value);
+        
+        return is_numeric($value) ? (float) $value : null;
     }
 
     protected function parseDate($dateString)
