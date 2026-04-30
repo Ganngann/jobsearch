@@ -68,16 +68,42 @@ class JobOfferController extends Controller
     /**
      * Affiche le détail d'une offre et son analyse de matching.
      */
-    public function show(JobOffer $jobOffer)
+    public function show($id)
     {
         $user = Auth::user();
 
-        // LAZY LOADING : Si l'offre n'a pas ses détails, on les récupère maintenant
+        // On cherche par ID interne ou ID Forem
+        $jobOffer = JobOffer::where('id', $id)
+            ->orWhere('forem_id', $id)
+            ->first();
+
+        if (!$jobOffer) {
+            // On s'assure d'avoir un employeur par défaut pour la contrainte SQL
+            $placeholderEmployer = \App\Models\Employer::firstOrCreate(
+                ['label' => 'Forem (Importation...)']
+            );
+
+            // Création d'un squelette temporaire
+            $jobOffer = JobOffer::create([
+                'forem_id' => $id,
+                'forem_ref' => 'F-' . $id,
+                'title' => 'Importation en cours...',
+                'employer_id' => $placeholderEmployer->id,
+                'description' => 'Chargement des données depuis le Forem...',
+                'contract_type' => '...',
+                'working_regime' => '...',
+            ]);
+            
+            $this->jobOfferService->syncFullDetails($jobOffer);
+        }
+
+        // LAZY LOADING : Si l'offre n'a pas ses détails complets
         if (!$jobOffer->is_detailed) {
             $this->jobOfferService->syncFullDetails($jobOffer);
-            // On recharge tout pour être sûr d'avoir les relations fraîches (compétences, etc)
-            $jobOffer->load(['employer', 'metier', 'skills', 'languages', 'permits', 'sectors']);
+            $jobOffer->refresh();
         }
+
+        $jobOffer->load(['employer', 'metier', 'skills', 'languages', 'permits', 'requiredExperiences', 'studies']);
 
         $match = UserMatch::where('user_id', $user->id)
             ->where('job_offer_id', $jobOffer->id)

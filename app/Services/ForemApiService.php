@@ -15,17 +15,17 @@ class ForemApiService
      */
     public function searchJobs(array $criteria = [], int $page = 1, int $rows = 20): array
     {
-        $url = "{$this->baseUrl}/Recherches/Search?page={$page}&row={$rows}";
+        $url = "{$this->baseUrl}/Recherches/SearchOffres?page={$page}&row={$rows}";
         
-        $payload = array_merge([
-            'filtres' => [],
-            'filtresCodifies' => [],
-            'locutions' => [],
+        $payload = [
+            'filtres' => $criteria['filtres_grouped'] ?? [],
+            'filtresCodifies' => $criteria['filters'] ?? [],
+            'locutions' => $criteria['keywords'] ?? [],
             'metier' => [],
             'operateurLocutions' => 'ET',
             'priority' => 1,
             'secteur' => [],
-        ], $criteria);
+        ];
 
         try {
             $response = Http::withoutVerifying()
@@ -34,17 +34,44 @@ class ForemApiService
                     'Accept' => 'application/json, text/plain, */*',
                     'Content-Type' => 'application/json',
                     'Referer' => 'https://www.leforem.be/recherche-offres/offres',
-                    'Origin' => 'https://www.leforem.be',
                 ])->post($url, $payload);
-
-            if ($response->failed()) {
-                Log::error("Forem Search API Error: {$response->status()}", ['body' => $response->body()]);
-                return [];
-            }
 
             return $response->json() ?? [];
         } catch (\Exception $e) {
             Log::error("Forem Search API Exception: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Récupère les compteurs d'offres par critère (filtres dynamiques)
+     */
+    public function getFilterCounts(array $criteria = []): array
+    {
+        $url = "{$this->baseUrl}/Recherches/SearchNombreParCritere?page=1&row=10";
+        
+        $payload = [
+            'filtres' => $criteria['filtres_grouped'] ?? [],
+            'filtresCodifies' => $criteria['filters'] ?? [],
+            'locutions' => $criteria['keywords'] ?? [],
+            'metier' => [],
+            'operateurLocutions' => 'ET',
+            'priority' => 1,
+            'secteur' => [],
+        ];
+
+        try {
+            $response = Http::withoutVerifying()
+                ->withHeaders([
+                    'User-Agent' => $this->userAgent,
+                    'Accept' => 'application/json, text/plain, */*',
+                    'Content-Type' => 'application/json',
+                    'Referer' => 'https://www.leforem.be/recherche-offres/offres',
+                ])->post($url, $payload);
+
+            return $response->json() ?? [];
+        } catch (\Exception $e) {
+            Log::error("Forem FilterCounts API Exception: " . $e->getMessage());
             return [];
         }
     }
