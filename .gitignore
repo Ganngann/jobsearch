@@ -11,9 +11,30 @@ Thumbs.db
 # Logs
 *.log
 
-# Dependencies (placeholder)
-node_modules/
-venv/
-.venv/
-env/
-__pycache__/
+# Laravel
+/vendor/
+/node_modules/
+.env
+.env.backup
+.env.production
+/storage/*.key
+/bootstrap/cache/
+/public/hot
+/public/storage
+/public/build/
+Homestead.json
+Homestead.yaml
+npm-debug.log
+yarn-error.log
+
+# Compiled assets
+/public/css/
+/public/js/
+/public/mix-manifest.json
+
+# PHPUnit
+.phpunit.result.cache
+.phpunit.cache/
+
+# Testing
+/coverage/
