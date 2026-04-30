@@ -74,18 +74,27 @@
                         </div>
 
                         <!-- 1. Section: Poste à pourvoir -->
-                        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-                            <button class="w-full px-8 py-5 flex items-center justify-between bg-slate-50/50 border-b border-slate-100 group">
+                        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden" x-data="{ open: true }">
+                            <button @click="open = !open" class="w-full px-8 py-5 flex items-center justify-between bg-slate-50/50 border-b border-slate-100 group transition-all">
                                 <h3 class="text-lg font-bold text-slate-800">Poste à pourvoir</h3>
-                                <svg class="w-5 h-5 text-slate-400 group-hover:text-indigo-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                <svg class="w-5 h-5 text-slate-400 group-hover:text-indigo-500 transition-transform duration-300" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </button>
-                            <div class="p-8 space-y-8">
+                            <div class="p-8 space-y-8" x-show="open" x-collapse>
+                                @if(isset($jobOffer->raw_data['descriptionJob']) && $jobOffer->raw_data['descriptionJob'])
                                 <div>
                                     <h4 class="text-md font-bold text-slate-900 mb-4">Responsabilité et missions</h4>
                                     <div class="prose prose-slate max-w-none text-slate-600 text-sm leading-relaxed">
-                                        {!! $jobOffer->raw_data['descriptionJob'] ?? $jobOffer->description !!}
+                                        {!! $jobOffer->raw_data['descriptionJob'] !!}
                                     </div>
                                 </div>
+                                @else
+                                <div>
+                                    <h4 class="text-md font-bold text-slate-900 mb-4">Description de l'offre</h4>
+                                    <div class="prose prose-slate max-w-none text-slate-600 text-sm leading-relaxed">
+                                        {!! $jobOffer->description !!}
+                                    </div>
+                                </div>
+                                @endif
 
                                 <div>
                                     <h4 class="text-md font-bold text-slate-900 mb-4">Lieu(x) de travail</h4>
@@ -102,12 +111,12 @@
                         </div>
 
                         <!-- 2. Section: Votre profil -->
-                        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-                            <button class="w-full px-8 py-5 flex items-center justify-between bg-slate-50/50 border-b border-slate-100 group">
+                        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden" x-data="{ open: true }">
+                            <button @click="open = !open" class="w-full px-8 py-5 flex items-center justify-between bg-slate-50/50 border-b border-slate-100 group transition-all">
                                 <h3 class="text-lg font-bold text-slate-800">Votre profil</h3>
-                                <svg class="w-5 h-5 text-slate-400 group-hover:text-indigo-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                <svg class="w-5 h-5 text-slate-400 group-hover:text-indigo-500 transition-transform duration-300" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </button>
-                            <div class="p-8 space-y-10">
+                            <div class="p-8 space-y-10" x-show="open" x-collapse>
                                 <div>
                                     <h4 class="text-md font-bold text-slate-900 mb-2">Métier</h4>
                                     <p class="text-sm text-slate-600">{{ $jobOffer->metier->label ?? 'Non spécifié' }}</p>
@@ -187,6 +196,23 @@
                                         </table>
                                     </div>
                                     @endif
+
+                                    <!-- Soft Skills Badges -->
+                                    @php
+                                        $softSkills = $jobOffer->skills->where('type', 'soft');
+                                    @endphp
+                                    @if($softSkills->count() > 0)
+                                    <div class="mt-10 pt-8 border-t border-slate-100">
+                                        <h4 class="text-md font-bold text-slate-900 mb-4">Compétences comportementales</h4>
+                                        <div class="flex flex-wrap gap-2">
+                                            @foreach($softSkills as $skill)
+                                                <span class="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-full text-sm font-medium border border-indigo-100 shadow-sm">
+                                                    {{ $skill->label }}
+                                                </span>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                    @endif
                                 </div>
 
                                 @if(isset($jobOffer->raw_data['descriptionComment']) && $jobOffer->raw_data['descriptionComment'])
@@ -202,12 +228,12 @@
 
                         <!-- 3. Section: Commentaire général -->
                         @if(isset($jobOffer->raw_data['commentaireGeneral']) && $jobOffer->raw_data['commentaireGeneral'])
-                        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-                            <button class="w-full px-8 py-5 flex items-center justify-between bg-slate-50/50 border-b border-slate-100 group">
+                        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden" x-data="{ open: true }">
+                            <button @click="open = !open" class="w-full px-8 py-5 flex items-center justify-between bg-slate-50/50 border-b border-slate-100 group transition-all">
                                 <h3 class="text-lg font-bold text-slate-800">Commentaire général</h3>
-                                <svg class="w-5 h-5 text-slate-400 group-hover:text-indigo-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                <svg class="w-5 h-5 text-slate-400 group-hover:text-indigo-500 transition-transform duration-300" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </button>
-                            <div class="p-8">
+                            <div class="p-8" x-show="open" x-collapse>
                                 <div class="prose prose-slate max-w-none text-slate-600 text-sm leading-relaxed">
                                     {!! $jobOffer->raw_data['commentaireGeneral'] !!}
                                 </div>
@@ -216,12 +242,12 @@
                         @endif
 
                         <!-- 4. Section: Condition du poste -->
-                        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-                            <button class="w-full px-8 py-5 flex items-center justify-between bg-slate-50/50 border-b border-slate-100 group">
+                        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden" x-data="{ open: true }">
+                            <button @click="open = !open" class="w-full px-8 py-5 flex items-center justify-between bg-slate-50/50 border-b border-slate-100 group transition-all">
                                 <h3 class="text-lg font-bold text-slate-800">Condition du poste</h3>
-                                <svg class="w-5 h-5 text-slate-400 group-hover:text-indigo-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                <svg class="w-5 h-5 text-slate-400 group-hover:text-indigo-500 transition-transform duration-300" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </button>
-                            <div class="p-8 space-y-10">
+                            <div class="p-8 space-y-10" x-show="open" x-collapse>
                                 <div class="overflow-hidden border border-slate-200 rounded-xl">
                                     <table class="w-full text-left text-xs">
                                         <thead class="bg-slate-50 border-b border-slate-200">

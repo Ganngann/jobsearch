@@ -13,27 +13,29 @@ class ForemApiService
     /**
      * Recherche d'offres (Search API)
      */
-    public function searchJobs(int $page = 1, int $rows = 20): array
+    public function searchJobs(array $criteria = [], int $page = 1, int $rows = 20): array
     {
         $url = "{$this->baseUrl}/Recherches/Search?page={$page}&row={$rows}";
         
+        $payload = array_merge([
+            'filtres' => [],
+            'filtresCodifies' => [],
+            'locutions' => [],
+            'metier' => [],
+            'operateurLocutions' => 'ET',
+            'priority' => 1,
+            'secteur' => [],
+        ], $criteria);
+
         try {
-            $response = Http::withoutVerifying() // Correction SSL
+            $response = Http::withoutVerifying()
                 ->withHeaders([
                     'User-Agent' => $this->userAgent,
                     'Accept' => 'application/json, text/plain, */*',
                     'Content-Type' => 'application/json',
                     'Referer' => 'https://www.leforem.be/recherche-offres/offres',
                     'Origin' => 'https://www.leforem.be',
-                ])->post($url, [
-                    'filtres' => [],
-                    'filtresCodifies' => [],
-                    'locutions' => [],
-                    'metier' => [],
-                    'operateurLocutions' => 'ET',
-                    'priority' => 1,
-                    'secteur' => [],
-                ]);
+                ])->post($url, $payload);
 
             if ($response->failed()) {
                 Log::error("Forem Search API Error: {$response->status()}", ['body' => $response->body()]);
@@ -77,26 +79,28 @@ class ForemApiService
     /**
      * Facettes / Taxonomies (Criteres API)
      */
-    public function getTaxonomies(): array
+    public function getTaxonomies(array $criteria = []): array
     {
         $url = "{$this->baseUrl}/Recherches/SearchNombreParCritere?page=1&row=10";
         
+        $payload = array_merge([
+            'filtres' => [],
+            'filtresCodifies' => [],
+            'locutions' => [],
+            'metier' => [],
+            'operateurLocutions' => 'ET',
+            'priority' => 1,
+            'secteur' => [],
+        ], $criteria);
+
         try {
-            $response = Http::withoutVerifying() // Correction SSL
+            $response = Http::withoutVerifying()
                 ->withHeaders([
                     'User-Agent' => $this->userAgent,
                     'Accept' => 'application/json, text/plain, */*',
                     'Content-Type' => 'application/json',
                     'Referer' => 'https://www.leforem.be/recherche-offres/offres',
-                ])->post($url, [
-                    'filtres' => [],
-                    'filtresCodifies' => [],
-                    'locutions' => [],
-                    'metier' => [],
-                    'operateurLocutions' => 'ET',
-                    'priority' => 1,
-                    'secteur' => [],
-                ]);
+                ])->post($url, $payload);
 
             return $response->json() ?? [];
         } catch (\Exception $e) {

@@ -112,46 +112,67 @@ class JobOfferService
             // Update Job Offer
             $jobOffer->update([
                 'forem_ref' => $jobData['numero'],
-                'title' => $jobData['titreOffre'],
                 'metier_id' => $metier->id,
                 'employer_id' => $employer->id,
                 'description' => $fullDescription,
-                'contract_type' => $jobData['typeContrat'] ?? 'N/A',
-                'working_regime' => $jobData['regimeTravail'] ?? 'N/A',
+                'title' => $jobData['title'] ?? $jobData['titreOffre'] ?? $jobOffer->title,
+                'contract_type' => $jobData['contractType'] ?? $jobData['typeContrat'] ?? $jobOffer->contract_type,
+                'working_regime' => $jobData['regimeTravail'] ?? $jobOffer->working_regime,
                 'working_regime_detail' => $jobData['regimeTravailPrecision'] ?? null,
                 'working_hours' => $this->sanitizeNumeric($jobData['shift']['hours'] ?? null),
                 'shift_period' => $jobData['shift']['shiftPeriod'] ?? null,
-                'base_salary' => $this->sanitizeNumeric($jobData['benefits']['basePay'] ?? null),
-                'benefits_comments' => $jobData['benefits']['comments'] ?? null,
+                'base_salary' => $jobData['baseSalary'] ?? null,
+                'benefits_comments' => $jobData['benefitsComments'] ?? null,
                 'nombre_postes' => $jobData['nombrePostes'] ?? 1,
-                'location' => $jobData['lieuxTravail'][0] ?? null,
+                'location' => $jobData['lieuxTravail'][0] ?? $jobOffer->location,
                 'locations_json' => $jobData['lieuxTravail'] ?? [],
+                'travel_info' => !empty($jobData['travel']) ? json_encode($jobData['travel']) : null,
                 'contact_name' => ($jobData['howToApply']['prefferedGivenName'] ?? '') . ' ' . ($jobData['howToApply']['familyName'] ?? ''),
                 'contact_email' => $jobData['howToApply']['email'] ?? null,
                 'apply_instructions' => $jobData['howToApply']['comments'] ?? null,
                 'apply_url' => $jobData['howToApply']['webAddress'] ?? null,
                 'is_postulable' => $jobData['isPostulable'] ?? false,
                 'start_date' => $this->parseDate($jobData['positionDateInfo']['startDate'] ?? null),
+                'published_at' => $this->parseDate($jobData['dateDebutDiffusion'] ?? $jobData['positionDateInfo']['postedDate'] ?? null),
                 'expires_at' => $this->parseDate($jobData['dateFinDiffusion'] ?? null),
-                'raw_data' => $jobData,
                 'is_detailed' => true,
+                'raw_data' => $jobData,
             ]);
 
-            // Skills
-            $allSkills = array_merge(
-                array_map(fn($s) => array_merge($s, ['type' => 'hard']), $jobData['competencies'] ?? []),
-                array_map(fn($s) => array_merge($s, ['type' => 'soft']), $jobData['softSkills'] ?? [])
-            );
-
-            foreach ($allSkills as $sData) {
+            // Sync Relationships
+            
+            // Skills (Technical, Soft, Office)
+            $allSkills = [];
+            
+            // Technical
+            $techSkills = $jobData['competences'] ?? $jobData['competencies'] ?? [];
+            foreach ($techSkills as $sData) {
                 $skill = Skill::updateOrCreate(
                     ['code' => $sData['code'] ?? $sData['libelle']],
-                    ['label' => $sData['libelle'], 'type' => $sData['type']]
+                    ['label' => $sData['libelle'], 'type' => 'hard']
                 );
-                $jobOffer->skills()->syncWithoutDetaching([
-                    $skill->id => ['is_required' => $sData['required'] ?? false]
-                ]);
+                $allSkills[$skill->id] = ['is_required' => $sData['required'] ?? true];
             }
+
+            // Soft Skills
+            foreach ($jobData['softSkills'] ?? [] as $sData) {
+                $skill = Skill::updateOrCreate(
+                    ['code' => $sData['code'] ?? $sData['libelle']],
+                    ['label' => $sData['libelle'], 'type' => 'soft']
+                );
+                $allSkills[$skill->id] = ['is_required' => $sData['required'] ?? true];
+            }
+
+            // Office Skills
+            foreach ($jobData['officeSkills'] ?? [] as $sData) {
+                $skill = Skill::updateOrCreate(
+                    ['code' => $sData['code'] ?? $sData['libelle']],
+                    ['label' => $sData['libelle'], 'type' => 'hard']
+                );
+                $allSkills[$skill->id] = ['is_required' => $sData['required'] ?? true];
+            }
+
+            $jobOffer->skills()->sync($allSkills);
 
             // Languages
             foreach ($jobData['langues'] ?? [] as $lData) {
