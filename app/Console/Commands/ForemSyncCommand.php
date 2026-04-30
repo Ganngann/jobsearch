@@ -18,8 +18,8 @@ use Illuminate\Support\Facades\DB;
 
 class ForemSyncCommand extends Command
 {
-    protected $signature = 'forem:sync {--pages=1 : Nombre de pages de recherche à parcourir} {--rows=10 : Nombre d\'offres par page}';
-    protected $description = 'Synchronise les taxonomies et les offres d\'emploi depuis l\'API réelle du Forem';
+    protected $signature = 'forem:sync {--pages=1 : Nombre de pages} {--rows=10 : Offres par page}';
+    protected $description = 'Synchronise les offres depuis l\'API réelle du Forem';
 
     protected $foremApi;
 
@@ -33,10 +33,7 @@ class ForemSyncCommand extends Command
     {
         $this->info('Début de la synchronisation réelle...');
 
-        // 1. Taxonomies (Une fois au début)
-        $this->syncTaxonomies();
-
-        // 2. Offres (Par pages)
+        // 1. Offres (Par pages)
         $pages = (int) $this->option('pages');
         $rows = (int) $this->option('rows');
 
@@ -44,65 +41,32 @@ class ForemSyncCommand extends Command
             $this->comment("Traitement de la page {$p}/{$pages}...");
             $searchResults = $this->foremApi->searchJobs($p, $rows);
             
-            $results = $searchResults['resultats'] ?? [];
+            // Correction de la clé ici : offreEmploiResumees
+            $results = $searchResults['offreEmploiResumees'] ?? [];
             
             if (empty($results)) {
-                $this->warn("Aucun résultat sur la page {$p}.");
+                $this->warn("Aucun résultat sur la page {$p}. Clés trouvées : " . implode(', ', array_keys($searchResults)));
                 break;
             }
 
             foreach ($results as $item) {
-                $jobId = $item['idOffreEmploi'] ?? $item['id'];
+                $jobId = $item['id'];
                 
-                // Vérifier si on a déjà l'offre (optionnel, on peut mettre à jour)
-                // if (JobOffer::where('forem_id', $jobId)->exists()) continue;
-
-                $this->line("  Récupération de l'offre #{$jobId}...");
+                $this->line("  Récupération de l'offre #{$jobId} : {$item['titre']}...");
                 
                 $jobData = $this->foremApi->getJobDetail($jobId);
                 
                 if ($jobData) {
                     $this->saveJobOffer($jobData);
-                    $this->info("    --> Sauvegardée : {$jobData['titreOffre']}");
+                    $this->info("    --> Sauvegardée !");
                 }
 
-                // PARSIMONIE : Pause aléatoire entre 1 et 2 secondes
-                usleep(rand(1000000, 2000000));
+                // PARSIMONIE : Pause aléatoire entre 1.5 et 3 secondes pour être discret
+                usleep(rand(1500000, 3000000));
             }
         }
 
         $this->info('Synchronisation terminée !');
-    }
-
-    protected function syncTaxonomies()
-    {
-        $this->comment('Synchronisation des taxonomies...');
-        $taxonomies = $this->foremApi->getTaxonomies();
-
-        if (empty($taxonomies)) return;
-
-        // Métiers
-        $metiers = collect($taxonomies['criteresParFiltres'] ?? [])->firstWhere('nom', 'Metier')['criteres'] ?? [];
-        foreach ($metiers as $m) {
-            Metier::updateOrCreate(['label' => $m['libelle']], ['guid' => $m['guid'] ?? null]);
-        }
-
-        // Langues
-        $languages = collect($taxonomies['criteresParFiltres'] ?? [])->firstWhere('nom', 'Language')['criteres'] ?? [];
-        foreach ($languages as $l) {
-            Language::updateOrCreate(['label' => $l['libelle']], ['code' => $l['guid'] ?? $l['libelle']]);
-        }
-
-        // Permis
-        $permits = collect($taxonomies['criteresParFiltres'] ?? [])->firstWhere('nom', 'Drivers License')['criteres'] ?? [];
-        foreach ($permits as $p) {
-            Permit::updateOrCreate(
-                ['label' => $p['libelle']],
-                ['code' => $p['guid'] ?? $p['libelle'], 'value' => $this->extractPermitValue($p['libelle'])]
-            );
-        }
-
-        $this->info('Taxonomies de base synchronisées.');
     }
 
     protected function saveJobOffer(array $jobData)
@@ -118,11 +82,10 @@ class ForemSyncCommand extends Command
                 ]
             );
 
-            // Metier
-            $metier = Metier::updateOrCreate(
-                ['label' => $jobData['metier'] ?? 'Métier non spécifié'],
-                ['code' => $jobData['experience'][0]['code'] ?? 'N/A']
-            );
+            // Metier (Extraction sécurisée)
+            $metierLabel = $jobData['metier'] ?? 'Métier non spécifié';
+            $metierCode = $jobData['experience'][0]['code'] ?? null;
+            $metier = Metier::updateOrCreate(['label' => $metierLabel], ['code' => $metierCode]);
 
             // Job Offer
             $jobOffer = JobOffer::updateOrCreate(
@@ -146,10 +109,10 @@ class ForemSyncCommand extends Command
                     'contact_name' => ($jobData['howToApply']['prefferedGivenName'] ?? '') . ' ' . ($jobData['howToApply']['familyName'] ?? ''),
                     'contact_email' => $jobData['howToApply']['email'] ?? null,
                     'apply_instructions' => $jobData['howToApply']['comments'] ?? null,
-                    'is_postulable' => str_contains($jobData['howToApply']['comments'] ?? '', 'Forem'),
-                    'start_date' => $this->parseFrenchDate($jobData['positionDateInfo']['startDate'] ?? null),
+                    'is_postulable' => $jobData['isPostulable'] ?? false,
+                    'start_date' => $this->parseDate($jobData['positionDateInfo']['startDate'] ?? null),
                     'published_at' => now(),
-                    'expires_at' => $this->parseFrenchDate($jobData['dateFinDiffusion'] ?? null),
+                    'expires_at' => $this->parseDate($jobData['dateFinDiffusion'] ?? null),
                     'raw_data' => $jobData,
                 ]
             );
@@ -192,19 +155,12 @@ class ForemSyncCommand extends Command
         });
     }
 
-    protected function extractPermitValue($label)
-    {
-        if (preg_match('/Permis ([\w+]+)/i', $label, $matches)) {
-            return $matches[1];
-        }
-        return 'B';
-    }
-
-    protected function parseFrenchDate($dateString)
+    protected function parseDate($dateString)
     {
         if (!$dateString) return null;
         try {
-            return \Carbon\Carbon::createFromFormat('d/m/Y', $dateString);
+            // L'API semble renvoyer de l'ISO8601 (ex: 2026-06-11T00:00:00+02:00)
+            return \Carbon\Carbon::parse($dateString);
         } catch (\Exception $e) {
             return null;
         }

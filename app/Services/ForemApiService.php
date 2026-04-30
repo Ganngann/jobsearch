@@ -15,14 +15,24 @@ class ForemApiService
      */
     public function searchJobs(int $page = 1, int $rows = 20): array
     {
-        $url = "{$this->baseUrl}/Recherches/Search";
+        $url = "{$this->baseUrl}/Recherches/Search?page={$page}&row={$rows}";
         
         try {
-            $response = Http::withHeaders(['User-Agent' => $this->userAgent])
-                ->get($url, [
-                    'page' => $page,
-                    'row' => $rows,
-                    'sort' => 'DatePublication',
+            $response = Http::withoutVerifying() // Correction SSL
+                ->withHeaders([
+                    'User-Agent' => $this->userAgent,
+                    'Accept' => 'application/json, text/plain, */*',
+                    'Content-Type' => 'application/json',
+                    'Referer' => 'https://www.leforem.be/recherche-offres/offres',
+                    'Origin' => 'https://www.leforem.be',
+                ])->post($url, [
+                    'filtres' => [],
+                    'filtresCodifies' => [],
+                    'locutions' => [],
+                    'metier' => [],
+                    'operateurLocutions' => 'ET',
+                    'priority' => 1,
+                    'secteur' => [],
                 ]);
 
             if ($response->failed()) {
@@ -30,7 +40,7 @@ class ForemApiService
                 return [];
             }
 
-            return $response->json();
+            return $response->json() ?? [];
         } catch (\Exception $e) {
             Log::error("Forem Search API Exception: " . $e->getMessage());
             return [];
@@ -45,15 +55,19 @@ class ForemApiService
         $url = "{$this->baseUrl}/Diffusion/DetailOffre/{$jobId}";
         
         try {
-            $response = Http::withHeaders(['User-Agent' => $this->userAgent])
-                ->get($url);
+            $response = Http::withoutVerifying() // Correction SSL
+                ->withHeaders([
+                    'User-Agent' => $this->userAgent,
+                    'Accept' => 'application/json, text/plain, */*',
+                    'Referer' => "https://www.leforem.be/recherche-offres/detail-offre/{$jobId}",
+                ])->get($url);
 
             if ($response->failed()) {
                 Log::error("Forem Detail API Error for ID {$jobId}: {$response->status()}");
                 return [];
             }
 
-            return $response->json();
+            return $response->json() ?? [];
         } catch (\Exception $e) {
             Log::error("Forem Detail API Exception for ID {$jobId}: " . $e->getMessage());
             return [];
@@ -65,13 +79,26 @@ class ForemApiService
      */
     public function getTaxonomies(): array
     {
-        $url = "{$this->baseUrl}/Recherches/SearchNombreParCritere";
+        $url = "{$this->baseUrl}/Recherches/SearchNombreParCritere?page=1&row=10";
         
         try {
-            $response = Http::withHeaders(['User-Agent' => $this->userAgent])
-                ->get($url);
+            $response = Http::withoutVerifying() // Correction SSL
+                ->withHeaders([
+                    'User-Agent' => $this->userAgent,
+                    'Accept' => 'application/json, text/plain, */*',
+                    'Content-Type' => 'application/json',
+                    'Referer' => 'https://www.leforem.be/recherche-offres/offres',
+                ])->post($url, [
+                    'filtres' => [],
+                    'filtresCodifies' => [],
+                    'locutions' => [],
+                    'metier' => [],
+                    'operateurLocutions' => 'ET',
+                    'priority' => 1,
+                    'secteur' => [],
+                ]);
 
-            return $response->json();
+            return $response->json() ?? [];
         } catch (\Exception $e) {
             Log::error("Forem Taxonomies API Exception: " . $e->getMessage());
             return [];
