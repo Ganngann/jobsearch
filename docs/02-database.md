@@ -1,6 +1,6 @@
-# Architecture de la Base de Données (Optimisée V2)
+# Architecture de la Base de Données (Optimisée V3 - Finale)
 
-L'architecture est normalisée pour exploiter l'intégralité des identifiants (`code` et `guid`) fournis par l'API Forem.
+L'architecture est normalisée pour exploiter l'intégralité des données fournies par l'API Forem (Search, Detail, Facettes).
 
 ## A. Tables de Référence (Taxonomies)
 
@@ -19,6 +19,12 @@ L'architecture est normalisée pour exploiter l'intégralité des identifiants (
 | `code` | String | Code compétence (ex: `16214`, `05`) |
 | `label` | String | Libellé |
 | `type` | Enum | `hard` (compétences), `soft` (savoir-être) |
+
+### Table `sectors`
+| Colonne | Type | Description |
+| :--- | :--- | :--- |
+| `id` | BigInt | Clé primaire |
+| `label` | String | Libellé du secteur d'activité |
 
 ### Table `employers`
 | Colonne | Type | Description |
@@ -58,11 +64,17 @@ L'architecture est normalisée pour exploiter l'intégralité des identifiants (
 | `description` | Text | Contenu HTML complet |
 | `contract_type` | String | ex: "Durée déterminée" |
 | `working_regime` | String | ex: "Temps partiel" |
+| `working_hours` | Decimal | ex: 22.48 |
+| `base_salary` | String | ex: "CP 329.02 Echelon 2" |
 | `location` | String | Ville ou région |
 | `experience_label`| String | ex: "Moins de 2 ans" |
 | `education_level` | String | ex: "Nettoyage locaux" |
+| `contact_name` | String | Nom du contact |
 | `contact_email` | String | Email pour postuler |
+| `contact_phone` | String | Téléphone |
 | `apply_instructions`| Text | Instructions |
+| `is_postulable` | Boolean | Postulable via Forem |
+| `published_at` | DateTime | Date de mise en ligne |
 | `expires_at` | Date | Fin de publication |
 | `raw_data` | JSON | Réponse brute complète |
 
@@ -71,6 +83,7 @@ L'architecture est normalisée pour exploiter l'intégralité des identifiants (
 - **`job_language`** : `job_id`, `language_id`, `level` (String), `is_required` (Boolean)
 - **`job_permit`** : `job_id`, `permit_id`, `is_required` (Boolean)
 - **`job_benefit`** : `job_id`, `benefit_id`
+- **`job_sector`** : `job_id`, `sector_id`
 
 ## D. Matching & Utilisateurs
 (Idem V1 : `user_skills`, `user_languages`, `user_matches`)
