@@ -11,10 +11,12 @@ use Illuminate\Support\Facades\Auth;
 class JobOfferController extends Controller
 {
     protected $matchingService;
+    protected $jobOfferService;
 
-    public function __construct(MatchingService $matchingService)
+    public function __construct(MatchingService $matchingService, JobOfferService $jobOfferService)
     {
         $this->matchingService = $matchingService;
+        $this->jobOfferService = $jobOfferService;
     }
 
     /**
@@ -41,6 +43,12 @@ class JobOfferController extends Controller
     {
         $user = Auth::user();
 
+        // Si l'offre n'a pas encore ses détails complets, on les récupère d'abord
+        if (!$jobOffer->is_detailed) {
+            $this->jobOfferService->syncFullDetails($jobOffer);
+            $jobOffer->refresh();
+        }
+
         // On force l'analyse IA
         $this->matchingService->match($user, $jobOffer, true);
 
@@ -53,6 +61,12 @@ class JobOfferController extends Controller
     public function show(JobOffer $jobOffer)
     {
         $user = Auth::user();
+
+        // LAZY LOADING : Si l'offre n'a pas ses détails, on les récupère maintenant
+        if (!$jobOffer->is_detailed) {
+            $this->jobOfferService->syncFullDetails($jobOffer);
+            $jobOffer->refresh();
+        }
 
         $match = UserMatch::where('user_id', $user->id)
             ->where('job_offer_id', $jobOffer->id)

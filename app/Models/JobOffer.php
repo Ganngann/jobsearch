@@ -36,12 +36,14 @@ class JobOffer extends Model
         'published_at',
         'expires_at',
         'raw_data',
+        'is_detailed',
     ];
 
     protected $casts = [
         'locations_json' => 'array',
         'raw_data' => 'array',
         'is_postulable' => 'boolean',
+        'is_detailed' => 'boolean',
         'start_date' => 'date',
         'published_at' => 'datetime',
         'expires_at' => 'date',
