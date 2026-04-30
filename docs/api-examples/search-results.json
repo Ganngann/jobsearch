@@ -1,0 +1,238 @@
+{
+    "offreEmploiResumees": [
+        {
+            "id": 1878785,
+            "numero": "1878785",
+            "titre": "TECHNICIEN - TECHNICIENNE DE SURFACE (H/F/X)",
+            "publication": "Publié aujourd'hui",
+            "fin": "2026-05-22T00:00:00+02:00",
+            "debut": "2026-04-30T00:00:00+02:00",
+            "nomEmployeur": "EPI - EPI",
+            "typeContrat": "Durée déterminée",
+            "regimeTravail": "Temps partiel",
+            "lieuxTravail": [
+                "Verviers"
+            ],
+            "langues": [
+                "FR"
+            ],
+            "email": "isabelle.lejeune@forem.be",
+            "nombrePostes": 1,
+            "logo": "51207d27-1f67-4581-c392-08de8dbac3bc",
+            "secteursActivite": [
+                "Autres formes d'enseignement"
+            ],
+            "isPostulable": true
+        },
+        {
+            "id": 1866825,
+            "numero": "1866825",
+            "titre": "Logopède  (H/F/X)",
+            "publication": "Publié aujourd'hui",
+            "fin": "2026-05-16T00:00:00+02:00",
+            "debut": "2026-04-30T00:00:00+02:00",
+            "nomEmployeur": "Michiels, Elodie",
+            "typeContrat": "Contrat collaboration indépendant",
+            "regimeTravail": "Temps partiel",
+            "lieuxTravail": [
+                "Arrondissement de Waremme",
+                "Geer",
+                "Hannut"
+            ],
+            "langues": [],
+            "email": "emichiels.psy@gmail.com",
+            "nombrePostes": 1,
+            "logo": "a08d5e00-7ab4-4d3b-a1e0-08de8d818e84",
+            "secteursActivite": [
+                "Activités relatives à la santé mentale, sauf hôpitaux et maisons de soins psychiatriques"
+            ],
+            "isPostulable": true
+        },
+        {
+            "id": 1866824,
+            "numero": "1866824",
+            "titre": "Ostéopathe pédiatrique (H/F/X)",
+            "publication": "Publié aujourd'hui",
+            "fin": "2026-05-16T00:00:00+02:00",
+            "debut": "2026-04-30T00:00:00+02:00",
+            "nomEmployeur": "Michiels, Elodie",
+            "typeContrat": "Contrat collaboration indépendant",
+            "regimeTravail": "Temps plein",
+            "lieuxTravail": [
+                "Arrondissement de Waremme",
+                "Geer",
+                "Hannut",
+                "Arrondissement de Liège"
+            ],
+            "langues": [],
+            "email": "emichiels.psy@gmail.com",
+            "nombrePostes": 1,
+            "logo": "1f2e468e-d84e-48bb-a1df-08de8d818e84",
+            "secteursActivite": [
+                "Activités relatives à la santé mentale, sauf hôpitaux et maisons de soins psychiatriques"
+            ],
+            "isPostulable": true
+        },
+        {
+            "id": 1866823,
+            "numero": "1866823",
+            "titre": "Ergothérapeute (H/F/X)",
+            "publication": "Publié aujourd'hui",
+            "fin": "2026-05-16T00:00:00+02:00",
+            "debut": "2026-04-30T00:00:00+02:00",
+            "nomEmployeur": "Michiels, Elodie",
+            "typeContrat": "Contrat collaboration indépendant",
+            "regimeTravail": "Temps partiel",
+            "lieuxTravail": [
+                "Hannut",
+                "Geer"
+            ],
+            "langues": [],
+            "email": "emichiels.psy@gmail.com",
+            "nombrePostes": 1,
+            "logo": "0811e3c8-a780-413e-c05d-08de8dbac3bc",
+            "secteursActivite": [
+                "Activités relatives à la santé mentale, sauf hôpitaux et maisons de soins psychiatriques"
+            ],
+            "isPostulable": true
+        },
+        {
+            "id": 1880447,
+            "numero": "1880447",
+            "titre": "Peintre en bâtiment (H/F/X)",
+            "publication": "Publié aujourd'hui",
+            "fin": "2026-06-11T00:00:00+02:00",
+            "debut": "2026-04-30T00:00:00+02:00",
+            "nomEmployeur": "Village n°1 Entreprises",
+            "typeContrat": "Durée déterminée",
+            "regimeTravail": "Temps plein",
+            "lieuxTravail": [
+                "Wauthier-Braine"
+            ],
+            "langues": [
+                "FR"
+            ],
+            "nombrePostes": 3,
+            "logo": "57a72fb2-08ea-471f-c3fc-08de8dbac3bc",
+            "secteursActivite": [
+                "Activités des entreprises de travail adapté"
+            ]
+        },
+        {
+            "id": 1866829,
+            "numero": "1866829",
+            "titre": "Tabacologue (H/F/X)",
+            "publication": "Publié aujourd'hui",
+            "fin": "2026-05-16T00:00:00+02:00",
+            "debut": "2026-04-30T00:00:00+02:00",
+            "nomEmployeur": "Michiels, Elodie",
+            "typeContrat": "Contrat collaboration indépendant",
+            "regimeTravail": "Temps plein",
+            "lieuxTravail": [
+                "Geer",
+                "Hannut"
+            ],
+            "langues": [],
+            "email": "emichiels.psy@gmail.com",
+            "nombrePostes": 1,
+            "logo": "e3effbe6-2d31-43a5-c05e-08de8dbac3bc",
+            "secteursActivite": [
+                "Activités relatives à la santé mentale, sauf hôpitaux et maisons de soins psychiatriques"
+            ],
+            "isPostulable": true
+        },
+        {
+            "id": 1880379,
+            "numero": "1880379",
+            "titre": "Animateur/trice sportif/ve (H/F/X)",
+            "publication": "Publié aujourd'hui",
+            "fin": "2026-06-11T00:00:00+02:00",
+            "debut": "2026-04-30T00:00:00+02:00",
+            "nomEmployeur": "Fédération Royale Sportive de l' Enseignement Libre",
+            "typeContrat": "Durée indéterminée",
+            "regimeTravail": "Temps partiel",
+            "lieuxTravail": [
+                "Uccle"
+            ],
+            "langues": [
+                "FR"
+            ],
+            "email": "federal@frsel.be",
+            "nombrePostes": 1,
+            "logo": "99d1fa48-2b25-4300-a51a-08de8d818e84",
+            "secteursActivite": [
+                "Activités des ligues et des fédérations sportives"
+            ],
+            "isPostulable": true
+        },
+        {
+            "id": 1881342,
+            "numero": "1881342",
+            "titre": "Technicien Installateur Campaniste Itinérant. (H/F/X)",
+            "publication": "Publié aujourd'hui",
+            "fin": "2026-06-11T00:00:00+02:00",
+            "debut": "2026-04-30T00:00:00+02:00",
+            "nomEmployeur": "CAMPA",
+            "typeContrat": "Durée indéterminée",
+            "regimeTravail": "Temps plein",
+            "lieuxTravail": [
+                "Tellin"
+            ],
+            "langues": [],
+            "email": "info@campatellin.be",
+            "telephone": "+3284367032",
+            "nombrePostes": 1,
+            "logo": "e9e65147-8220-4eec-a53d-08de8d818e84",
+            "secteursActivite": [
+                "Horlogerie"
+            ],
+            "isPostulable": true
+        },
+        {
+            "id": 1881427,
+            "numero": "1881427",
+            "titre": "un(e) employé(e) pour le service du Personnel  (H/F/X)",
+            "publication": "Publié aujourd'hui",
+            "fin": "2026-05-29T00:00:00+02:00",
+            "debut": "2026-04-30T00:00:00+02:00",
+            "nomEmployeur": "Commune d'Erquelinnes",
+            "typeContrat": "Durée indéterminée",
+            "regimeTravail": "Temps plein",
+            "lieuxTravail": [
+                "Erquelinnes"
+            ],
+            "langues": [
+                "FR"
+            ],
+            "nombrePostes": 1,
+            "secteursActivite": [
+                "Administration publique communale, sauf Centres Publics d'Action Sociale (C.P.A.S.)"
+            ]
+        },
+        {
+            "id": 1881335,
+            "numero": "1881335",
+            "titre": "JOBDAY Conducteur/conductrice d’engin  (H/F/X)",
+            "publication": "Publié aujourd'hui",
+            "fin": "2026-05-13T00:00:00+02:00",
+            "debut": "2026-04-30T00:00:00+02:00",
+            "nomEmployeur": "UNI-RAIL",
+            "typeContrat": "Durée indéterminée",
+            "regimeTravail": "Temps plein",
+            "lieuxTravail": [
+                "Manage"
+            ],
+            "langues": [
+                "FR"
+            ],
+            "nombrePostes": 1,
+            "logo": "8276a41b-305b-4f69-c42e-08de8dbac3bc",
+            "secteursActivite": [
+                "Construction de voies ferrées de surface et souterraines"
+            ]
+        }
+    ],
+    "total": 41145,
+    "currentPage": 1,
+    "pageCount": 4115
+}

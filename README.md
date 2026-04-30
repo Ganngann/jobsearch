@@ -1,9 +1,16 @@
-# Job Matcher
+# Forem Matcher AI 🚀
 
-Job Matcher est une application conçue pour faire correspondre des CV avec des offres d'emploi de manière intelligente.
+Système intelligent de matching d'offres d'emploi (Forem) via IA.
 
-## Fonctionnalités (à venir)
-- Analyse de CV (PDF/Markdown)
-- Extraction de mots-clés des offres d'emploi
-- Calcul de score de correspondance
-- Suggestions d'optimisation
+## Documentation
+- [Vision & Tech Stack](docs/01-vision.md)
+- [Architecture Base de Données](docs/02-database.md)
+- [Workflow de Traitement](docs/03-workflow.md)
+- [Scoring & IA](docs/04-ai.md)
+- [API Reference](docs/06-api-reference.md)
+- [Roadmap](docs/05-roadmap.md)
+
+## Installation (À venir)
+```bash
+# Instructions d'installation à définir
+```

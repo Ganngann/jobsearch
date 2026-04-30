@@ -1,0 +1,87 @@
+{
+    "idOffreEmploi": 1878785,
+    "numero": "1878785",
+    "titreOffre": "TECHNICIEN - TECHNICIENNE DE SURFACE (H/F/X)",
+    "datePublication": "Publié aujourd'hui",
+    "dateFinDiffusion": "22/05/2026",
+    "dateDebutDiffusion": "30/04/2026",
+    "nomEmployeur": "EPI - EPI",
+    "secteurActiviteEmployeur": "Autres formes d'enseignement",
+    "typeContrat": "Durée déterminée",
+    "regimeTravail": "Temps partiel",
+    "regimeTravailPrecision": "Travail de jour",
+    "lieuxTravail": [
+        "Verviers"
+    ],
+    "langues": [
+        {
+            "code": "FR",
+            "libelle": "Français",
+            "experience": "B2 - Avancé",
+            "comment": ""
+        }
+    ],
+    "nombrePostes": 1,
+    "logoEmployeur": "iV... (Base64 data) ...==",
+    "logoMimeType": "image/png",
+    "descriptionEmployeur": "<p>L'EPI est une ASBL active depuis plus de 40 ans à Verviers...</p>",
+    "descriptionJob": "<div>Contenu HTML complet de l'offre...</div>",
+    "metier": "Nettoyeur / Nettoyeuse de locaux et de grandes surfaces",
+    "positionDateInfo": {
+        "startDate": "01/06/2026"
+    },
+    "shift": {
+        "shiftPeriod": "3/5 temps — Horaire principalement en matinée, avec une journée complète le mercredi.",
+        "hours": "22.48"
+    },
+    "benefits": {
+        "basePay": "CP 329.02 Echelon 2",
+        "otherBenefits": [],
+        "comments": "<p>Possibilité de prolongation du contrat...</p>"
+    },
+    "howToApply": {
+        "prefferedGivenName": "Isabelle",
+        "familyName": "LEJEUNE",
+        "email": "isabelle.lejeune@forem.be",
+        "comments": "<p>Pour postuler, veuillez envoyer votre CV par mail...</p>"
+    },
+    "softSkills": [
+        {
+            "code": "05",
+            "libelle": "Esprit d’équipe",
+            "required": true,
+            "experience": "0"
+        }
+    ],
+    "experience": [
+        {
+            "code": "K220401-1",
+            "libelle": "Nettoyeur / Nettoyeuse de locaux et de grandes surfaces",
+            "required": true,
+            "experience": "Moins de 2 years - "
+        }
+    ],
+    "permisConduire": [
+        {
+            "code": "5101005",
+            "libelle": "Permis de conduire validé pour une catégorie B",
+            "valeur": "B"
+        }
+    ],
+    "etudes": [
+        {
+            "libelle": "Nettoyage locaux"
+        }
+    ],
+    "competencies": [
+        {
+            "code": "16214",
+            "libelle": "Nettoyer et laver les sols, les mobiliers",
+            "required": true
+        }
+    ],
+    "googleForJobMetadata": {
+        "type": "JobPosting",
+        "title": "TECHNICIEN - TECHNICIENNE DE SURFACE (H/F/X)"
+    }
+}

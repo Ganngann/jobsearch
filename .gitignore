@@ -1,0 +1,19 @@
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Logs
+*.log
+
+# Dependencies (placeholder)
+node_modules/
+venv/
+.venv/
+env/
+__pycache__/
