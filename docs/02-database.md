@@ -81,7 +81,7 @@ L'architecture est normalisée pour exploiter l'intégralité des données fourn
 
 > L'API Detail retourne un **tableau** `etudes[]`, chaque entrée n'ayant qu'un `libelle`.
 
-## B. Table `jobs` (Données de l'offre)
+## B. Table `job_offers` (Données de l'offre)
 | Colonne | Type | Description |
 | :--- | :--- | :--- |
 | `id` | BigInt | Clé primaire |
@@ -119,52 +119,52 @@ L'architecture est normalisée pour exploiter l'intégralité des données fourn
 
 ## C. Tables de Liaison (Pivots)
 
-### `job_skill`
+### `job_offer_skill`
 | Colonne | Type | Description |
 | :--- | :--- | :--- |
-| `job_id` | Foreign Key | Lien vers `jobs.id` |
+| `job_offer_id` | Foreign Key | Lien vers `job_offers.id` |
 | `skill_id` | Foreign Key | Lien vers `skills.id` |
 | `is_required` | Boolean | Compétence obligatoire ? |
 
-### `job_language`
+### `job_offer_language`
 | Colonne | Type | Description |
 | :--- | :--- | :--- |
-| `job_id` | Foreign Key | Lien vers `jobs.id` |
+| `job_offer_id` | Foreign Key | Lien vers `job_offers.id` |
 | `language_id` | Foreign Key | Lien vers `languages.id` |
 | `level` | String (Nullable) | Niveau requis (ex: "B2 - Avancé") |
 | `is_required` | Boolean | Langue obligatoire ? (défaut: true) |
 
-### `job_permit`
+### `job_offer_permit`
 | Colonne | Type | Description |
 | :--- | :--- | :--- |
-| `job_id` | Foreign Key | Lien vers `jobs.id` |
+| `job_offer_id` | Foreign Key | Lien vers `job_offers.id` |
 | `permit_id` | Foreign Key | Lien vers `permits.id` |
 | `is_required` | Boolean | Permis obligatoire ? (défaut: true) |
 
-### `job_benefit`
+### `job_offer_benefit`
 | Colonne | Type | Description |
 | :--- | :--- | :--- |
-| `job_id` | Foreign Key | Lien vers `jobs.id` |
+| `job_offer_id` | Foreign Key | Lien vers `job_offers.id` |
 | `benefit_id` | Foreign Key | Lien vers `benefits.id` |
 
-### `job_sector`
+### `job_offer_sector`
 | Colonne | Type | Description |
 | :--- | :--- | :--- |
-| `job_id` | Foreign Key | Lien vers `jobs.id` |
+| `job_offer_id` | Foreign Key | Lien vers `job_offers.id` |
 | `sector_id` | Foreign Key | Lien vers `sectors.id` |
 
-### `job_study`
+### `job_offer_study`
 | Colonne | Type | Description |
 | :--- | :--- | :--- |
-| `job_id` | Foreign Key | Lien vers `jobs.id` |
+| `job_offer_id` | Foreign Key | Lien vers `job_offers.id` |
 | `study_id` | Foreign Key | Lien vers `studies.id` |
 
 > Remplace l'ancien champ `education_level` (string). L'API Detail retourne `etudes[]` comme tableau.
 
-### `job_experience`
+### `job_offer_experience`
 | Colonne | Type | Description |
 | :--- | :--- | :--- |
-| `job_id` | Foreign Key | Lien vers `jobs.id` |
+| `job_offer_id` | Foreign Key | Lien vers `job_offers.id` |
 | `metier_id` | Foreign Key | Lien vers `metiers.id` (via `experience[].code`) |
 | `is_required` | Boolean | Expérience obligatoire ? |
 | `experience_label` | String (Nullable) | Durée requise (ex: "Moins de 2 ans") |
@@ -210,7 +210,7 @@ L'architecture est normalisée pour exploiter l'intégralité des données fourn
 | :--- | :--- | :--- |
 | `id` | BigInt | Clé primaire |
 | `user_id` | Foreign Key | Lien vers `users.id` |
-| `job_id` | Foreign Key | Lien vers `jobs.id` |
+| `job_offer_id` | Foreign Key | Lien vers `job_offers.id` |
 | `pre_score` | Integer (Nullable) | Score Layer 1 (filtrage statique, 0–100) |
 | `ai_score` | Integer (Nullable) | Score Layer 2 (analyse IA, 0–100) |
 | `final_score` | Integer (Nullable) | Score combiné final (0–100) |
@@ -221,4 +221,4 @@ L'architecture est normalisée pour exploiter l'intégralité des données fourn
 | `created_at` | Timestamp | Date de création |
 | `updated_at` | Timestamp | Date de mise à jour |
 
-> **Contrainte unique** : `(user_id, job_id)` — un utilisateur ne peut matcher qu'une seule fois par offre.
+> **Contrainte unique** : `(user_id, job_offer_id)` — un utilisateur ne peut matcher qu'une seule fois par offre.

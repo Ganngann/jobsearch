@@ -1,40 +1,24 @@
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS
-Thumbs.db
-.DS_Store
-
-# Logs
 *.log
-
-# Laravel
-/vendor/
-/node_modules/
+.DS_Store
 .env
 .env.backup
 .env.production
-/storage/*.key
-/bootstrap/cache/
+.phpactor.json
+.phpunit.result.cache
+/.fleet
+/.idea
+/.nova
+/.phpunit.cache
+/.vscode
+/.zed
+/auth.json
+/node_modules
+/public/build
 /public/hot
 /public/storage
-/public/build/
+/storage/*.key
+/storage/pail
+/vendor
 Homestead.json
 Homestead.yaml
-npm-debug.log
-yarn-error.log
-
-# Compiled assets
-/public/css/
-/public/js/
-/public/mix-manifest.json
-
-# PHPUnit
-.phpunit.result.cache
-.phpunit.cache/
-
-# Testing
-/coverage/
+Thumbs.db
