@@ -15,6 +15,12 @@
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('profile.show')" :active="request()->routeIs('profile.show')">
+                        {{ __('Mon Profil') }}
+                    </x-nav-link>
+                    <x-nav-link :href="route('forem.search')" :active="request()->routeIs('forem.search')">
+                        {{ __('Recherche Forem') }}
+                    </x-nav-link>
                 </div>
             </div>
 
@@ -34,8 +40,12 @@
                     </x-slot>
 
                     <x-slot name="content">
+                        <x-dropdown-link :href="route('profile.show')">
+                            {{ __('Voir Profil') }}
+                        </x-dropdown-link>
+
                         <x-dropdown-link :href="route('profile.edit')">
-                            {{ __('Profile') }}
+                            {{ __('Modifier Profil') }}
                         </x-dropdown-link>
 
                         <!-- Authentication -->
