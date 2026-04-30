@@ -99,13 +99,23 @@ class JobOfferService
             $metierCode = $jobData['experience'][0]['code'] ?? null;
             $metier = Metier::updateOrCreate(['label' => $metierLabel], ['code' => $metierCode]);
 
+            // Construction de la description complète à partir de plusieurs champs Forem
+            $descriptionParts = [
+                $jobData['descriptionEmployeur'] ?? '',
+                $jobData['descriptionJob'] ?? '',
+                $jobData['descriptionComment'] ?? '',
+                $jobData['commentaireGeneral'] ?? '',
+                $jobData['benefitsComments'] ?? '',
+            ];
+            $fullDescription = implode("\n\n", array_filter($descriptionParts));
+
             // Update Job Offer
             $jobOffer->update([
                 'forem_ref' => $jobData['numero'],
                 'title' => $jobData['titreOffre'],
                 'metier_id' => $metier->id,
                 'employer_id' => $employer->id,
-                'description' => $jobData['descriptionJob'] ?? '',
+                'description' => $fullDescription,
                 'contract_type' => $jobData['typeContrat'] ?? 'N/A',
                 'working_regime' => $jobData['regimeTravail'] ?? 'N/A',
                 'working_regime_detail' => $jobData['regimeTravailPrecision'] ?? null,
@@ -119,6 +129,7 @@ class JobOfferService
                 'contact_name' => ($jobData['howToApply']['prefferedGivenName'] ?? '') . ' ' . ($jobData['howToApply']['familyName'] ?? ''),
                 'contact_email' => $jobData['howToApply']['email'] ?? null,
                 'apply_instructions' => $jobData['howToApply']['comments'] ?? null,
+                'apply_url' => $jobData['howToApply']['webAddress'] ?? null,
                 'is_postulable' => $jobData['isPostulable'] ?? false,
                 'start_date' => $this->parseDate($jobData['positionDateInfo']['startDate'] ?? null),
                 'expires_at' => $this->parseDate($jobData['dateFinDiffusion'] ?? null),
@@ -160,6 +171,27 @@ class JobOfferService
                     ['label' => $pData['libelle'], 'value' => $pData['valeur'] ?? 'B']
                 );
                 $jobOffer->permits()->syncWithoutDetaching([$permit->id => ['is_required' => true]]);
+            }
+
+            // Experience
+            foreach ($jobData['experience'] ?? [] as $eData) {
+                if (!isset($eData['libelle'])) continue;
+                
+                $expMetier = Metier::updateOrCreate(['label' => $eData['libelle']]);
+                $jobOffer->requiredExperiences()->syncWithoutDetaching([
+                    $expMetier->id => [
+                        'is_required' => true,
+                        'experience_label' => $eData['experience'] ?? null
+                    ]
+                ]);
+            }
+
+            // Etudes
+            foreach ($jobData['etudes'] ?? [] as $stData) {
+                if (!isset($stData['libelle'])) continue;
+
+                $study = \App\Models\Study::updateOrCreate(['label' => $stData['libelle']]);
+                $jobOffer->studies()->syncWithoutDetaching([$study->id]);
             }
 
             return true;

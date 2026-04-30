@@ -9,6 +9,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class JobOffer extends Model
 {
+    /**
+     * Utilise l'ID du Forem comme identifiant dans les URLs.
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'forem_id';
+    }
+
     protected $fillable = [
         'forem_id',
         'forem_ref',
@@ -31,6 +39,7 @@ class JobOffer extends Model
         'contact_email',
         'contact_phone',
         'apply_instructions',
+        'apply_url',
         'is_postulable',
         'start_date',
         'published_at',

@@ -26,148 +26,247 @@
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
                     
-                    <!-- Colonne Principale -->
-                    <div class="lg:col-span-8 space-y-8">
-                        
-                        <!-- Main Job Card -->
-                        <div class="bg-white rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden">
-                            <div class="p-10">
-                                <!-- Header Section -->
-                                <div class="flex flex-col md:flex-row md:items-start justify-between gap-8 mb-12">
-                                    <div class="flex-1">
-                                        <div class="flex items-center gap-3 mb-6">
-                                            <span class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-indigo-600 text-white shadow-lg shadow-indigo-100">Le Forem</span>
-                                            <span class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-slate-100 text-slate-500">{{ $jobOffer->contract_type }}</span>
-                                        </div>
-                                        
-                                        <h1 class="text-4xl font-black text-slate-900 leading-[1.1] tracking-tight mb-6">
-                                            {{ $jobOffer->title }}
-                                        </h1>
+                    <!-- Colonne Principale (Structure type Forem) -->
+                    <div class="lg:col-span-8 space-y-6">
 
-                                        <div class="flex flex-wrap items-center gap-y-4 gap-x-8">
-                                            <div class="flex items-center gap-3">
-                                                <div class="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-7h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-                                                </div>
-                                                <span class="font-bold text-slate-700">{{ $jobOffer->employer->label }}</span>
-                                            </div>
-                                            <div class="flex items-center gap-3">
-                                                <div class="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400">
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
-                                                </div>
-                                                <span class="font-semibold text-slate-500">{{ $jobOffer->location }}</span>
-                                            </div>
-                                            <div class="flex items-center gap-3">
-                                                <div class="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400">
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                                </div>
-                                                <span class="font-semibold text-slate-500">{{ $jobOffer->start_date ? $jobOffer->start_date->format('d/m/Y') : 'Dès que possible' }}</span>
-                                            </div>
-                                        </div>
+                        <!-- En-tête de l'offre -->
+                        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-10 mb-6">
+                            <div class="flex flex-col md:flex-row md:items-start justify-between gap-8">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-3 mb-6">
+                                        <span class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-indigo-600 text-white shadow-lg shadow-indigo-100">Le Forem</span>
+                                        <span class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-slate-100 text-slate-500">{{ $jobOffer->contract_type }}</span>
                                     </div>
+                                    
+                                    <h1 class="text-4xl font-black text-slate-900 leading-[1.1] tracking-tight mb-6">
+                                        {{ $jobOffer->title }}
+                                    </h1>
 
-                                    <div class="shrink-0 pt-2">
-                                        @if($jobOffer->employer->logo_base64 && strlen($jobOffer->employer->logo_base64) > 100)
-                                            <div class="w-32 h-32 p-6 bg-slate-50 rounded-[2rem] border border-slate-100 shadow-inner flex items-center justify-center">
-                                                <img src="data:{{ $jobOffer->employer->logo_mime_type }};base64,{{ $jobOffer->employer->logo_base64 }}" class="w-full h-full object-contain" alt="Logo">
+                                    <div class="flex flex-wrap items-center gap-y-4 gap-x-8">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-7h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
                                             </div>
-                                        @else
-                                            <div class="w-32 h-32 rounded-[2rem] bg-gradient-to-br from-indigo-500 to-violet-600 flex flex-col items-center justify-center text-white shadow-2xl shadow-indigo-200">
-                                                <span class="text-4xl font-black">{{ substr($jobOffer->employer->label, 0, 1) }}</span>
-                                                <span class="text-[10px] font-black uppercase tracking-widest mt-1 opacity-60">Employer</span>
+                                            <span class="font-bold text-slate-700">{{ $jobOffer->employer->label }}</span>
+                                        </div>
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
                                             </div>
-                                        @endif
+                                            <span class="font-semibold text-slate-500">{{ $jobOffer->location }}</span>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <!-- Stats Grid -->
-                                <div class="grid grid-cols-2 md:grid-cols-4 gap-6 p-8 bg-slate-50 rounded-[2rem] border border-slate-100 mb-12">
-                                    <div class="space-y-1">
-                                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Régime</p>
-                                        <p class="text-base font-black text-slate-800">{{ $jobOffer->working_regime }}</p>
-                                    </div>
-                                    <div class="space-y-1">
-                                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Type</p>
-                                        <p class="text-base font-black text-slate-800">{{ $jobOffer->working_regime_detail ?? 'Standard' }}</p>
-                                    </div>
-                                    <div class="space-y-1">
-                                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Volume</p>
-                                        <p class="text-base font-black text-slate-800">{{ $jobOffer->working_hours ?? '38' }}h/sem</p>
-                                    </div>
-                                    <div class="space-y-1">
-                                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Recrutement</p>
-                                        <p class="text-base font-black text-slate-800">{{ $jobOffer->nombre_postes }} poste{{ $jobOffer->nombre_postes > 1 ? 's' : '' }}</p>
-                                    </div>
-                                </div>
-
-                                <!-- Job Content -->
-                                <div class="space-y-8">
-                                    <h3 class="text-2xl font-black text-slate-900 flex items-center gap-4">
-                                        <span class="w-2 h-8 bg-indigo-600 rounded-full"></span>
-                                        Mission & Responsabilités
-                                    </h3>
-                                    <div class="text-slate-600 leading-relaxed text-lg border-l-4 border-slate-100 pl-8 py-2">
-                                        {!! $jobOffer->description !!}
-                                    </div>
+                                <div class="shrink-0 pt-2">
+                                    @if($jobOffer->employer->logo_base64 && strlen($jobOffer->employer->logo_base64) > 100)
+                                        <div class="w-32 h-32 p-6 bg-slate-50 rounded-[2rem] border border-slate-100 shadow-inner flex items-center justify-center">
+                                            <img src="data:{{ $jobOffer->employer->logo_mime_type }};base64,{{ $jobOffer->employer->logo_base64 }}" class="w-full h-full object-contain" alt="Logo">
+                                        </div>
+                                    @else
+                                        <div class="w-32 h-32 rounded-[2rem] bg-gradient-to-br from-indigo-500 to-violet-600 flex flex-col items-center justify-center text-white shadow-2xl shadow-indigo-200">
+                                            <span class="text-4xl font-black">{{ substr($jobOffer->employer->label, 0, 1) }}</span>
+                                            <span class="text-[10px] font-black uppercase tracking-widest mt-1 opacity-60">Employeur</span>
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Requirements Card -->
-                        <div class="bg-white rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.03)] border border-slate-100 p-10">
-                            <h3 class="text-2xl font-black text-slate-900 mb-10 flex items-center gap-4">
-                                <span class="w-2 h-8 bg-emerald-500 rounded-full"></span>
-                                Profil Recherché
-                            </h3>
-                            
-                            <div class="space-y-10">
+                        <!-- 1. Section: Poste à pourvoir -->
+                        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                            <button class="w-full px-8 py-5 flex items-center justify-between bg-slate-50/50 border-b border-slate-100 group">
+                                <h3 class="text-lg font-bold text-slate-800">Poste à pourvoir</h3>
+                                <svg class="w-5 h-5 text-slate-400 group-hover:text-indigo-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </button>
+                            <div class="p-8 space-y-8">
                                 <div>
-                                    <p class="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Compétences attendues</p>
-                                    <div class="flex flex-wrap gap-3">
-                                        @foreach($jobOffer->skills as $skill)
-                                            <div class="flex items-center gap-3 px-5 py-3 rounded-2xl text-sm font-bold transition-all duration-300 {{ $skill->pivot->is_required ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'bg-slate-100 text-slate-600' }}">
-                                                {{ $skill->label }}
-                                                @if($skill->pivot->is_required)
-                                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
-                                                @endif
-                                            </div>
-                                        @endforeach
+                                    <h4 class="text-md font-bold text-slate-900 mb-4">Responsabilité et missions</h4>
+                                    <div class="prose prose-slate max-w-none text-slate-600 text-sm leading-relaxed">
+                                        {!! $jobOffer->raw_data['descriptionJob'] ?? $jobOffer->description !!}
                                     </div>
                                 </div>
 
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    @if($jobOffer->languages->count() > 0)
-                                    <div class="p-8 bg-blue-50/50 rounded-3xl border border-blue-100/50">
-                                        <p class="text-xs font-black text-blue-400 uppercase tracking-[0.2em] mb-6">Langues</p>
-                                        <div class="space-y-3">
-                                            @foreach($jobOffer->languages as $lang)
-                                                <div class="flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm border border-blue-100">
-                                                    <span class="text-sm font-black text-blue-900">{{ $lang->label }}</span>
-                                                    <span class="px-3 py-1 rounded-xl bg-blue-100 text-blue-700 text-[10px] font-black tracking-widest uppercase">{{ $lang->pivot->level }}</span>
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                    @endif
-
-                                    @if($jobOffer->permits->count() > 0)
-                                    <div class="p-8 bg-amber-50/50 rounded-3xl border border-amber-100/50">
-                                        <p class="text-xs font-black text-amber-500 uppercase tracking-[0.2em] mb-6">Mobilité</p>
-                                        <div class="flex flex-wrap gap-3">
-                                            @foreach($jobOffer->permits as $permit)
-                                                <div class="px-5 py-3 bg-white text-amber-700 border border-amber-100 rounded-2xl text-sm font-extrabold flex items-center gap-3 shadow-sm">
-                                                    <div class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600">
-                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1"></path></svg>
-                                                    </div>
-                                                    Permis {{ $permit->value }}
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                    @endif
+                                <div>
+                                    <h4 class="text-md font-bold text-slate-900 mb-4">Lieu(x) de travail</h4>
+                                    <ul class="space-y-2">
+                                        @foreach($jobOffer->locations_json ?? [] as $loc)
+                                            <li class="flex items-center gap-3 text-sm text-slate-600">
+                                                <div class="w-1.5 h-1.5 rounded-full bg-slate-400"></div>
+                                                {{ $loc }}
+                                            </li>
+                                        @endforeach
+                                    </ul>
                                 </div>
                             </div>
                         </div>
+
+                        <!-- 2. Section: Votre profil -->
+                        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                            <button class="w-full px-8 py-5 flex items-center justify-between bg-slate-50/50 border-b border-slate-100 group">
+                                <h3 class="text-lg font-bold text-slate-800">Votre profil</h3>
+                                <svg class="w-5 h-5 text-slate-400 group-hover:text-indigo-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </button>
+                            <div class="p-8 space-y-10">
+                                <div>
+                                    <h4 class="text-md font-bold text-slate-900 mb-2">Métier</h4>
+                                    <p class="text-sm text-slate-600">{{ $jobOffer->metier->label ?? 'Non spécifié' }}</p>
+                                </div>
+
+                                <div>
+                                    <h4 class="text-md font-bold text-slate-900 mb-6">Expériences, langues et qualifications</h4>
+                                    
+                                    <!-- Table Expérience -->
+                                    <div class="overflow-hidden border border-slate-200 rounded-xl mb-6">
+                                        <table class="w-full text-left text-xs">
+                                            <thead class="bg-slate-50 border-b border-slate-200">
+                                                <tr>
+                                                    <th class="px-4 py-3 font-bold text-slate-700">Expérience</th>
+                                                    <th class="px-4 py-3 font-bold text-slate-700">Niveau d'expérience</th>
+                                                    <th class="px-4 py-3 font-bold text-slate-700 text-center">Exigé</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-slate-100">
+                                                @forelse($jobOffer->requiredExperiences as $exp)
+                                                <tr>
+                                                    <td class="px-4 py-3 text-slate-600">{{ $exp->label }}</td>
+                                                    <td class="px-4 py-3 text-slate-600">{{ $exp->pivot->experience_label }}</td>
+                                                    <td class="px-4 py-3 text-center text-slate-600">{{ $exp->pivot->is_required ? 'Oui' : 'Non' }}</td>
+                                                </tr>
+                                                @empty
+                                                <tr>
+                                                    <td colspan="3" class="px-4 py-3 text-slate-400 text-center italic">Aucune expérience spécifique requise</td>
+                                                </tr>
+                                                @endforelse
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <!-- Table Langues -->
+                                    @if($jobOffer->languages->count() > 0)
+                                    <div class="overflow-hidden border border-slate-200 rounded-xl mb-6">
+                                        <table class="w-full text-left text-xs">
+                                            <thead class="bg-slate-50 border-b border-slate-200">
+                                                <tr>
+                                                    <th class="px-4 py-3 font-bold text-slate-700">Langue</th>
+                                                    <th class="px-4 py-3 font-bold text-slate-700">Niveau</th>
+                                                    <th class="px-4 py-3 font-bold text-slate-700 text-center">Exigé</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-slate-100">
+                                                @foreach($jobOffer->languages as $lang)
+                                                <tr>
+                                                    <td class="px-4 py-3 text-slate-600">{{ $lang->label }}</td>
+                                                    <td class="px-4 py-3 text-slate-600">{{ $lang->pivot->level }}</td>
+                                                    <td class="px-4 py-3 text-center text-slate-600">{{ $lang->pivot->is_required ? 'Oui' : 'Non' }}</td>
+                                                </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    @endif
+
+                                    <!-- Table Permis -->
+                                    @if($jobOffer->permits->count() > 0)
+                                    <div class="overflow-hidden border border-slate-200 rounded-xl">
+                                        <table class="w-full text-left text-xs">
+                                            <thead class="bg-slate-50 border-b border-slate-200">
+                                                <tr>
+                                                    <th class="px-4 py-3 font-bold text-slate-700">Permis de conduire</th>
+                                                    <th class="px-4 py-3 font-bold text-slate-700 text-center">Exigé</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-slate-100">
+                                                @foreach($jobOffer->permits as $permit)
+                                                <tr>
+                                                    <td class="px-4 py-3 text-slate-600">Permis {{ $permit->value }} ({{ $permit->label }})</td>
+                                                    <td class="px-4 py-3 text-center text-slate-600">Oui</td>
+                                                </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    @endif
+                                </div>
+
+                                @if(isset($jobOffer->raw_data['descriptionComment']) && $jobOffer->raw_data['descriptionComment'])
+                                <div>
+                                    <h4 class="text-md font-bold text-slate-900 mb-4">Description complémentaire</h4>
+                                    <div class="prose prose-slate max-w-none text-slate-600 text-sm leading-relaxed">
+                                        {!! $jobOffer->raw_data['descriptionComment'] !!}
+                                    </div>
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+
+                        <!-- 3. Section: Commentaire général -->
+                        @if(isset($jobOffer->raw_data['commentaireGeneral']) && $jobOffer->raw_data['commentaireGeneral'])
+                        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                            <button class="w-full px-8 py-5 flex items-center justify-between bg-slate-50/50 border-b border-slate-100 group">
+                                <h3 class="text-lg font-bold text-slate-800">Commentaire général</h3>
+                                <svg class="w-5 h-5 text-slate-400 group-hover:text-indigo-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </button>
+                            <div class="p-8">
+                                <div class="prose prose-slate max-w-none text-slate-600 text-sm leading-relaxed">
+                                    {!! $jobOffer->raw_data['commentaireGeneral'] !!}
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+
+                        <!-- 4. Section: Condition du poste -->
+                        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                            <button class="w-full px-8 py-5 flex items-center justify-between bg-slate-50/50 border-b border-slate-100 group">
+                                <h3 class="text-lg font-bold text-slate-800">Condition du poste</h3>
+                                <svg class="w-5 h-5 text-slate-400 group-hover:text-indigo-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </button>
+                            <div class="p-8 space-y-10">
+                                <div class="overflow-hidden border border-slate-200 rounded-xl">
+                                    <table class="w-full text-left text-xs">
+                                        <thead class="bg-slate-50 border-b border-slate-200">
+                                            <tr>
+                                                <th class="px-4 py-3 font-bold text-slate-700">Type de Contrat</th>
+                                                <th class="px-4 py-3 font-bold text-slate-700 text-center">Date de début</th>
+                                                <th class="px-4 py-3 font-bold text-slate-700 text-center">Date de fin</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td class="px-4 py-3 text-slate-600">{{ $jobOffer->contract_type }}</td>
+                                                <td class="px-4 py-3 text-center text-slate-600">{{ $jobOffer->start_date ? $jobOffer->start_date->format('d/m/Y') : '-' }}</td>
+                                                <td class="px-4 py-3 text-center text-slate-600">{{ $jobOffer->expires_at ? $jobOffer->expires_at->format('d/m/Y') : '-' }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="flex flex-col md:flex-row gap-8 py-6 border-y border-slate-100">
+                                    <div class="flex-1">
+                                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Régime de travail</h4>
+                                        <p class="text-sm font-bold text-slate-700">{{ $jobOffer->working_regime }}</p>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Heures / semaine</h4>
+                                        <p class="text-sm font-bold text-slate-700">{{ $jobOffer->working_hours ?? 'Non précisé' }}h</p>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Précision</h4>
+                                        <p class="text-sm font-bold text-slate-700">{{ $jobOffer->working_regime_detail ?? ($jobOffer->working_regime == 'Temps plein' ? 'Standard' : 'N/A') }}</p>
+                                    </div>
+                                </div>
+
+                                @if($jobOffer->benefits_comments || (isset($jobOffer->raw_data['benefitsComments']) && $jobOffer->raw_data['benefitsComments']))
+                                <div>
+                                    <h4 class="text-md font-bold text-slate-900 mb-4">Ce que nous offrons :</h4>
+                                    <div class="prose prose-slate max-w-none text-slate-600 text-sm leading-relaxed">
+                                        {!! $jobOffer->raw_data['benefitsComments'] ?? $jobOffer->benefits_comments !!}
+                                    </div>
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+
                     </div>
 
                     <!-- Colonne Latérale -->
@@ -273,6 +372,15 @@
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                                         </div>
                                         <span class="text-sm font-black truncate">{{ $jobOffer->contact_email }}</span>
+                                    </a>
+                                @endif
+
+                                @if($jobOffer->apply_url)
+                                    <a href="{{ $jobOffer->apply_url }}" target="_blank" class="flex items-center gap-4 p-5 rounded-2xl bg-indigo-600 text-white hover:bg-indigo-700 transition-all duration-300 group shadow-lg shadow-indigo-100">
+                                        <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center text-white">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                        </div>
+                                        <span class="text-sm font-black">Postuler en ligne</span>
                                     </a>
                                 @endif
                             </div>
