@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Log;
 class GeminiService
 {
     protected ?string $apiKey;
-    protected string $baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+    protected string $baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent';
 
     public function __construct()
     {
@@ -17,43 +17,69 @@ class GeminiService
 
     public function analyzeMatch(string $prompt): ?array
     {
+        return $this->generateJson($prompt);
+    }
+
+    /**
+     * Analyse un CV ou un texte brut pour en extraire un profil structuré.
+     */
+    public function analyzeProfile(string $text): ?array
+    {
+        $prompt = "
+        Tu es un expert en recrutement. Analyse le texte suivant (CV ou bio) et extrais-en un profil structuré.
+        
+        ## Texte à analyser
+        {$text}
+
+        ## Instructions
+        1. Génère un 'headline' (titre pro percutant).
+        2. Rédige un 'profile_text' (récit narratif de la dimension humaine, environ 150-200 mots).
+        3. Identifie les 'aspirations' (valeurs et ce que le candidat recherche).
+        4. Liste les compétences techniques et soft skills principales identifiées.
+        
+        Réponds UNIQUEMENT en JSON avec la structure suivante :
+        {
+            \"headline\": \"string\",
+            \"profile_text\": \"string\",
+            \"aspirations\": \"string\",
+            \"skills\": [\"Nom de la compétence\", ...]
+        }
+        ";
+
+        return $this->generateJson($prompt);
+    }
+
+    /**
+     * Méthode générique pour appeler Gemini et obtenir du JSON.
+     */
+    protected function generateJson(string $prompt): ?array
+    {
         if (empty($this->apiKey)) {
             Log::warning('Gemini API key is missing.');
             return null;
         }
 
-        $response = Http::withHeaders([
+        $response = Http::withoutVerifying()->withHeaders([
             'Content-Type' => 'application/json',
         ])->post("{$this->baseUrl}?key={$this->apiKey}", [
             'contents' => [
-                [
-                    'parts' => [
-                        ['text' => $prompt]
-                    ]
-                ]
+                ['parts' => [['text' => $prompt]]]
             ],
             'generationConfig' => [
                 'temperature' => 0.2,
-                'maxOutputTokens' => 1024,
+                'maxOutputTokens' => 2048,
                 'responseMimeType' => 'application/json',
             ]
         ]);
 
         if ($response->failed()) {
-            Log::error('Gemini API request failed', [
-                'status' => $response->status(),
-                'error' => $response->body()
-            ]);
+            Log::error('Gemini API request failed', ['error' => $response->body()]);
             return null;
         }
 
         $result = $response->json();
         $text = $result['candidates'][0]['content']['parts'][0]['text'] ?? null;
 
-        if (!$text) {
-            return null;
-        }
-
-        return json_decode($text, true);
+        return $text ? json_decode($text, true) : null;
     }
 }

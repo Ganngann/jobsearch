@@ -9,6 +9,7 @@ use App\Models\Metier;
 use App\Models\Permit;
 use App\Models\Skill;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class JobOfferService
 {
@@ -147,27 +148,42 @@ class JobOfferService
             // Technical
             $techSkills = $jobData['competences'] ?? $jobData['competencies'] ?? [];
             foreach ($techSkills as $sData) {
+                $slug = \Illuminate\Support\Str::slug($sData['libelle']);
                 $skill = Skill::updateOrCreate(
-                    ['code' => $sData['code'] ?? $sData['libelle']],
-                    ['label' => $sData['libelle'], 'type' => 'hard']
+                    ['slug' => $slug],
+                    [
+                        'label' => $sData['libelle'], 
+                        'code' => isset($sData['code']) && strlen($sData['code']) <= 10 ? $sData['code'] : $slug,
+                        'type' => 'hard'
+                    ]
                 );
                 $allSkills[$skill->id] = ['is_required' => $sData['required'] ?? true];
             }
 
             // Soft Skills
             foreach ($jobData['softSkills'] ?? [] as $sData) {
+                $slug = Str::slug($sData['libelle']);
                 $skill = Skill::updateOrCreate(
-                    ['code' => $sData['code'] ?? $sData['libelle']],
-                    ['label' => $sData['libelle'], 'type' => 'soft']
+                    ['slug' => $slug],
+                    [
+                        'label' => $sData['libelle'], 
+                        'code' => isset($sData['code']) && strlen($sData['code']) <= 10 ? $sData['code'] : $slug,
+                        'type' => 'soft'
+                    ]
                 );
                 $allSkills[$skill->id] = ['is_required' => $sData['required'] ?? true];
             }
 
             // Office Skills
             foreach ($jobData['officeSkills'] ?? [] as $sData) {
+                $slug = Str::slug($sData['libelle']);
                 $skill = Skill::updateOrCreate(
-                    ['code' => $sData['code'] ?? $sData['libelle']],
-                    ['label' => $sData['libelle'], 'type' => 'hard']
+                    ['slug' => $slug],
+                    [
+                        'label' => $sData['libelle'], 
+                        'code' => isset($sData['code']) && strlen($sData['code']) <= 10 ? $sData['code'] : $slug,
+                        'type' => 'hard'
+                    ]
                 );
                 $allSkills[$skill->id] = ['is_required' => $sData['required'] ?? true];
             }
@@ -176,9 +192,13 @@ class JobOfferService
 
             // Languages
             foreach ($jobData['langues'] ?? [] as $lData) {
+                $slug = Str::slug($lData['libelle']);
                 $lang = Language::updateOrCreate(
-                    ['code' => $lData['code'] ?? $lData['libelle']],
-                    ['label' => $lData['libelle']]
+                    ['slug' => $slug],
+                    [
+                        'label' => $lData['libelle'],
+                        'code' => isset($lData['code']) && strlen($lData['code']) <= 5 ? strtoupper($lData['code']) : strtoupper(substr($slug, 0, 3))
+                    ]
                 );
                 $jobOffer->languages()->syncWithoutDetaching([
                     $lang->id => ['level' => $lData['experience'] ?? null, 'is_required' => true]
@@ -187,9 +207,15 @@ class JobOfferService
 
             // Permits
             foreach ($jobData['permisConduire'] ?? [] as $pData) {
+                $label = $pData['libelle'] ?? $pData['valeur'];
+                $slug = Permit::generateSlug($label);
                 $permit = Permit::updateOrCreate(
-                    ['code' => $pData['code'] ?? $pData['valeur']],
-                    ['label' => $pData['libelle'], 'value' => $pData['valeur'] ?? 'B']
+                    ['slug' => $slug],
+                    [
+                        'label' => $pData['libelle'] ?? $pData['valeur'], 
+                        'code' => isset($pData['code']) && strlen($pData['code']) <= 5 ? $pData['code'] : strtoupper(substr($slug, 0, 3)),
+                        'value' => $pData['valeur'] ?? 'B'
+                    ]
                 );
                 $jobOffer->permits()->syncWithoutDetaching([$permit->id => ['is_required' => true]]);
             }

@@ -24,6 +24,8 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile/skills', [ProfileController::class, 'updateSkills'])->name('profile.skills.update');
     Route::patch('/profile/languages', [ProfileController::class, 'updateLanguages'])->name('profile.languages.update');
     Route::patch('/profile/permits', [ProfileController::class, 'updatePermits'])->name('profile.permits.update');
+    Route::patch('/profile/mobility', [ProfileController::class, 'updateMobility'])->name('profile.mobility.update');
+    Route::post('/profile/analyze', [ProfileController::class, 'analyze'])->name('profile.analyze');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 

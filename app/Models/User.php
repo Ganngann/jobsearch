@@ -27,6 +27,8 @@ class User extends Authenticatable
         'profile_text',
         'aspirations',
         'location',
+        'zip_code',
+        'radius',
     ];
 
     /**
