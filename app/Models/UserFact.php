@@ -31,4 +31,9 @@ class UserFact extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function skills(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Skill::class, 'fact_skill', 'user_fact_id', 'skill_id');
+    }
 }

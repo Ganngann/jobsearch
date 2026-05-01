@@ -1,40 +1,27 @@
-<section>
-    <header>
-        <h2 class="text-lg font-medium text-gray-900">
-            {{ __('Compétences (Hard & Soft Skills)') }}
-        </h2>
+@php
+    $initialSkills = $user->skills->map(function($s) use ($user) {
+        return [
+            'id' => $s->id,
+            'label' => $s->label,
+            'level' => $s->pivot->level ?? 'beginner',
+            'type' => $s->type,
+            'sources' => $s->userFacts()->where('user_id', $user->id)->pluck('content')->toArray()
+        ];
+    })->values();
+    
+    $availableSkills = $allSkills->map(function($s) {
+        return [
+            'id' => $s->id,
+            'label' => $s->label,
+            'type' => $s->type
+        ];
+    })->values();
+@endphp
 
-        <p class="mt-1 text-sm text-gray-600">
-            {{ __("Sélectionnez vos compétences. L'IA utilisera ces informations pour le matching.") }}
-        </p>
-    </header>
-
-    @php
-        $initialSkills = $user->skills->map(function($s) {
-            return [
-                'id' => $s->id,
-                'label' => $s->label,
-                'level' => $s->pivot->level ?? 'beginner',
-                'type' => $s->type
-            ];
-        })->values(); // Forcer un tableau JS [...]
-        
-        $availableSkills = $allSkills->map(function($s) {
-            return [
-                'id' => $s->id,
-                'label' => $s->label,
-                'type' => $s->type
-            ];
-        })->values(); // Forcer un tableau JS [...]
-    @endphp
-
-    <form method="post" action="{{ route('profile.skills.update') }}" class="mt-6 space-y-6">
-        @csrf
-        @method('patch')
-
-        <div x-data='{
+<section x-data='{
             search: "",
             isSaving: false,
+            isSyncing: false,
             selectedSkills: @json($initialSkills),
             allAvailable: @json($availableSkills),
 
@@ -80,7 +67,8 @@
                         id: skill.id,
                         label: skill.label,
                         level: "beginner",
-                        type: skill.type
+                        type: skill.type,
+                        sources: []
                     });
                     this.save();
                 }
@@ -89,8 +77,66 @@
             removeSkill(id) {
                 this.selectedSkills = this.selectedSkills.filter(s => s.id !== id);
                 this.save();
+            },
+
+            async syncSkills() {
+                if (this.isSyncing) return;
+                this.isSyncing = true;
+                try {
+                    const response = await fetch("{{ route('profile.builder.sync-skills') }}", {
+                        method: "POST",
+                        headers: {
+                            "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                            "Accept": "application/json"
+                        }
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        alert(data.message);
+                        window.location.reload();
+                    }
+                } catch (e) {
+                    console.error(e);
+                    alert("Erreur lors de la synchronisation");
+                } finally {
+                    this.isSyncing = false;
+                }
             }
-        }' class="space-y-4">
+        }'>
+    <header class="flex items-center justify-between">
+        <div>
+            <h2 class="text-lg font-medium text-gray-900">
+                {{ __('Compétences (Hard & Soft Skills)') }}
+            </h2>
+
+            <p class="mt-1 text-sm text-gray-600">
+                {{ __("Sélectionnez vos compétences. L'IA utilisera ces informations pour le matching.") }}
+            </p>
+        </div>
+        
+        <button type="button" 
+                @click="syncSkills()" 
+                :disabled="isSyncing"
+                class="flex-shrink-0 relative inline-flex items-center justify-center px-6 py-2.5 min-w-[200px] bg-gradient-to-r from-indigo-600 to-violet-600 border border-transparent rounded-xl font-bold text-[10px] text-white uppercase tracking-widest hover:from-indigo-700 hover:to-violet-700 shadow-md transition-all disabled:opacity-50 group">
+            <div class="flex items-center gap-2">
+                <svg x-show="!isSyncing" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                <svg x-show="isSyncing" class="animate-spin h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span x-text="isSyncing ? 'Synchronisation...' : 'Synchroniser avec mes récits'"></span>
+            </div>
+        </button>
+    </header>
+
+
+
+    <form method="post" action="{{ route('profile.skills.update') }}" class="mt-6 space-y-6">
+        @csrf
+        @method('patch')
+
+        <div class="space-y-4">
+
             
             {{-- Status d'enregistrement --}}
             <div class="flex justify-end h-4">
@@ -118,15 +164,21 @@
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                                     </button>
                                 </div>
-                                <div class="flex items-center gap-2">
-                                    <select x-model="skill.level" @change="save()" class="flex-1 text-[11px] py-1.5 border-gray-100 bg-gray-50 focus:ring-indigo-500 rounded-xl">
-                                        <option value="beginner">Débutant</option>
-                                        <option value="intermediate">Intermédiaire</option>
-                                        <option value="advanced">Avancé</option>
-                                        <option value="expert">Expert</option>
-                                    </select>
+                                <div class="flex items-center justify-between">
                                     <span class="text-[9px] uppercase font-black px-2 py-1 rounded-lg bg-gray-100 text-gray-500" x-text="skill.type"></span>
                                 </div>
+
+                                <!-- SOURCES (FACTS) -->
+                                <template x-if="skill.sources && skill.sources.length > 0">
+                                    <div class="mt-3 pt-2 border-t border-gray-50">
+                                        <p class="text-[8px] font-bold text-gray-400 uppercase mb-1 tracking-tight">Source narratif :</p>
+                                        <div class="space-y-1">
+                                            <template x-for="source in skill.sources">
+                                                <p class="text-[10px] text-gray-500 leading-snug italic line-clamp-2" x-text="'« ' + source + ' »'"></p>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </template>
                             </div>
                         </template>
                         <template x-if="selectedSkills.length === 0">

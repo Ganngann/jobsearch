@@ -91,4 +91,6 @@
             @endif
         </div>
     </form>
+
+    @include('profile.partials.manage-facts-list')
 </section>

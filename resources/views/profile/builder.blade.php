@@ -151,21 +151,37 @@
                 <!-- 3. RIGHT SIDEBAR: FACTS (PROFILE) -->
                 <aside class="w-64 lg:w-72 flex-shrink-0 hidden md:flex flex-col" style="max-height: 80vh;">
                     <div class="bg-white border border-gray-100 shadow-sm rounded-2xl flex flex-col h-full overflow-hidden">
-                        <div class="p-3 border-b border-gray-50 bg-gray-50/30 flex items-center justify-between">
-                            <h2 class="text-xs font-bold text-gray-800 flex items-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                </svg>
-                                Mon Profil
-                            </h2>
-                            <div class="flex bg-gray-200/50 p-0.5 rounded-lg">
-                                <button @click="showAllFacts = false" 
-                                        :class="!showAllFacts ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-500'"
-                                        class="px-2 py-0.5 text-[9px] font-bold rounded-md transition-all uppercase tracking-tight">Session</button>
-                                <button @click="showAllFacts = true" 
-                                        :class="showAllFacts ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-500'"
-                                        class="px-2 py-0.5 text-[9px] font-bold rounded-md transition-all uppercase tracking-tight ml-0.5">Tout</button>
+                        <div class="p-3 border-b border-gray-50 bg-gray-50/30">
+                            <div class="flex items-center justify-between mb-2">
+                                <h2 class="text-xs font-bold text-gray-800 flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                    Mon Profil
+                                </h2>
+                                <div class="flex bg-gray-200/50 p-0.5 rounded-lg">
+                                    <button @click="showAllFacts = false" 
+                                            :class="!showAllFacts ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-500'"
+                                            class="px-2 py-0.5 text-[9px] font-bold rounded-md transition-all uppercase tracking-tight">Session</button>
+                                    <button @click="showAllFacts = true" 
+                                            :class="showAllFacts ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-500'"
+                                            class="px-2 py-0.5 text-[9px] font-bold rounded-md transition-all uppercase tracking-tight ml-0.5">Tout</button>
+                                </div>
                             </div>
+                            
+                            <button @click="syncSkills()" 
+                                    :disabled="isSyncing"
+                                    class="w-full text-[10px] font-bold py-1.5 rounded-lg transition-all flex items-center justify-center gap-2 shadow-sm"
+                                    :class="isSyncing ? 'bg-gray-100 text-gray-400' : 'bg-indigo-600 text-white hover:bg-indigo-700'">
+                                <svg x-show="!isSyncing" xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                </svg>
+                                <svg x-show="isSyncing" class="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span x-text="isSyncing ? 'Synchronisation...' : 'Synchroniser compétences Forem'"></span>
+                            </button>
                         </div>
                         <div class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-3 bg-gray-50/10">
                             <template x-for="fact in filteredFacts" :key="fact.id">
@@ -209,6 +225,13 @@
                                     <div x-data="{ editing: false, content: fact.content }">
                                         <div x-show="!editing && !fact.proposed_action" @click="editing = true; content = fact.content" class="cursor-pointer group/text">
                                             <p class="text-xs text-gray-700 leading-relaxed" x-text="fact.content"></p>
+                                        </div>
+
+                                        <!-- SKILLS TAGS -->
+                                        <div x-show="fact.skills?.length > 0" class="mt-2 flex flex-wrap gap-1">
+                                            <template x-for="skill in fact.skills" :key="skill.id">
+                                                <span class="text-[8px] bg-gray-50 text-gray-400 px-1.5 py-0.5 rounded border border-gray-100" x-text="skill.label"></span>
+                                            </template>
                                         </div>
 
                                         <!-- PROPOSAL UPDATE VIEW -->
@@ -285,6 +308,7 @@
                 currentSessionId: @json($sessionId),
                 newMessage: '',
                 isTyping: false,
+                isSyncing: false,
                 showAllFacts: false,
                 showArchives: false,
 
@@ -462,6 +486,29 @@
                             }
                         }
                     } catch (error) { console.error('Archive error:', error); }
+                },
+
+                async syncSkills() {
+                    if (this.isSyncing) return;
+                    this.isSyncing = true;
+                    try {
+                        const response = await fetch("{{ route('profile.builder.sync-skills') }}", {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            }
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            alert(data.message);
+                            window.location.reload();
+                        }
+                    } catch (error) { 
+                        console.error('Sync error:', error);
+                        alert('Une erreur est survenue lors de la synchronisation.');
+                    } finally {
+                        this.isSyncing = false;
+                    }
                 }
             }
         }

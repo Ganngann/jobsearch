@@ -54,7 +54,7 @@ class ProfileChatController extends Controller
         session(['profile_builder_session' => $sessionId]);
 
         $messages = $user->profileMessages()->where('session_id', $sessionId)->orderBy('created_at', 'asc')->get();
-        $facts = $user->facts()->orderBy('created_at', 'desc')->get();
+        $facts = $user->facts()->with('skills')->orderBy('created_at', 'desc')->get();
 
         return view('profile.builder', compact('messages', 'facts', 'activeSessions', 'archivedSessions', 'sessionId'));
     }
@@ -187,7 +187,7 @@ class ProfileChatController extends Controller
 
         return response()->json([
             'reply' => $aiResponse['reply'],
-            'facts' => $user->facts()->orderBy('created_at', 'desc')->get(),
+            'facts' => $user->facts()->with('skills')->orderBy('created_at', 'desc')->get(),
             'activeSessions' => $user->profileSessions()->where('is_archived', false)->get(),
             'archivedSessions' => $user->profileSessions()->where('is_archived', true)->get(),
             'debug' => [
@@ -208,6 +208,13 @@ class ProfileChatController extends Controller
         ]);
 
         return response()->json(['success' => true]);
+    }
+
+    public function syncSkills(Request $request, \App\Services\ProfileMappingService $mappingService)
+    {
+        $result = $mappingService->mapUserFacts(Auth::user());
+        
+        return response()->json($result);
     }
 
     public function updateFact(Request $request, UserFact $fact)
