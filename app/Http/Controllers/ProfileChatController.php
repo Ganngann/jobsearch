@@ -22,11 +22,22 @@ class ProfileChatController extends Controller
     {
         $user = Auth::user();
         
-        // 1. On récupère la liste des sessions pour la sidebar
-        $sessions = $user->profileMessages()
-            ->select('session_id', \DB::raw('min(created_at) as created_at'), \DB::raw('min(content) as title'))
-            ->groupBy('session_id')
-            ->orderBy('created_at', 'desc')
+        // Synchronisation des sessions existantes si besoin
+        $existingSessionIds = $user->profileMessages()->distinct()->pluck('session_id');
+        foreach ($existingSessionIds as $sid) {
+            \App\Models\ProfileSession::firstOrCreate(
+                ['id' => $sid],
+                ['user_id' => $user->id, 'title' => 'Ancienne discussion']
+            );
+        }
+
+        // 1. On récupère les sessions actives et archivées séparément pour la sidebar
+        $activeSessions = $user->profileSessions()
+            ->where('is_archived', false)
+            ->get();
+            
+        $archivedSessions = $user->profileSessions()
+            ->where('is_archived', true)
             ->get();
 
         // 2. Déterminer quelle session afficher
@@ -45,7 +56,7 @@ class ProfileChatController extends Controller
         $messages = $user->profileMessages()->where('session_id', $sessionId)->orderBy('created_at', 'asc')->get();
         $facts = $user->facts()->orderBy('created_at', 'desc')->get();
 
-        return view('profile.builder', compact('messages', 'facts', 'sessions', 'sessionId'));
+        return view('profile.builder', compact('messages', 'facts', 'activeSessions', 'archivedSessions', 'sessionId'));
     }
 
     public function resetSession()
@@ -61,13 +72,25 @@ class ProfileChatController extends Controller
         $user = Auth::user();
         $sessionId = session('profile_builder_session', uniqid());
 
-        // 1. Sauvegarder le message de l'utilisateur
+        // 1. Assurer l'existence de la session et sauvegarder le message
+        $session = \App\Models\ProfileSession::firstOrCreate(
+            ['id' => $sessionId],
+            ['user_id' => $user->id, 'title' => substr($request->message, 0, 50) . '...']
+        );
+
         $user->profileMessages()->create([
             'user_id' => $user->id,
             'session_id' => $sessionId,
             'role' => 'user',
             'content' => $request->message
         ]);
+
+        // Mettre à jour le titre si c'est le premier message et qu'il était par défaut
+        if ($session->messages()->count() === 1) {
+            $session->update(['title' => substr($request->message, 0, 50) . '...']);
+        }
+        
+        $session->touch(); // Pour mettre à jour updated_at et faire remonter la session
 
         // 2. Préparer l'historique pour l'IA (uniquement de la session actuelle)
         // On prend les 20 derniers messages, puis on les remet dans l'ordre chronologique
@@ -165,16 +188,26 @@ class ProfileChatController extends Controller
         return response()->json([
             'reply' => $aiResponse['reply'],
             'facts' => $user->facts()->orderBy('created_at', 'desc')->get(),
-            'sessions' => $user->profileMessages()
-                ->select('session_id', \DB::raw('min(created_at) as created_at'), \DB::raw('min(content) as title'))
-                ->groupBy('session_id')
-                ->orderBy('created_at', 'desc')
-                ->get(),
+            'activeSessions' => $user->profileSessions()->where('is_archived', false)->get(),
+            'archivedSessions' => $user->profileSessions()->where('is_archived', true)->get(),
             'debug' => [
                 'history' => $history,
                 'session_id' => $sessionId
             ]
         ]);
+    }
+
+    public function toggleArchive(Request $request, $sessionId)
+    {
+        $session = \App\Models\ProfileSession::where('id', $sessionId)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
+
+        $session->update([
+            'is_archived' => !$session->is_archived
+        ]);
+
+        return response()->json(['success' => true]);
     }
 
     public function updateFact(Request $request, UserFact $fact)

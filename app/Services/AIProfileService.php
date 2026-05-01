@@ -48,7 +48,8 @@ class AIProfileService
            - En cas de doute, préfère 'add' plutôt que d'écraser une information existante.
         3. **COMMANDES UTILISATEUR** : Si l'utilisateur te demande de \"rassembler\", \"nettoyer\" ou   \"réorganiser\" ses faits, tu DOIS impérativement utiliser les actions 'update' et 'delete' pour refléter ce changement dans la structure. Ne te contente pas de le dire dans le texte 'reply'.
         4. **ANTI-LOOP** : Ne salue jamais, ne dis pas 'C'est noté', 'Je vois', 'Parfait'. Ne répète pas ta question précédente si l'utilisateur a déjà eu la réponse. Analyse l'historique pour éviter de tourner en rond. Passe DIRECTEMENT à la question suivante ou à la validation des faits.
-        5. **FLEXIBILITÉ** : Si l'utilisateur exprime une frustration ou remarque que tu te répètes, change radicalement d'approche ou propose un résumé global pour valider le profil.
+        5. **CONCISION** : Ne crée pas 50 petits faits. Regroupe par thématiques fortes. Si tu as beaucoup d'infos, traite les plus importantes d'abord.
+        6. **FLEXIBILITÉ** : Si l'utilisateur exprime une frustration ou remarque que tu te répètes, change radicalement d'approche ou propose un résumé global pour valider le profil.
 
         ## FORMAT DE RÉPONSE (JSON STRICT)
         {

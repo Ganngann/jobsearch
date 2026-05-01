@@ -29,24 +29,58 @@
                 <aside class="w-48 lg:w-56 flex-shrink-0 hidden md:flex flex-col" style="max-height: 80vh;">
                     <div class="bg-white border border-gray-100 shadow-sm rounded-2xl flex flex-col h-full overflow-hidden">
                         <div class="p-3 border-b border-gray-50 flex items-center justify-between bg-gray-50/30">
-                            <h2 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Historique</h2>
+                            <h2 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Conversations</h2>
                             <a href="{{ route('profile.builder.reset') }}" class="p-1 text-indigo-600 hover:bg-indigo-50 rounded-lg transition" title="Nouvelle discussion">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                                 </svg>
                             </a>
                         </div>
+                        
                         <div class="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
-                            <template x-for="session in sessions" :key="session.session_id">
-                                <a :href="'?session=' + session.session_id" 
-                                   class="group block p-2.5 rounded-xl transition-all border"
-                                   :class="session.session_id === currentSessionId ? 'bg-indigo-50 border-indigo-100 text-indigo-700' : 'bg-transparent border-transparent hover:bg-gray-50 text-gray-500'">
-                                    <div class="text-xs font-medium leading-snug" 
-                                         style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;"
-                                         x-text="session.title || 'Nouvelle discussion'"></div>
-                                    <div class="text-[9px] mt-2 opacity-50" x-text="new Date(session.created_at).toLocaleDateString()"></div>
-                                </a>
+                            <!-- Active Sessions -->
+                            <template x-for="session in activeSessions" :key="session.id">
+                                <div class="group relative">
+                                    <a :href="'?session=' + session.id" 
+                                       class="block p-2.5 rounded-xl transition-all border pr-8"
+                                       :class="session.id === currentSessionId ? 'bg-indigo-50 border-indigo-100 text-indigo-700' : 'bg-transparent border-transparent hover:bg-gray-50 text-gray-500'">
+                                        <div class="text-xs font-medium leading-snug line-clamp-3" x-text="session.title || 'Discussion'"></div>
+                                    </a>
+                                    <button @click="toggleArchive(session.id)" 
+                                            class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-300 hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-all">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                                        </svg>
+                                    </button>
+                                </div>
                             </template>
+
+                            <!-- Archived Section Toggle -->
+                            <div x-show="archivedSessions?.length > 0" class="pt-4 pb-1">
+                                <button @click="showArchives = !showArchives" class="w-full flex items-center justify-between px-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest hover:text-gray-600">
+                                    <span>Archives</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 transition-transform" :class="showArchives ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <div x-show="showArchives" x-collapse>
+                                <template x-for="session in archivedSessions" :key="session.id">
+                                    <div class="group relative opacity-60 hover:opacity-100">
+                                        <a :href="'?session=' + session.id" 
+                                           class="block p-2 rounded-xl transition-all border border-transparent hover:bg-gray-50 text-gray-400 pr-8">
+                                            <div class="text-[11px] font-medium leading-tight line-clamp-1" x-text="session.title"></div>
+                                        </a>
+                                        <button @click="toggleArchive(session.id)" 
+                                                class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-300 hover:text-green-600 opacity-0 group-hover:opacity-100 transition-all" title="Désarchiver">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </template>
+                            </div>
                         </div>
                     </div>
                 </aside>
@@ -244,13 +278,15 @@
     <script>
         function profileBuilder() {
             return {
-                messages: @json($messages),
-                facts: @json($facts),
-                sessions: @json($sessions),
+                messages: @json($messages) || [],
+                facts: @json($facts) || [],
+                activeSessions: @json($activeSessions) || [],
+                archivedSessions: @json($archivedSessions) || [],
                 currentSessionId: @json($sessionId),
                 newMessage: '',
                 isTyping: false,
                 showAllFacts: false,
+                showArchives: false,
 
                 get filteredFacts() {
                     if (this.showAllFacts) return this.facts;
@@ -312,7 +348,8 @@
                         });
 
                         this.facts = newFacts;
-                        this.sessions = data.sessions;
+                        this.activeSessions = data.activeSessions;
+                        this.archivedSessions = data.archivedSessions;
                         this.scrollToBottom();
                     } catch (error) {
                         console.error('Error:', error);
@@ -396,6 +433,35 @@
                         });
                         this.facts = this.facts.filter(f => f.id !== fact.id);
                     } catch (error) { console.error('Delete error:', error); }
+                },
+
+                async toggleArchive(sessionId) {
+                    try {
+                        await fetch(`/profile/builder/sessions/${sessionId}/archive`, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            }
+                        });
+                        
+                        // Si on archive la session courante, on réinitialise
+                        if (sessionId === this.currentSessionId) {
+                            window.location.href = "{{ route('profile.builder.reset') }}";
+                            return;
+                        }
+
+                        // Sinon on déplace juste localement pour éviter un reload
+                        const session = [...this.activeSessions, ...this.archivedSessions].find(s => s.id === sessionId);
+                        if (session) {
+                            if (this.activeSessions.find(s => s.id === sessionId)) {
+                                this.activeSessions = this.activeSessions.filter(s => s.id !== sessionId);
+                                this.archivedSessions.unshift(session);
+                            } else {
+                                this.archivedSessions = this.archivedSessions.filter(s => s.id !== sessionId);
+                                this.activeSessions.unshift(session);
+                            }
+                        }
+                    } catch (error) { console.error('Archive error:', error); }
                 }
             }
         }

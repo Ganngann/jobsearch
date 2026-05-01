@@ -87,4 +87,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(ProfileMessage::class)->orderBy('created_at', 'asc');
     }
+
+    public function profileSessions(): HasMany
+    {
+        return $this->hasMany(ProfileSession::class)->orderBy('updated_at', 'desc');
+    }
 }

@@ -60,7 +60,7 @@ class GeminiService
             'contents' => $messages,
             'generationConfig' => [
                 'temperature' => 0.7,
-                'maxOutputTokens' => 2048,
+                'maxOutputTokens' => 4096,
                 'responseMimeType' => 'application/json',
             ]
         ];
@@ -90,7 +90,18 @@ class GeminiService
 
         $text = $result['candidates'][0]['content']['parts'][0]['text'] ?? null;
 
-        return $text ? json_decode($text, true) : null;
+        if (!$text) return null;
+
+        $decoded = json_decode($text, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            Log::error('Gemini JSON Decode Error: ' . json_last_error_msg());
+            return [
+                'reply' => "Oups, ma réponse était tellement détaillée qu'elle a été coupée en plein milieu ! Pouvons-nous reprendre en traitant les points un par un ?",
+                'facts' => []
+            ];
+        }
+
+        return $decoded;
     }
 
     /**
