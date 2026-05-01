@@ -59,7 +59,7 @@ class GeminiService
         $payload = [
             'contents' => $messages,
             'generationConfig' => [
-                'temperature' => 0.5,
+                'temperature' => 0.7,
                 'maxOutputTokens' => 2048,
                 'responseMimeType' => 'application/json',
             ]
@@ -84,6 +84,10 @@ class GeminiService
         }
 
         $result = $response->json();
+        
+        // Log de la réponse reçue de Gemini
+        Log::debug('GEMINI RESPONSE:', $result);
+
         $text = $result['candidates'][0]['content']['parts'][0]['text'] ?? null;
 
         return $text ? json_decode($text, true) : null;

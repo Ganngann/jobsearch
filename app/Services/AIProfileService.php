@@ -46,16 +46,24 @@ class AIProfileService
         2. **MAINTENANCE DU PROFIL** : 
            - Utilise toujours l'action 'update' avec un [ID] pour affiner.
            - 'add' uniquement pour une info radicalement nouvelle (ex: passer de 'Compétences' à 'Valeurs').
-        3. **ANTI-LOOP** : Ne salue jamais, ne dis pas 'C'est noté'. Passe à la question suivante.
+        3. **COMMANDES UTILISATEUR** : Si l'utilisateur te demande de \"rassembler\", \"nettoyer\" ou   \"réorganiser\" ses faits, tu DOIS impérativement utiliser les actions 'update' et 'delete' pour refléter ce changement dans la structure. Ne te contente pas de le dire dans le texte 'reply'.
+        4. **ANTI-LOOP** : Ne salue jamais, ne dis pas 'C'est noté', 'Je vois', 'Parfait'. Ne répète pas ta question précédente si l'utilisateur a déjà eu la réponse. Analyse l'historique pour éviter de tourner en rond. Passe DIRECTEMENT à la question suivante ou à la validation des faits.
+        5. **FLEXIBILITÉ** : Si l'utilisateur exprime une frustration ou remarque que tu te répètes, change radicalement d'approche ou propose un résumé global pour valider le profil.
 
         ## FORMAT DE RÉPONSE (JSON STRICT)
         {
-            \"reply\": \"Ton message\",
+            \"reply\": \"Ton message (bref, percutant, pas de blabla inutile)\",
             \"facts\": [
-                { \"id\": 123, \"action\": \"update\", \"content\": \"Développeur Web (PHP, JS)\" },
+                { 
+                  \"id\": 123, 
+                  \"action\": \"update\", 
+                  \"category\": \"CONTEXT|VALUE|CHALLENGE|SKILL\",
+                  \"content\": \"Texte pur sans préfixe de catégorie\" 
+                },
                 { \"id\": 456, \"action\": \"delete\" }
             ]
         }
+        IMPORTANT: Le champ 'category' est obligatoire pour les actions 'add' et fortement recommandé pour 'update'. N'écris JAMAIS la catégorie dans le texte 'content' (ex: pas de \"(VALUE) texte\").
         IMPORTANT: L'ID doit être un nombre pur (ex: 123), sans crochets ni texte.
         ";
 

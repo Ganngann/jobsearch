@@ -7,6 +7,7 @@ use App\Models\ProfileMessage;
 use App\Services\AIProfileService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class ProfileChatController extends Controller
 {
@@ -110,18 +111,8 @@ class ProfileChatController extends Controller
                 if ($action === 'delete' && $cleanId) {
                     Log::info("AI Action: DELETE fact {$cleanId}");
                     UserFact::where('id', $cleanId)->where('user_id', $user->id)->delete();
-                } elseif ($cleanId) {
-                    // Mise à jour ou Fusion
-                    $fact = UserFact::find($cleanId);
-                    if ($fact && $fact->user_id === $user->id) {
-                        Log::info("AI Action: UPDATE fact {$cleanId}");
-                        $fact->update([
-                            'content' => $factData['content'] ?? $fact->content,
-                            'category' => $factData['category'] ?? $fact->category,
-                        ]);
-                    }
-                } else {
-                    // Nouvel ajout
+                } elseif ($action === 'add' || !$cleanId) {
+                    // Nouvel ajout (soit forcé par 'add', soit pas d'ID présent)
                     Log::info("AI Action: ADD new fact");
                     $user->facts()->create([
                         'content' => $factData['content'],
@@ -129,6 +120,25 @@ class ProfileChatController extends Controller
                         'status' => 'draft',
                         'confidence_score' => 1.0
                     ]);
+                } elseif ($cleanId) {
+                    // Mise à jour (si l'ID existe et appartient à l'utilisateur)
+                    $fact = UserFact::find($cleanId);
+                    if ($fact && $fact->user_id === $user->id) {
+                        Log::info("AI Action: UPDATE fact {$cleanId}");
+                        $fact->update([
+                            'content' => $factData['content'] ?? $fact->content,
+                            'category' => $factData['category'] ?? $fact->category,
+                        ]);
+                    } else {
+                        // Si l'ID n'existe pas, on considère que c'est un ajout (l'IA invente parfois des IDs)
+                        Log::info("AI Action: ADD fact (ID {$cleanId} not found, fallback to creation)");
+                        $user->facts()->create([
+                            'content' => $factData['content'],
+                            'category' => $factData['category'] ?? 'CONTEXT',
+                            'status' => 'draft',
+                            'confidence_score' => 1.0
+                        ]);
+                    }
                 }
             }
         }
@@ -136,6 +146,11 @@ class ProfileChatController extends Controller
         return response()->json([
             'reply' => $aiResponse['reply'],
             'facts' => $user->facts()->orderBy('created_at', 'desc')->get(),
+            'sessions' => $user->profileMessages()
+                ->select('session_id', \DB::raw('min(created_at) as created_at'), \DB::raw('min(content) as title'))
+                ->groupBy('session_id')
+                ->orderBy('created_at', 'desc')
+                ->get(),
             'debug' => [
                 'history' => $history,
                 'session_id' => $sessionId

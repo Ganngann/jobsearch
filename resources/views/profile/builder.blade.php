@@ -152,8 +152,8 @@
                                     </div>
 
                                     <div x-data="{ editing: false, content: fact.content }">
-                                        <div x-show="!editing" @click="editing = true" class="cursor-pointer group/text">
-                                            <p class="text-xs text-gray-700 leading-relaxed" x-text="content"></p>
+                                        <div x-show="!editing" @click="editing = true; content = fact.content" class="cursor-pointer group/text">
+                                            <p class="text-xs text-gray-700 leading-relaxed" x-text="fact.content"></p>
                                         </div>
                                         <div x-show="editing" @click.away="editing = false" class="mt-2">
                                             <textarea x-model="content" 
@@ -228,6 +228,7 @@
                             content: data.reply
                         });
                         this.facts = data.facts;
+                        this.sessions = data.sessions;
                         this.scrollToBottom();
                     } catch (error) {
                         console.error('Error:', error);
