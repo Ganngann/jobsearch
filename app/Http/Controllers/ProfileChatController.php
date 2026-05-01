@@ -109,12 +109,19 @@ class ProfileChatController extends Controller
                 $action = $factData['action'] ?? ($cleanId ? 'update' : 'add');
 
                 if ($action === 'delete' && $cleanId) {
-                    Log::info("AI Action: DELETE fact {$cleanId}");
-                    UserFact::where('id', $cleanId)->where('user_id', $user->id)->delete();
+                    $fact = UserFact::find($cleanId);
+                    if ($fact && $fact->user_id === $user->id) {
+                        Log::info("AI Action: PROPOSE DELETE fact {$cleanId}");
+                        $fact->update([
+                            'session_id' => $sessionId,
+                            'proposed_action' => 'delete'
+                        ]);
+                    }
                 } elseif ($action === 'add' || !$cleanId) {
                     // Nouvel ajout (soit forcé par 'add', soit pas d'ID présent)
                     Log::info("AI Action: ADD new fact");
                     $user->facts()->create([
+                        'session_id' => $sessionId,
                         'content' => $factData['content'],
                         'category' => $factData['category'] ?? 'CONTEXT',
                         'status' => 'draft',
@@ -124,15 +131,27 @@ class ProfileChatController extends Controller
                     // Mise à jour (si l'ID existe et appartient à l'utilisateur)
                     $fact = UserFact::find($cleanId);
                     if ($fact && $fact->user_id === $user->id) {
-                        Log::info("AI Action: UPDATE fact {$cleanId}");
+                        $newContent = trim($factData['content'] ?? $fact->content);
+                        $newCategory = $factData['category'] ?? $fact->category;
+
+                        // On ne crée une proposition que si c'est réellement différent
+                        if ($fact->content === $newContent && $fact->category === $newCategory) {
+                            Log::info("AI Action: UPDATE fact {$cleanId} IGNORED (identical)");
+                            continue;
+                        }
+
+                        Log::info("AI Action: PROPOSE UPDATE fact {$cleanId}");
                         $fact->update([
-                            'content' => $factData['content'] ?? $fact->content,
-                            'category' => $factData['category'] ?? $fact->category,
+                            'session_id' => $sessionId,
+                            'proposed_content' => $newContent,
+                            'proposed_category' => $newCategory,
+                            'proposed_action' => 'update'
                         ]);
                     } else {
                         // Si l'ID n'existe pas, on considère que c'est un ajout (l'IA invente parfois des IDs)
                         Log::info("AI Action: ADD fact (ID {$cleanId} not found, fallback to creation)");
                         $user->facts()->create([
+                            'session_id' => $sessionId,
                             'content' => $factData['content'],
                             'category' => $factData['category'] ?? 'CONTEXT',
                             'status' => 'draft',
@@ -165,7 +184,7 @@ class ProfileChatController extends Controller
         
         $fact->update([
             'content' => $request->content,
-            'status' => 'validated' // On valide automatiquement si l'utilisateur modifie manuellement
+            'status' => 'validated'
         ]);
 
         return response()->json(['success' => true]);
@@ -174,7 +193,47 @@ class ProfileChatController extends Controller
     public function validateFact(UserFact $fact)
     {
         if ($fact->user_id !== Auth::id()) abort(403);
-        $fact->update(['status' => 'validated']);
+        $fact->update([
+            'status' => 'validated',
+            'proposed_content' => null, 
+            'proposed_category' => null,
+            'proposed_action' => null
+        ]);
+        return response()->json(['success' => true]);
+    }
+
+    public function acceptProposal(UserFact $fact)
+    {
+        if ($fact->user_id !== Auth::id()) abort(403);
+        
+        if ($fact->proposed_action === 'delete') {
+            $fact->delete();
+            return response()->json(['success' => true, 'deleted' => true]);
+        }
+
+        if (!$fact->proposed_content) return response()->json(['success' => false]);
+
+        $fact->update([
+            'content' => $fact->proposed_content,
+            'category' => $fact->proposed_category ?? $fact->category,
+            'proposed_content' => null,
+            'proposed_category' => null,
+            'proposed_action' => null,
+            'status' => 'validated'
+        ]);
+
+        return response()->json(['success' => true, 'fact' => $fact]);
+    }
+
+    public function rejectProposal(UserFact $fact)
+    {
+        if ($fact->user_id !== Auth::id()) abort(403);
+        $fact->update([
+            'proposed_content' => null,
+            'proposed_category' => null,
+            'proposed_action' => null
+        ]);
+
         return response()->json(['success' => true]);
     }
 

@@ -39,13 +39,13 @@ class AIProfileService
         {$context}
 
         ## RÈGLES DE FER :
-        1. **FUSION ET NETTOYAGE** : 
-           - Si une nouvelle info complète un fait existant, **METS À JOUR** le fait existant (utilise son [ID]).
+        1. **FUSION ET NETTOYAGE (SÉMANTIQUE)** : 
+           - **'update'** : Utilise un [ID] uniquement si la nouvelle information concerne le MÊME SUJET que le fait existant (ex: ajouter une techno à une carte SKILL). 
+           - **JAMAIS d'update pour changer de sujet** : Ne remplace pas une compétence technique par un trait de personnalité ou un goût personnel.
            - Si tu vois des doublons (ex: deux cartes 'Webdev'), utilise l'action 'delete' sur l'ID de la carte en trop.
-           - Sois constructif : au lieu d'avoir 3 faits ('fait du PHP', 'fait du JS', 'Webdev'), crée un seul fait : 'Développeur Web Fullstack (PHP, JavaScript)'.
-        2. **MAINTENANCE DU PROFIL** : 
-           - Utilise toujours l'action 'update' avec un [ID] pour affiner.
-           - 'add' uniquement pour une info radicalement nouvelle (ex: passer de 'Compétences' à 'Valeurs').
+        2. **AJOUT DE CONTENU** : 
+           - **'add'** : Utilise cette action pour toute information qui traite d'un nouveau sujet ou qui n'a pas de lien direct avec les faits existants.
+           - En cas de doute, préfère 'add' plutôt que d'écraser une information existante.
         3. **COMMANDES UTILISATEUR** : Si l'utilisateur te demande de \"rassembler\", \"nettoyer\" ou   \"réorganiser\" ses faits, tu DOIS impérativement utiliser les actions 'update' et 'delete' pour refléter ce changement dans la structure. Ne te contente pas de le dire dans le texte 'reply'.
         4. **ANTI-LOOP** : Ne salue jamais, ne dis pas 'C'est noté', 'Je vois', 'Parfait'. Ne répète pas ta question précédente si l'utilisateur a déjà eu la réponse. Analyse l'historique pour éviter de tourner en rond. Passe DIRECTEMENT à la question suivante ou à la validation des faits.
         5. **FLEXIBILITÉ** : Si l'utilisateur exprime une frustration ou remarque que tu te répètes, change radicalement d'approche ou propose un résumé global pour valider le profil.
@@ -86,7 +86,11 @@ class AIProfileService
         // On inclut TOUS les faits (validés et draft) pour que l'IA puisse les mettre à jour
         $facts = $user->facts()->get()->map(function($f) {
             $statusStr = $f->status === 'validated' ? 'VALIDÉ' : 'EN ATTENTE';
-            return "[ID: {$f->id}] [{$statusStr}] ({$f->category}) {$f->content}";
+            $pendingStr = '';
+            if ($f->proposed_action === 'update') $pendingStr = '[MAJ EN ATTENTE]';
+            if ($f->proposed_action === 'delete') $pendingStr = '[SUPPRESSION EN ATTENTE]';
+            
+            return "[ID: {$f->id}] [{$statusStr}]{$pendingStr} ({$f->category}) {$f->content}";
         })->implode("\n");
 
         return "

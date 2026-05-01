@@ -11,6 +11,14 @@
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
+        @keyframes pulse-indigo {
+            0% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(79, 70, 229, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
+        }
+        .animate-pulse-update {
+            animation: pulse-indigo 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
     </style>
 
     <div class="py-6 bg-gray-50/50" x-data="profileBuilder()" x-cloak>
@@ -109,24 +117,37 @@
                 <!-- 3. RIGHT SIDEBAR: FACTS (PROFILE) -->
                 <aside class="w-64 lg:w-72 flex-shrink-0 hidden md:flex flex-col" style="max-height: 80vh;">
                     <div class="bg-white border border-gray-100 shadow-sm rounded-2xl flex flex-col h-full overflow-hidden">
-                        <div class="p-3 border-b border-gray-50 bg-gray-50/30">
+                        <div class="p-3 border-b border-gray-50 bg-gray-50/30 flex items-center justify-between">
                             <h2 class="text-xs font-bold text-gray-800 flex items-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                 </svg>
                                 Mon Profil
                             </h2>
+                            <div class="flex bg-gray-200/50 p-0.5 rounded-lg">
+                                <button @click="showAllFacts = false" 
+                                        :class="!showAllFacts ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-500'"
+                                        class="px-2 py-0.5 text-[9px] font-bold rounded-md transition-all uppercase tracking-tight">Session</button>
+                                <button @click="showAllFacts = true" 
+                                        :class="showAllFacts ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-500'"
+                                        class="px-2 py-0.5 text-[9px] font-bold rounded-md transition-all uppercase tracking-tight ml-0.5">Tout</button>
+                            </div>
                         </div>
                         <div class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-3 bg-gray-50/10">
-                            <template x-for="fact in facts" :key="fact.id">
+                            <template x-for="fact in filteredFacts" :key="fact.id">
                                 <div class="bg-white p-3 rounded-xl border border-gray-100 shadow-sm transition-all hover:shadow-md group relative"
                                      x-data="{ confirmingDelete: false }"
-                                     :class="fact.status === 'draft' ? 'border-indigo-100 ring-2 ring-indigo-50' : ''">
+                                     :class="{ 
+                                        'border-indigo-100 ring-2 ring-indigo-50': fact.status === 'draft',
+                                        'animate-pulse-update': fact.justUpdated 
+                                     }">
                                     
                                     <div class="flex items-center justify-between mb-2">
-                                        <span class="text-[8px] px-1.5 py-0.5 rounded-full uppercase font-bold tracking-widest"
-                                              :class="fact.status === 'draft' ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-500'"
-                                              x-text="fact.category"></span>
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="text-[8px] px-1.5 py-0.5 rounded-full uppercase font-bold tracking-widest"
+                                                  :class="fact.status === 'draft' ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-500'"
+                                                  x-text="fact.category"></span>
+                                        </div>
                                         
                                         <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <button @click="validateFact(fact)" x-show="fact.status === 'draft' && !confirmingDelete"
@@ -152,9 +173,52 @@
                                     </div>
 
                                     <div x-data="{ editing: false, content: fact.content }">
-                                        <div x-show="!editing" @click="editing = true; content = fact.content" class="cursor-pointer group/text">
+                                        <div x-show="!editing && !fact.proposed_action" @click="editing = true; content = fact.content" class="cursor-pointer group/text">
                                             <p class="text-xs text-gray-700 leading-relaxed" x-text="fact.content"></p>
                                         </div>
+
+                                        <!-- PROPOSAL UPDATE VIEW -->
+                                        <template x-if="fact.proposed_action === 'update'">
+                                            <div class="space-y-3">
+                                                <div class="opacity-40">
+                                                    <p class="text-[8px] font-bold text-gray-400 uppercase mb-1">Actuel :</p>
+                                                    <p class="text-[11px] text-gray-600" x-text="fact.content"></p>
+                                                </div>
+                                                <div class="p-2.5 bg-indigo-50/50 rounded-xl border border-indigo-100 shadow-sm">
+                                                    <div class="flex items-center justify-between mb-1">
+                                                        <p class="text-[9px] font-bold text-indigo-500 uppercase tracking-tight">Suggestion IA :</p>
+                                                        <span class="text-[8px] px-1 bg-indigo-100 text-indigo-600 rounded" x-text="fact.proposed_category"></span>
+                                                    </div>
+                                                    <p class="text-xs text-indigo-900 leading-relaxed font-medium" x-text="fact.proposed_content"></p>
+                                                    <div class="mt-3 flex justify-end gap-2">
+                                                        <button @click="rejectProposal(fact)" 
+                                                                class="text-[10px] px-2 py-1 bg-white border border-gray-200 text-gray-500 rounded-lg hover:bg-gray-50 transition shadow-sm">Garder l'ancien</button>
+                                                        <button @click="acceptProposal(fact)" 
+                                                                class="text-[10px] px-2 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition shadow-md font-bold">Accepter</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </template>
+
+                                        <!-- PROPOSAL DELETE VIEW -->
+                                        <template x-if="fact.proposed_action === 'delete'">
+                                            <div class="p-3 bg-red-50 border border-red-100 rounded-xl">
+                                                <div class="flex items-center gap-2 mb-2 text-red-600">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                    </svg>
+                                                    <p class="text-[10px] font-bold uppercase tracking-tight">L'IA suggère de supprimer ce fait</p>
+                                                </div>
+                                                <p class="text-xs text-red-800 line-clamp-3 mb-3 italic" x-text="fact.content"></p>
+                                                <div class="flex justify-end gap-2">
+                                                    <button @click="rejectProposal(fact)" 
+                                                            class="text-[10px] px-2 py-1 bg-white border border-red-200 text-red-600 rounded-lg hover:bg-red-100 transition shadow-sm font-medium">Conserver</button>
+                                                    <button @click="acceptProposal(fact)" 
+                                                            class="text-[10px] px-2 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 transition shadow-md font-bold">Confirmer suppression</button>
+                                                </div>
+                                            </div>
+                                        </template>
+
                                         <div x-show="editing" @click.away="editing = false" class="mt-2">
                                             <textarea x-model="content" 
                                                       class="w-full text-[11px] border-gray-200 rounded-lg p-2 bg-gray-50"
@@ -186,6 +250,12 @@
                 currentSessionId: @json($sessionId),
                 newMessage: '',
                 isTyping: false,
+                showAllFacts: false,
+
+                get filteredFacts() {
+                    if (this.showAllFacts) return this.facts;
+                    return this.facts.filter(f => f.session_id === this.currentSessionId || f.proposed_content);
+                },
 
                 init() {
                     this.scrollToBottom();
@@ -201,6 +271,9 @@
                 async sendMessage() {
                     const message = this.newMessage.trim();
                     if (!message) return;
+
+                    // On réinitialise les indicateurs de mise à jour du tour précédent
+                    this.facts = this.facts.map(f => ({ ...f, justUpdated: false }));
 
                     this.newMessage = '';
                     this.messages.push({
@@ -227,7 +300,18 @@
                             role: 'assistant',
                             content: data.reply
                         });
-                        this.facts = data.facts;
+
+                        // On marque les nouveaux faits ou les faits modifiés pour l'animation
+                        const oldFactIds = this.facts.map(f => f.id);
+                        const newFacts = data.facts.map(f => {
+                            const isNew = !oldFactIds.includes(f.id);
+                            const oldFact = this.facts.find(of => of.id === f.id);
+                            const isChanged = oldFact && oldFact.content !== f.content;
+                            
+                            return { ...f, justUpdated: isNew || isChanged };
+                        });
+
+                        this.facts = newFacts;
                         this.sessions = data.sessions;
                         this.scrollToBottom();
                     } catch (error) {
@@ -246,6 +330,44 @@
                             }
                         });
                         fact.status = 'validated';
+                        fact.proposed_content = null;
+                    } catch (error) { console.error(error); }
+                },
+
+                async acceptProposal(fact) {
+                    try {
+                        const response = await fetch(`/profile/builder/facts/${fact.id}/accept`, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            }
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            if (data.deleted) {
+                                this.facts = this.facts.filter(f => f.id !== fact.id);
+                            } else {
+                                fact.content = fact.proposed_content;
+                                fact.category = fact.proposed_category || fact.category;
+                                fact.proposed_content = null;
+                                fact.proposed_category = null;
+                                fact.proposed_action = null;
+                                fact.status = 'validated';
+                            }
+                        }
+                    } catch (error) { console.error(error); }
+                },
+
+                async rejectProposal(fact) {
+                    try {
+                        await fetch(`/profile/builder/facts/${fact.id}/reject`, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            }
+                        });
+                        fact.proposed_content = null;
+                        fact.proposed_category = null;
                     } catch (error) { console.error(error); }
                 },
 
