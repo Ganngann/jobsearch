@@ -25,6 +25,65 @@
     <div class="py-10">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             
+            <!-- Barre de Filtres -->
+            <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 p-2 mb-10">
+                <form action="{{ route('dashboard') }}" method="GET" class="flex flex-col md:flex-row items-center gap-2">
+                    <!-- Recherche -->
+                    <div class="relative flex-1 w-full md:w-auto">
+                        <div class="absolute inset-y-0 left-6 flex items-center pointer-events-none">
+                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </div>
+                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Rechercher par titre ou employeur..." class="w-full pl-14 pr-6 py-4 bg-transparent border-none focus:ring-0 text-sm font-bold text-slate-700 placeholder:text-slate-400 placeholder:font-medium">
+                    </div>
+
+                    <div class="hidden md:block w-px h-8 bg-slate-100"></div>
+
+                    <!-- Filtre Contrat -->
+                    <div class="w-full md:w-64">
+                        <select name="contract" class="w-full px-6 py-4 bg-transparent border-none focus:ring-0 text-sm font-bold text-slate-700 appearance-none cursor-pointer">
+                            <option value="">Tous les contrats</option>
+                            @foreach($contractTypes as $type)
+                                <option value="{{ $type }}" {{ request('contract') == $type ? 'selected' : '' }}>{{ $type }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="hidden md:block w-px h-8 bg-slate-100"></div>
+
+                    <!-- Filtre Score -->
+                    <div class="w-full md:w-48 border-r border-slate-100">
+                        <select name="min_score" class="w-full px-6 py-4 bg-transparent border-none focus:ring-0 text-sm font-bold text-slate-700 appearance-none cursor-pointer">
+                            <option value="">Match min.</option>
+                            <option value="1" {{ request('min_score') == '1' ? 'selected' : '' }}>Tout match</option>
+                            <option value="90" {{ request('min_score') == '90' ? 'selected' : '' }}>90% +</option>
+                            <option value="75" {{ request('min_score') == '75' ? 'selected' : '' }}>75% +</option>
+                            <option value="50" {{ request('min_score') == '50' ? 'selected' : '' }}>50% +</option>
+                            <option value="25" {{ request('min_score') == '25' ? 'selected' : '' }}>25% +</option>
+                            <option value="10" {{ request('min_score') == '10' ? 'selected' : '' }}>10% +</option>
+                        </select>
+                    </div>
+
+                    <!-- Tri -->
+                    <div class="w-full md:w-48">
+                        <select name="sort_by" class="w-full px-6 py-4 bg-transparent border-none focus:ring-0 text-sm font-bold text-slate-700 appearance-none cursor-pointer">
+                            <option value="date_desc" {{ request('sort_by') == 'date_desc' ? 'selected' : '' }}>Plus récent</option>
+                            <option value="score_desc" {{ request('sort_by') == 'score_desc' ? 'selected' : '' }}>Meilleur match</option>
+                            <option value="title_asc" {{ request('sort_by') == 'title_asc' ? 'selected' : '' }}>Titre (A-Z)</option>
+                        </select>
+                    </div>
+
+                    <!-- Bouton Appliquer -->
+                    <button type="submit" class="w-full md:w-auto px-10 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[2rem] text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-100 flex items-center justify-center gap-3">
+                        Filtrer
+                    </button>
+
+                    @if(request()->anyFilled(['search', 'contract', 'min_score']))
+                        <a href="{{ route('dashboard') }}" class="w-full md:w-auto px-6 py-4 text-slate-400 hover:text-rose-500 text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center">
+                            Effacer
+                        </a>
+                    @endif
+                </form>
+            </div>
             @if(session('status'))
                 <div class="mb-6 p-4 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-2xl text-sm font-bold shadow-sm flex items-center gap-3">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>

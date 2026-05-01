@@ -50,7 +50,6 @@ class JobOfferService
                     'nombre_postes' => $item['nombrePostes'] ?? 1,
                     'contact_email' => $item['email'] ?? null,
                     'is_postulable' => $item['isPostulable'] ?? false,
-                    'published_at' => now(),
                     'start_date' => isset($item['debut']) ? $this->parseDate($item['debut']) : null,
                     'expires_at' => isset($item['fin']) ? $this->parseDate($item['fin']) : null,
                 ]

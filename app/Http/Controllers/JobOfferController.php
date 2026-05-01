@@ -8,6 +8,7 @@ use App\Services\MatchingService;
 use App\Services\JobOfferService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class JobOfferController extends Controller
 {
@@ -26,20 +27,68 @@ class JobOfferController extends Controller
     }
 
     /**
-     * Affiche le tableau de bord avec TOUTES les offres.
+     * Affiche le tableau de bord avec filtres.
      */
-    public function dashboard()
+    public function dashboard(Request $request)
     {
         $user = Auth::user();
+        $query = JobOffer::with(['employer', 'metier', 'matches' => function($q) use ($user) {
+            $q->where('user_id', $user->id);
+        }]);
 
-        // Récupérer TOUTES les offres, avec le match de l'utilisateur s'il existe
-        $jobOffers = JobOffer::with(['employer', 'metier', 'matches' => function($query) use ($user) {
-            $query->where('user_id', $user->id);
-        }])
-        ->orderByDesc('published_at')
-        ->paginate(12);
+        // Filtrage par recherche (Titre ou Employeur)
+        if ($search = $request->input('search')) {
+            $query->where(function($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhereHas('employer', function($sq) use ($search) {
+                      $sq->where('label', 'like', "%{$search}%");
+                  });
+            });
+        }
 
-        return view('dashboard', compact('jobOffers'));
+        // Filtrage par type de contrat
+        if ($contract = $request->input('contract')) {
+            $query->where('contract_type', $contract);
+        }
+
+        // Filtrage par score minimum
+        if ($minScore = $request->input('min_score')) {
+            $offerIds = DB::table('user_matches')
+                ->where('user_id', $user->id)
+                ->where(function($q) use ($minScore) {
+                    $q->where('final_score', '>=', $minScore)
+                      ->orWhere(function($sq) use ($minScore) {
+                          $sq->whereNull('final_score')
+                             ->where('pre_score', '>=', $minScore);
+                      });
+                })
+                ->pluck('job_offer_id');
+
+            $query->whereIn('job_offers.id', $offerIds);
+        }
+
+        // Gestion du tri
+        $sortBy = $request->input('sort_by', 'date_desc');
+
+        if ($sortBy === 'score_desc') {
+            $query->leftJoin('user_matches', function($join) use ($user) {
+                $join->on('job_offers.id', '=', 'user_matches.job_offer_id')
+                     ->where('user_matches.user_id', '=', $user->id);
+            })
+            ->select('job_offers.*')
+            ->orderByRaw('COALESCE(user_matches.final_score, user_matches.pre_score) DESC');
+        } elseif ($sortBy === 'title_asc') {
+            $query->orderBy('title', 'asc');
+        } else {
+            $query->orderByRaw('job_offers.published_at IS NULL, job_offers.published_at DESC');
+        }
+
+        $jobOffers = $query->paginate(12)
+            ->withQueryString();
+
+        $contractTypes = JobOffer::distinct()->pluck('contract_type')->filter()->sort();
+
+        return view('dashboard', compact('jobOffers', 'contractTypes'));
     }
 
     /**
