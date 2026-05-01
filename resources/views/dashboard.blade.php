@@ -54,7 +54,7 @@
                     <div class="w-full md:w-48 border-r border-slate-100">
                         <select name="min_score" class="w-full px-6 py-4 bg-transparent border-none focus:ring-0 text-sm font-bold text-slate-700 appearance-none cursor-pointer">
                             <option value="">Match min.</option>
-                            <option value="1" {{ request('min_score') == '1' ? 'selected' : '' }}>Tout match</option>
+                            <option value="0" {{ request('min_score') == '0' ? 'selected' : '' }}>Tout match (inc. 0%)</option>
                             <option value="90" {{ request('min_score') == '90' ? 'selected' : '' }}>90% +</option>
                             <option value="75" {{ request('min_score') == '75' ? 'selected' : '' }}>75% +</option>
                             <option value="50" {{ request('min_score') == '50' ? 'selected' : '' }}>50% +</option>

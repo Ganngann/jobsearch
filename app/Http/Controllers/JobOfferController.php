@@ -52,7 +52,8 @@ class JobOfferController extends Controller
         }
 
         // Filtrage par score minimum
-        if ($minScore = $request->input('min_score')) {
+        if ($request->filled('min_score')) {
+            $minScore = $request->input('min_score');
             $offerIds = DB::table('user_matches')
                 ->where('user_id', $user->id)
                 ->where(function($q) use ($minScore) {
