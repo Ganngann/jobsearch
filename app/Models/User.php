@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -77,5 +76,15 @@ class User extends Authenticatable
     public function matches(): HasMany
     {
         return $this->hasMany(UserMatch::class);
+    }
+
+    public function facts(): HasMany
+    {
+        return $this->hasMany(UserFact::class);
+    }
+
+    public function profileMessages(): HasMany
+    {
+        return $this->hasMany(ProfileMessage::class)->orderBy('created_at', 'asc');
     }
 }

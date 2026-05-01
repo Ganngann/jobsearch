@@ -49,28 +49,34 @@ class GeminiService
         return $this->generateJson($prompt);
     }
 
-    /**
-     * Méthode générique pour appeler Gemini et obtenir du JSON.
-     */
-    protected function generateJson(string $prompt): ?array
+    public function chat(array $messages, ?string $systemInstruction = null): ?array
     {
         if (empty($this->apiKey)) {
             Log::warning('Gemini API key is missing.');
             return null;
         }
 
-        $response = Http::withoutVerifying()->withHeaders([
-            'Content-Type' => 'application/json',
-        ])->post("{$this->baseUrl}?key={$this->apiKey}", [
-            'contents' => [
-                ['parts' => [['text' => $prompt]]]
-            ],
+        $payload = [
+            'contents' => $messages,
             'generationConfig' => [
-                'temperature' => 0.2,
+                'temperature' => 0.5,
                 'maxOutputTokens' => 2048,
                 'responseMimeType' => 'application/json',
             ]
-        ]);
+        ];
+
+        if ($systemInstruction) {
+            $payload['system_instruction'] = [
+                'parts' => [['text' => $systemInstruction]]
+            ];
+        }
+
+        // DEBUG: On log la requête pour voir ce qui est envoyé à l'IA
+        Log::debug('GEMINI REQUEST PAYLOAD:', $payload);
+
+        $response = Http::withoutVerifying()->withHeaders([
+            'Content-Type' => 'application/json',
+        ])->post("{$this->baseUrl}?key={$this->apiKey}", $payload);
 
         if ($response->failed()) {
             Log::error('Gemini API request failed', ['error' => $response->body()]);
@@ -81,5 +87,15 @@ class GeminiService
         $text = $result['candidates'][0]['content']['parts'][0]['text'] ?? null;
 
         return $text ? json_decode($text, true) : null;
+    }
+
+    /**
+     * Méthode générique pour appeler Gemini et obtenir du JSON.
+     */
+    protected function generateJson(string $prompt): ?array
+    {
+        return $this->chat([
+            ['role' => 'user', 'parts' => [['text' => $prompt]]]
+        ]);
     }
 }
