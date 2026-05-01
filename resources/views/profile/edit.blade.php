@@ -5,21 +5,21 @@
         </h2>
     </x-slot>
 
-    <div class="py-12" x-data="{ tab: 'wizard' }">
+    <div class="py-12" x-data="{ tab: 'info' }">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             
             {{-- Tabs Navigation --}}
             <div class="flex flex-wrap gap-2 mb-8 bg-gray-200/50 p-1 rounded-2xl w-fit">
-                <button @click="tab = 'wizard'" :class="tab === 'wizard' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-600 hover:text-gray-900'" class="px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                    Assistant IA
-                </button>
                 <button @click="tab = 'info'" :class="tab === 'info' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-600 hover:text-gray-900'" class="px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                     Identité & Récit
                 </button>
-                <button @click="tab = 'skills'" :class="tab === 'skills' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-600 hover:text-gray-900'" class="px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center">
+                <button @click="tab = 'facts'" :class="tab === 'facts' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-600 hover:text-gray-900'" class="px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                    Récits & Expériences
+                </button>
+                <button @click="tab = 'skills'" :class="tab === 'skills' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-600 hover:text-gray-900'" class="px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     Compétences
                 </button>
                 <button @click="tab = 'mobility'" :class="tab === 'mobility' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-600 hover:text-gray-900'" class="px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center">
@@ -33,11 +33,6 @@
             </div>
 
             <div class="space-y-8">
-                {{-- Tab 0: IA Wizard --}}
-                <div x-show="tab === 'wizard'" x-transition class="p-4 sm:p-8 bg-white shadow sm:rounded-xl border-l-4 border-black">
-                    @include('profile.partials.ai-profile-wizard')
-                </div>
-
                 {{-- Tab 1: Human Dimension & Info --}}
                 <div x-show="tab === 'info'" x-transition class="p-4 sm:p-8 bg-white shadow sm:rounded-xl border-l-4 border-indigo-500">
                     <div class="max-w-6xl mx-auto">
@@ -45,7 +40,14 @@
                     </div>
                 </div>
 
-                {{-- Tab 2: Skills --}}
+                {{-- Tab 2: Facts --}}
+                <div x-show="tab === 'facts'" x-transition class="p-4 sm:p-8 bg-white shadow sm:rounded-xl border-l-4 border-amber-500">
+                    <div class="max-w-6xl mx-auto">
+                        @include('profile.partials.manage-facts-list')
+                    </div>
+                </div>
+
+                {{-- Tab 3: Skills --}}
                 <div x-show="tab === 'skills'" x-transition class="p-4 sm:p-8 bg-white shadow sm:rounded-xl border-l-4 border-purple-500">
                     <div class="max-w-full">
                         @include('profile.partials.update-skills-form')

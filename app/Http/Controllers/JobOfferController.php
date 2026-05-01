@@ -13,11 +13,16 @@ class JobOfferController extends Controller
 {
     protected $matchingService;
     protected $jobOfferService;
+    protected $jobMatcher;
 
-    public function __construct(MatchingService $matchingService, JobOfferService $jobOfferService)
-    {
+    public function __construct(
+        MatchingService $matchingService, 
+        JobOfferService $jobOfferService,
+        \App\Services\JobMatcherService $jobMatcher
+    ) {
         $this->matchingService = $matchingService;
         $this->jobOfferService = $jobOfferService;
+        $this->jobMatcher = $jobMatcher;
     }
 
     /**
@@ -114,6 +119,8 @@ class JobOfferController extends Controller
             $match = $this->matchingService->match($user, $jobOffer, false);
         }
 
-        return view('job-offers.show', compact('jobOffer', 'match'));
+        $hardScore = $this->jobMatcher->calculateHardScore($user, $jobOffer);
+
+        return view('job-offers.show', compact('jobOffer', 'match', 'hardScore'));
     }
 }

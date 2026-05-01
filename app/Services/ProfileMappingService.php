@@ -22,10 +22,10 @@ class ProfileMappingService
      */
     public function mapUserFacts(User $user): array
     {
-        // 1. On récupère tous les faits validés
-        $facts = $user->facts()->where('status', 'validated')->get();
+        // 1. On récupère tous les faits
+        $facts = $user->facts()->get();
         if ($facts->isEmpty()) {
-            return ['success' => false, 'message' => 'Aucun fait validé à mapper.'];
+            return ['success' => false, 'message' => 'Aucun récit trouvé à mapper.'];
         }
 
         $totalLinks = 0;
@@ -71,10 +71,17 @@ class ProfileMappingService
         if (empty($keywords)) return 0;
 
         // B. Recherche SQL des compétences candidates (on cherche les termes dans les labels)
-        $query = Skill::query();
-        foreach ($keywords as $kw) {
-            $query->orWhere('label', 'LIKE', '%' . $kw . '%');
-        }
+        $blacklistedIds = $user->blacklistedSkills()->pluck('skills.id');
+        
+        $query = Skill::query()
+            ->whereNotIn('id', $blacklistedIds);
+
+        $query->where(function($q) use ($keywords) {
+            foreach ($keywords as $kw) {
+                $q->orWhere('label', 'LIKE', '%' . $kw . '%');
+            }
+        });
+
         $candidates = $query->limit(50)->get(['id', 'label']); // On limite pour ne pas saturer l'IA
 
         if ($candidates->isEmpty()) return 0;

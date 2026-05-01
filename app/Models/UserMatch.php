@@ -15,6 +15,8 @@ class UserMatch extends Model
         'final_score',
         'strengths',
         'weaknesses',
+        'ai_analysis_narrative',
+        'ai_recommendation',
         'ai_raw_response',
         'analyzed_at',
     ];

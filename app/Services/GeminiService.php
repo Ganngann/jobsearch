@@ -49,6 +49,35 @@ class GeminiService
         return $this->generateJson($prompt);
     }
 
+    /**
+     * Génère une synthèse de profil à partir d'une liste de faits validés.
+     */
+    public function generateProfileFromFacts(array $facts): ?array
+    {
+        $factsText = collect($facts)->pluck('content')->implode("\n- ");
+        
+        $prompt = "
+        Tu es un expert en personal branding. À partir des 'faits' suivants extraits du parcours d'un candidat, rédige les éléments clés de son profil.
+        
+        ## Faits validés
+        - {$factsText}
+
+        ## Instructions
+        1. Génère un 'headline' (titre pro percutant et moderne).
+        2. Rédige un 'profile_text' (récit narratif captivant de la dimension humaine, environ 200 mots). Parle de la personne à la 3ème personne ou à la 1ère personne de manière élégante.
+        3. Synthétise les 'aspirations' (ce que le candidat recherche et ses valeurs).
+        
+        Réponds UNIQUEMENT en JSON avec la structure suivante :
+        {
+            \"headline\": \"string\",
+            \"profile_text\": \"string\",
+            \"aspirations\": \"string\"
+        }
+        ";
+
+        return $this->generateJson($prompt);
+    }
+
     public function chat(array $messages, ?string $systemInstruction = null): ?array
     {
         if (empty($this->apiKey)) {

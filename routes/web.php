@@ -25,6 +25,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile/languages', [ProfileController::class, 'updateLanguages'])->name('profile.languages.update');
     Route::patch('/profile/permits', [ProfileController::class, 'updatePermits'])->name('profile.permits.update');
     Route::patch('/profile/mobility', [ProfileController::class, 'updateMobility'])->name('profile.mobility.update');
+    Route::post('/profile/magic-fill', [ProfileController::class, 'magicFill'])->name('profile.magic-fill');
     Route::post('/profile/analyze', [ProfileController::class, 'analyze'])->name('profile.analyze');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
@@ -39,6 +40,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/profile/builder/facts/{fact}/accept', [\App\Http\Controllers\ProfileChatController::class, 'acceptProposal'])->name('profile.builder.facts.accept');
     Route::post('/profile/builder/facts/{fact}/reject', [\App\Http\Controllers\ProfileChatController::class, 'rejectProposal'])->name('profile.builder.facts.reject');
     Route::delete('/profile/builder/facts/{fact}', [\App\Http\Controllers\ProfileChatController::class, 'deleteFact'])->name('profile.builder.facts.delete');
+    Route::delete('/profile/facts/{fact}/skills/{skill}', [ProfileController::class, 'detachSkillFromFact'])->name('profile.facts.skills.detach');
+    Route::post('/profile/skills/{skill}/add', [ProfileController::class, 'addSkill'])->name('profile.skills.add');
+    Route::post('/profile/skills/{skill}/remove', [ProfileController::class, 'removeSkill'])->name('profile.skills.remove');
+    Route::post('/profile/skills/{skill}/blacklist', [ProfileController::class, 'blacklistSkill'])->name('profile.skills.blacklist');
+    Route::delete('/profile/skills/{skill}/blacklist', [ProfileController::class, 'unblacklistSkill'])->name('profile.skills.unblacklist');
 });
 
 require __DIR__.'/auth.php';

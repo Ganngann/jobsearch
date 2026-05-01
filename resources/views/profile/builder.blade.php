@@ -188,25 +188,16 @@
                                 <div class="bg-white p-3 rounded-xl border border-gray-100 shadow-sm transition-all hover:shadow-md group relative"
                                      x-data="{ confirmingDelete: false }"
                                      :class="{ 
-                                        'border-indigo-100 ring-2 ring-indigo-50': fact.status === 'draft',
                                         'animate-pulse-update': fact.justUpdated 
                                      }">
                                     
                                     <div class="flex items-center justify-between mb-2">
                                         <div class="flex items-center gap-1.5">
-                                            <span class="text-[8px] px-1.5 py-0.5 rounded-full uppercase font-bold tracking-widest"
-                                                  :class="fact.status === 'draft' ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-500'"
+                                            <span class="text-[8px] px-1.5 py-0.5 rounded-full uppercase font-bold tracking-widest bg-gray-100 text-gray-500"
                                                   x-text="fact.category"></span>
                                         </div>
                                         
                                         <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button @click="validateFact(fact)" x-show="fact.status === 'draft' && !confirmingDelete"
-                                                    class="p-0.5 text-green-500 hover:bg-green-50 rounded transition" title="Valider">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                                                </svg>
-                                            </button>
-                                            
                                             <!-- Inline Delete Confirmation -->
                                             <div x-show="confirmingDelete" class="flex items-center gap-1">
                                                 <button @click="deleteFact(fact)" class="text-[9px] text-red-600 font-bold bg-red-50 px-1.5 py-0.5 rounded">Sûr ?</button>
@@ -390,7 +381,6 @@
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                             }
                         });
-                        fact.status = 'validated';
                         fact.proposed_content = null;
                     } catch (error) { console.error(error); }
                 },
@@ -413,7 +403,6 @@
                                 fact.proposed_content = null;
                                 fact.proposed_category = null;
                                 fact.proposed_action = null;
-                                fact.status = 'validated';
                             }
                         }
                     } catch (error) { console.error(error); }
@@ -443,7 +432,6 @@
                             body: JSON.stringify({ content: newContent })
                         });
                         fact.content = newContent;
-                        fact.status = 'validated';
                     } catch (error) { console.error(error); }
                 },
 

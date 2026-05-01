@@ -54,7 +54,7 @@ class ProfileChatController extends Controller
         session(['profile_builder_session' => $sessionId]);
 
         $messages = $user->profileMessages()->where('session_id', $sessionId)->orderBy('created_at', 'asc')->get();
-        $facts = $user->facts()->with('skills')->orderBy('created_at', 'desc')->get();
+        $facts = $user->facts()->with('skills')->withCount('skills')->orderBy('skills_count', 'desc')->get();
 
         return view('profile.builder', compact('messages', 'facts', 'activeSessions', 'archivedSessions', 'sessionId'));
     }
@@ -110,7 +110,7 @@ class ProfileChatController extends Controller
         if (!$aiResponse || !isset($aiResponse['reply'])) {
             return response()->json([
                 'reply' => "Désolé, j'ai eu un petit souci pour traiter votre message. Pouvez-vous reformuler ?",
-                'facts' => $user->facts()->orderBy('created_at', 'desc')->get()
+                'facts' => $user->facts()->withCount('skills')->orderBy('skills_count', 'desc')->get()
             ]);
         }
 
@@ -147,7 +147,7 @@ class ProfileChatController extends Controller
                         'session_id' => $sessionId,
                         'content' => $factData['content'],
                         'category' => $factData['category'] ?? 'CONTEXT',
-                        'status' => 'draft',
+                        'status' => 'validated',
                         'confidence_score' => 1.0
                     ]);
                 } elseif ($cleanId) {
@@ -177,7 +177,7 @@ class ProfileChatController extends Controller
                             'session_id' => $sessionId,
                             'content' => $factData['content'],
                             'category' => $factData['category'] ?? 'CONTEXT',
-                            'status' => 'draft',
+                            'status' => 'validated',
                             'confidence_score' => 1.0
                         ]);
                     }
@@ -187,7 +187,7 @@ class ProfileChatController extends Controller
 
         return response()->json([
             'reply' => $aiResponse['reply'],
-            'facts' => $user->facts()->with('skills')->orderBy('created_at', 'desc')->get(),
+            'facts' => $user->facts()->with('skills')->withCount('skills')->orderBy('skills_count', 'desc')->get(),
             'activeSessions' => $user->profileSessions()->where('is_archived', false)->get(),
             'archivedSessions' => $user->profileSessions()->where('is_archived', true)->get(),
             'debug' => [

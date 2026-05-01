@@ -73,7 +73,159 @@
                             </div>
                         </div>
 
-                        <!-- 1. Section: Poste à pourvoir -->
+                        <!-- Analyse de Compatibilité Déterministe (Hard Match) -->
+                        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+                            <div class="px-8 py-5 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between">
+                                <h3 class="text-lg font-bold text-slate-800">Analyse de Compatibilité (Données)</h3>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Score de données :</span>
+                                    <span class="px-3 py-1 bg-indigo-600 text-white rounded-full text-xs font-black">{{ $hardScore['total_score'] }}%</span>
+                                </div>
+                            </div>
+                            <div class="p-8">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {{-- Compétences --}}
+                                    <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                                        <div class="flex items-center justify-between mb-4">
+                                            <h4 class="text-xs font-black uppercase tracking-widest text-slate-500">Compétences</h4>
+                                            <span class="text-sm font-black {{ $hardScore['details']['skills']['score'] >= 70 ? 'text-green-600' : 'text-amber-600' }}">
+                                                {{ round($hardScore['details']['skills']['score']) }}%
+                                            </span>
+                                        </div>
+                                        <div class="space-y-3" x-data="{ 
+                                            async handleSkill(skillId, action) {
+                                                try {
+                                                    const response = await fetch(`/profile/skills/${skillId}/${action}`, {
+                                                        method: 'POST',
+                                                        headers: {
+                                                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                                            'Accept': 'application/json'
+                                                        }
+                                                    });
+                                                    if (response.ok) {
+                                                        window.location.reload();
+                                                    } else {
+                                                        $dispatch('notify', { message: 'Une erreur est survenue lors de la mise à jour.', type: 'error' });
+                                                    }
+                                                } catch (e) { 
+                                                    console.error(e); 
+                                                    $dispatch('notify', { message: 'Erreur de connexion au serveur.', type: 'error' });
+                                                }
+                                            }
+                                        }">
+                                            @foreach($hardScore['details']['skills']['matched'] as $skill)
+                                                <div class="flex items-center justify-between group/skill">
+                                                    <div class="flex items-center gap-2 text-xs font-bold text-slate-700">
+                                                        <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                                                        {{ $skill['label'] }}
+                                                    </div>
+                                                    <div class="flex items-center gap-1 opacity-0 group-hover/skill:opacity-100 transition-opacity">
+                                                        <button @click="handleSkill({{ $skill['id'] }}, 'remove')" class="p-1.5 text-slate-400 hover:text-amber-500 hover:bg-amber-50 rounded-lg transition-all" title="Retirer de mon profil">
+                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                        </button>
+                                                        <button @click="handleSkill({{ $skill['id'] }}, 'blacklist')" class="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all" title="Blacklister">
+                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                            @foreach($hardScore['details']['skills']['missing'] as $skill)
+                                                <div class="flex items-center justify-between group/skill">
+                                                    <div class="flex items-center gap-2 text-xs font-bold text-slate-400">
+                                                        <svg class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                                        {{ $skill['label'] }}
+                                                    </div>
+                                                    <div class="flex items-center gap-1 opacity-0 group-hover/skill:opacity-100 transition-opacity">
+                                                        <button @click="handleSkill({{ $skill['id'] }}, 'add')" class="p-1.5 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all" title="Ajouter à mon profil">
+                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                        </button>
+                                                        <button @click="handleSkill({{ $skill['id'] }}, 'blacklist')" class="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all" title="Blacklister">
+                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+
+                                    {{-- Langues & Permis --}}
+                                    <div class="space-y-6">
+                                        <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                                            <div class="flex items-center justify-between mb-4">
+                                                <h4 class="text-xs font-black uppercase tracking-widest text-slate-500">Langues</h4>
+                                                <span class="text-sm font-black text-slate-700">{{ round($hardScore['details']['languages']['score']) }}%</span>
+                                            </div>
+                                            <div class="flex flex-wrap gap-2">
+                                                @foreach($hardScore['details']['languages']['matched'] as $lang)
+                                                    <span class="px-3 py-1 bg-green-50 text-green-700 rounded-lg text-[10px] font-black border border-green-100 uppercase">{{ $lang['label'] }}</span>
+                                                @endforeach
+                                                @foreach($hardScore['details']['languages']['missing'] as $lang)
+                                                    <span class="px-3 py-1 bg-slate-100 text-slate-400 rounded-lg text-[10px] font-black border border-slate-200 uppercase">{{ $lang['label'] }}</span>
+                                                @endforeach
+                                            </div>
+                                        </div>
+
+                                        <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                                            <div class="flex items-center justify-between mb-4">
+                                                <h4 class="text-xs font-black uppercase tracking-widest text-slate-500">Mobilité</h4>
+                                                <span class="text-xs font-black text-indigo-600">{{ $hardScore['details']['location']['message'] }}</span>
+                                            </div>
+                                            <div class="h-2 bg-slate-200 rounded-full overflow-hidden">
+                                                <div class="h-full bg-indigo-500" style="width: {{ $hardScore['details']['location']['score'] }}%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 1. Section: La Dimension Humaine (Analyse IA) -->
+                        @if($match->analyzed_at)
+                        <div class="bg-slate-900 rounded-3xl shadow-2xl border border-slate-800 overflow-hidden mb-6 text-white">
+                            <div class="px-8 py-5 bg-gradient-to-r from-slate-800 to-indigo-900 border-b border-slate-700 flex items-center justify-between">
+                                <h3 class="text-lg font-bold text-indigo-100 flex items-center gap-3">
+                                    <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                                    La Dimension Humaine
+                                </h3>
+                                <div class="flex items-center gap-3">
+                                    <form action="{{ route('jobs.match', $jobOffer) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="group flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all duration-300">
+                                            <svg class="w-3.5 h-3.5 text-indigo-400 group-hover:rotate-180 transition-transform duration-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                            </svg>
+                                            <span class="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Relancer l'analyse</span>
+                                        </button>
+                                    </form>
+                                    <span class="px-3 py-1 bg-indigo-500/20 text-indigo-300 rounded-full text-[10px] font-black uppercase tracking-widest border border-indigo-500/30">Analyse IA Narrative</span>
+                                </div>
+                            </div>
+                            <div class="p-8">
+                                <div class="prose prose-invert max-w-none">
+                                    <div class="bg-white/5 p-6 rounded-2xl border border-white/10 mb-6">
+                                        <h4 class="text-xs font-black uppercase tracking-[0.2em] text-indigo-400 mb-3">Analyse de vos récits</h4>
+                                        <p class="text-sm text-slate-300 leading-relaxed italic">
+                                            {{ $match->ai_analysis_narrative }}
+                                        </p>
+                                    </div>
+                                    
+                                    <div class="flex items-start gap-4 p-6 bg-indigo-600/10 rounded-2xl border border-indigo-500/20">
+                                        <div class="w-10 h-10 shrink-0 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-900/50">
+                                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                                        </div>
+                                        <div>
+                                            <h4 class="text-xs font-black uppercase tracking-[0.2em] text-indigo-300 mb-1">Conseil d'expert</h4>
+                                            <p class="text-sm font-medium text-indigo-100">
+                                                {{ $match->ai_recommendation }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+
+                        <!-- 2. Section: Poste à pourvoir -->
                         <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden" x-data="{ open: true }">
                             <button @click="open = !open" class="w-full px-8 py-5 flex items-center justify-between bg-slate-50/50 border-b border-slate-100 group transition-all">
                                 <h3 class="text-lg font-bold text-slate-800">Poste à pourvoir</h3>

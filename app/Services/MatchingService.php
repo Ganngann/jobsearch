@@ -89,6 +89,8 @@ class MatchingService
                 'final_score' => $result['score'] ?? $match->pre_score,
                 'strengths' => $result['points_forts'] ?? [],
                 'weaknesses' => $result['points_faibles'] ?? [],
+                'ai_analysis_narrative' => $result['analyse_narrative'] ?? null,
+                'ai_recommendation' => $result['recommandation'] ?? null,
                 'ai_raw_response' => $result,
                 'analyzed_at' => now(),
             ]);
@@ -106,30 +108,55 @@ class MatchingService
         $userSkills = $user->skills()->pluck('label')->implode(', ');
         $userLangs = $user->languages()->withPivot('level')->get()->map(fn($l) => "{$l->label} ({$l->pivot->level})")->implode(', ');
         
+        // Récupération de tous les récits
+        $userFacts = $user->facts()
+            ->pluck('content')
+            ->map(fn($f) => "- " . $f)
+            ->implode("\n");
+
         $jobSkills = $jobOffer->skills()->wherePivot('is_required', true)->pluck('label')->implode(', ');
         $jobOptionalSkills = $jobOffer->skills()->wherePivot('is_required', false)->pluck('label')->implode(', ');
         $jobLangs = $jobOffer->languages()->withPivot('level')->get()->map(fn($l) => "{$l->label} ({$l->pivot->level})")->implode(', ');
 
         return "
-        Tu es un expert en recrutement francophone belge.
-        Analyse la correspondance entre ce candidat et cette offre.
+        Tu es un expert en recrutement francophone belge, spécialisé dans l'approche narrative et humaine (Dimension Humaine).
+        Ta mission est d'analyser la correspondance entre un candidat et une offre d'emploi en allant au-delà des simples mots-clés techniques.
 
-        ## Profil du candidat
-        - Compétences : {$userSkills}
+        ## 1. PROFIL DU CANDIDAT
+        - Titre/Headline : {$user->headline}
+        - Bio/Résumé : {$user->profile_text}
+        - Aspirations : {$user->aspirations}
+        - Compétences déclarées : {$userSkills}
         - Langues : {$userLangs}
-        - Profil : {$user->profile_text}
 
-        ## Offre d'emploi
+        ## 2. RÉCITS & EXPÉRIENCES CONCRÈTES (La preuve par le fait)
+        Voici les éléments narratifs validés par le candidat qui prouvent ses compétences et sa résilience :
+        {$userFacts}
+
+        ## 3. L'OFFRE D'EMPLOI
         - Titre : {$jobOffer->title}
         - Métier : {$jobOffer->metier?->label}
         - Compétences requises : {$jobSkills}
         - Compétences souhaitées : {$jobOptionalSkills}
         - Langues requises : {$jobLangs}
 
-        ## Description
+        ## 4. DESCRIPTION COMPLÈTE DE L'OFFRE
         " . strip_tags($jobOffer->description) . "
 
-        Réponds UNIQUEMENT en JSON avec : score (0-100), points_forts (array), points_faibles (array), recommandation (string).
+        ## TA MISSION
+        1. Analyse comment les récits concrets du candidat répondent aux besoins du poste.
+        2. Identifie les \"soft skills\" invisibles mais présents dans les récits (résilience, adaptabilité, etc.).
+        3. Évalue si les aspirations du candidat sont en phase avec le poste.
+        4. Calcule un score global (0-100) basé sur cette adéquation humaine et technique.
+
+        Réponds UNIQUEMENT en JSON avec cette structure : 
+        {
+            \"score\": (int), 
+            \"points_forts\": [string], 
+            \"points_faibles\": [string], 
+            \"analyse_narrative\": \"(ton analyse sur comment les faits du candidat matchent le poste)\",
+            \"recommandation\": \"(conseil pour le candidat)\"
+        }
         ";
     }
 }

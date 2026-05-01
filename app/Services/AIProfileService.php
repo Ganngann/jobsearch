@@ -84,14 +84,13 @@ class AIProfileService
     {
         $skills = $user->skills->pluck('name')->implode(', ');
         
-        // On inclut TOUS les faits (validés et draft) pour que l'IA puisse les mettre à jour
+        // On inclut TOUS les faits
         $facts = $user->facts()->get()->map(function($f) {
-            $statusStr = $f->status === 'validated' ? 'VALIDÉ' : 'EN ATTENTE';
             $pendingStr = '';
             if ($f->proposed_action === 'update') $pendingStr = '[MAJ EN ATTENTE]';
             if ($f->proposed_action === 'delete') $pendingStr = '[SUPPRESSION EN ATTENTE]';
             
-            return "[ID: {$f->id}] [{$statusStr}]{$pendingStr} ({$f->category}) {$f->content}";
+            return "[ID: {$f->id}]{$pendingStr} ({$f->category}) {$f->content}";
         })->implode("\n");
 
         return "

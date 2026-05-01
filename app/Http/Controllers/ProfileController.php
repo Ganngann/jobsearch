@@ -33,6 +33,27 @@ class ProfileController extends Controller
 
         return response()->json($suggestion);
     }
+
+    /**
+     * Auto-complète le profil à partir des faits validés.
+     */
+    public function magicFill(Request $request)
+    {
+        $user = $request->user();
+        $facts = $user->facts()->get();
+
+        if ($facts->isEmpty()) {
+            return response()->json(['error' => 'Aucun récit trouvé. Discutez avec l\'Assistant pour en ajouter.'], 400);
+        }
+
+        $suggestion = $this->gemini->generateProfileFromFacts($facts->toArray());
+
+        if (!$suggestion) {
+            return response()->json(['error' => 'Échec de la génération IA'], 500);
+        }
+
+        return response()->json($suggestion);
+    }
     /**
      * Display the user's profile.
      */
@@ -183,5 +204,76 @@ class ProfileController extends Controller
         $request->session()->regenerateToken();
 
         return Redirect::to('/');
+    }
+
+    /**
+     * Détache une compétence d'un fait spécifique.
+     */
+    public function detachSkillFromFact(Request $request, \App\Models\UserFact $fact, \App\Models\Skill $skill)
+    {
+        if ($fact->user_id !== Auth::id()) abort(403);
+        
+        $fact->skills()->detach($skill->id);
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Blackliste une compétence pour l'utilisateur.
+     */
+    public function blacklistSkill(Request $request, \App\Models\Skill $skill)
+    {
+        $user = Auth::user();
+        
+        // Ajouter à la blacklist
+        $user->blacklistedSkills()->syncWithoutDetaching([$skill->id]);
+        
+        // Supprimer de tous les faits
+        foreach ($user->facts as $fact) {
+            $fact->skills()->detach($skill->id);
+        }
+        
+        // Supprimer du profil global
+        $user->skills()->detach($skill->id);
+
+        session()->flash('status', "Compétence '{$skill->label}' ajoutée à la liste noire");
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Retire une compétence de la blacklist.
+     */
+    public function unblacklistSkill(Request $request, \App\Models\Skill $skill)
+    {
+        $request->user()->blacklistedSkills()->detach($skill->id);
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Ajoute une compétence au profil de l'utilisateur.
+     */
+    public function addSkill(Request $request, \App\Models\Skill $skill)
+    {
+        Auth::user()->skills()->syncWithoutDetaching([
+            $skill->id => ['level' => 'intermediate']
+        ]);
+
+        session()->flash('status', "Compétence '{$skill->label}' ajoutée à votre profil");
+
+        return response()->json(['success' => true, 'message' => 'Compétence ajoutée']);
+    }
+
+    /**
+     * Retire une compétence du profil de l'utilisateur.
+     */
+    public function removeSkill(Request $request, \App\Models\Skill $skill)
+    {
+        Auth::user()->skills()->detach($skill->id);
+
+        session()->flash('status', "Compétence '{$skill->label}' retirée de votre profil");
+
+        return response()->json(['success' => true, 'message' => 'Compétence retirée']);
     }
 }
