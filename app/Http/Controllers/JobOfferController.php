@@ -80,8 +80,10 @@ class JobOfferController extends Controller
 
         $jobOffers = $query->with(['employer', 'metier', 'userMatch'])->paginate(20);
 
+        $favoriteRomeCodes = $user->preferredReferentielMetiers()->pluck('code')->toArray();
+
         if ($request->ajax() || $request->has('partial')) {
-            return view('job-offers.partials.list-items', compact('jobOffers'))->render();
+            return view('job-offers.partials.list-items', compact('jobOffers', 'favoriteRomeCodes'))->render();
         }
 
         // Données pour les filtres de la sidebar
@@ -116,7 +118,9 @@ class JobOfferController extends Controller
             ->limit(20)
             ->get();
 
-        return view('dashboard', compact('jobOffers', 'user', 'topMetiers', 'topEmployers'));
+        $favoriteRomeCodes = $user->preferredReferentielMetiers()->pluck('code')->toArray();
+
+        return view('dashboard', compact('jobOffers', 'user', 'topMetiers', 'topEmployers', 'favoriteRomeCodes'));
     }
 
     /**
@@ -132,7 +136,13 @@ class JobOfferController extends Controller
             $match = app(\App\Services\MatchingService::class)->match($user, $jobOffer, false, false);
         }
 
-        return view('job-offers.partials.preview', compact('jobOffer', 'match', 'user'));
+        $isParentFavorite = false;
+        if ($jobOffer->metier && $jobOffer->metier->code) {
+            $parentCode = substr($jobOffer->metier->code, 0, 5);
+            $isParentFavorite = $user->preferredReferentielMetiers()->where('code', $parentCode)->exists();
+        }
+
+        return view('job-offers.partials.preview', compact('jobOffer', 'match', 'user', 'isParentFavorite'));
     }
 
     /**
@@ -185,7 +195,13 @@ class JobOfferController extends Controller
 
         $hardScore = $this->jobMatcherService->calculateHardScore($user, $jobOffer);
 
-        return view('job-offers.show', compact('jobOffer', 'match', 'user', 'hardScore'));
+        $isParentFavorite = false;
+        if ($jobOffer->metier && $jobOffer->metier->code) {
+            $parentCode = substr($jobOffer->metier->code, 0, 5);
+            $isParentFavorite = $user->preferredReferentielMetiers()->where('code', $parentCode)->exists();
+        }
+
+        return view('job-offers.show', compact('jobOffer', 'match', 'user', 'hardScore', 'isParentFavorite'));
     }
 
     /**

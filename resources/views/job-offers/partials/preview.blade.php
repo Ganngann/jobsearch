@@ -32,6 +32,12 @@
                         <span class="px-3 py-1 text-indigo-700 text-[10px] font-black uppercase tracking-widest">
                             {{ $jobOffer->metier->label ?? 'Métier non spécifié' }}
                         </span>
+                        @if($isParentFavorite)
+                            <div class="flex items-center gap-1 bg-rose-500 text-white px-2 py-0.5 rounded-full mr-1 shadow-sm" title="Famille ROME en favoris">
+                                <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                                <span class="text-[8px] font-black uppercase">Famille</span>
+                            </div>
+                        @endif
                         <div class="flex items-center gap-1 border-l border-indigo-200 ml-1 pl-1">
                             <button @click="toggleFavorite()" :class="isPreferred ? 'text-rose-500 bg-rose-50' : 'text-slate-400 hover:text-rose-500'" class="p-1 rounded-full transition-all" title="Ajouter aux favoris">
                                 <svg class="w-3.5 h-3.5" :fill="isPreferred ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
