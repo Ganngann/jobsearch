@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="py-12 bg-slate-50 min-h-screen" x-data="discoveryApp({{ $initialSuggestions->toJson() }})">
+    <div class="py-12 bg-slate-50 min-h-screen" x-data="discoveryApp({{ $initialSuggestions->toJson() }}, {{ Auth::user()->preferredMetiers()->pluck('metiers.id')->toJson() }})">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             
             <!-- Header -->
@@ -63,7 +63,36 @@
 
                         <p class="text-slate-600 leading-relaxed mb-8 flex-grow italic" x-text="'« ' + s.reason + ' »'"></p>
 
-                        <div class="flex flex-col gap-3">
+                        <!-- Variants List (Always Visible if not empty) -->
+                        <div class="mb-8 bg-slate-50/50 rounded-2xl p-4 border border-slate-100" x-show="s.variants && s.variants.length > 0">
+                            <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Métiers liés</h4>
+                            <div class="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                                <template x-for="v in s.variants" :key="v.id">
+                                    <div class="flex items-center justify-between gap-3 p-2 hover:bg-white rounded-xl transition-colors group/item">
+                                        <span class="text-xs font-medium text-slate-600 line-clamp-2" x-text="v.label"></span>
+                                        <div class="flex items-center gap-2 shrink-0">
+                                            <button 
+                                                @click="toggleMetierFavorite(v)"
+                                                class="text-slate-300 hover:text-red-500 transition-colors"
+                                                :class="v.is_favorite ? 'text-red-500' : ''"
+                                            >
+                                                <svg class="w-4 h-4" :fill="v.is_favorite ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                                            </button>
+                                            
+                                            <button 
+                                                @click="toggleMetierBlacklist(v)"
+                                                class="text-slate-200 hover:text-slate-600 transition-colors"
+                                                :class="v.is_blacklisted ? 'text-slate-800' : ''"
+                                            >
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col gap-3" x-show="!s.is_blacklisted">
                             <button 
                                 @click="toggleFavorite(s)"
                                 :class="s.is_favorite ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-slate-50 text-slate-600 border-slate-200'"
@@ -79,6 +108,25 @@
                             >
                                 🔍 Voir les offres
                             </a>
+
+                            <button 
+                                @click="toggleBlacklist(s)"
+                                class="w-full py-2 text-[10px] font-bold text-slate-400 hover:text-red-500 transition-colors uppercase tracking-widest"
+                            >
+                                Ignorer ce domaine
+                            </button>
+                        </div>
+
+                        <!-- Blacklisted Overlay -->
+                        <div x-show="s.is_blacklisted" class="absolute inset-0 bg-slate-50/90 flex flex-col items-center justify-center p-8 text-center backdrop-blur-sm">
+                            <svg class="w-12 h-12 text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                            <p class="font-bold text-slate-500 mb-4 text-sm uppercase tracking-wider">Ce domaine est ignoré</p>
+                            <button 
+                                @click="toggleBlacklist(s)"
+                                class="px-6 py-2 bg-white border border-slate-200 rounded-full text-xs font-black text-indigo-600 shadow-sm hover:shadow-md transition-all"
+                            >
+                                RÉACTIVER
+                            </button>
                         </div>
                     </div>
                 </template>
@@ -93,11 +141,12 @@
     </div>
 
     <script>
-        function discoveryApp(initialSuggestions = []) {
+        function discoveryApp(initialSuggestions = [], favoriteMetierIds = []) {
             return {
                 loading: false,
                 errorMessage: '',
                 suggestions: initialSuggestions,
+                favoriteMetierIds: favoriteMetierIds,
                 loadingMessage: '',
                 messages: [
                     "Analyse de votre profil narratif...",
@@ -139,6 +188,62 @@
                     }
                 },
 
+                async toggleMetierFavorite(v) {
+                    const url = v.is_favorite 
+                        ? `/profile/metiers/${v.id}/remove` 
+                        : `/profile/metiers/${v.id}/add`;
+                    
+                    try {
+                        const res = await fetch(url, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        const data = await res.json();
+                        if (data.status === 'success') {
+                            v.is_favorite = !v.is_favorite;
+                            if (v.is_favorite) {
+                                this.favoriteMetierIds.push(v.id);
+                            } else {
+                                this.favoriteMetierIds = this.favoriteMetierIds.filter(id => id !== v.id);
+                            }
+                        }
+                    } catch (e) {
+                        console.error(e);
+                    }
+                },
+
+                async toggleMetierBlacklist(v) {
+                    const url = v.is_blacklisted 
+                        ? `/profile/metiers/${v.id}/blacklist` 
+                        : `/profile/metiers/${v.id}/blacklist`;
+                    
+                    // Note: The backend route for DELETE might be needed if it was defined as delete
+                    // But ProfileController usually handles toggle with POST in some cases.
+                    // Let's check routes again. 61: Route::delete(...)
+                    
+                    const method = v.is_blacklisted ? 'DELETE' : 'POST';
+                    const targetUrl = `/profile/metiers/${v.id}/blacklist`;
+
+                    try {
+                        const res = await fetch(targetUrl, {
+                            method: method,
+                            headers: {
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        const data = await res.json();
+                        if (data.status === 'success') {
+                            v.is_blacklisted = !v.is_blacklisted;
+                        }
+                    } catch (e) {
+                        console.error(e);
+                    }
+                },
+
                 async toggleFavorite(s) {
                     try {
                         const res = await fetch(`/discovery/favorite/${s.code}`, {
@@ -150,7 +255,34 @@
                         });
                         const data = await res.json();
                         if (data.status === 'success') {
-                            s.is_favorite = data.is_favorite;
+                            s.is_favorite = !s.is_favorite;
+                            
+                            // Propager aux variantes si elles sont chargées
+                            if (s.variants.length > 0) {
+                                s.variants.forEach(v => {
+                                    v.is_favorite = s.is_favorite || this.favoriteMetierIds.includes(v.id);
+                                });
+                            }
+                        }
+                    } catch (e) {
+                        console.error(e);
+                    }
+                },
+
+                async toggleBlacklist(s) {
+                    try {
+                        const res = await fetch(`/discovery/blacklist/${s.code}`, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        const data = await res.json();
+                        if (data.status === 'success') {
+                            s.is_blacklisted = data.is_blacklisted;
+                            // Si on blacklist, on retire le favori visuellement
+                            if (s.is_blacklisted) s.is_favorite = false;
                         }
                     } catch (e) {
                         console.error(e);

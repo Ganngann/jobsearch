@@ -20,12 +20,17 @@ class DiscoveryService
         $profile = $this->formatUserProfile($user);
         $referentiel = ReferentielMetier::where('is_active', true)->get(['code', 'title', 'family_name']);
         
+        $favoriteCodes = $user->preferredReferentielMetiers()->pluck('code')->toArray();
+        $blacklistedCodes = $user->blacklistedReferentielMetiers()->pluck('code')->toArray();
+        $excludedCodes = array_unique(array_merge($favoriteCodes, $blacklistedCodes));
+        $excludedCodesString = !empty($excludedCodes) ? implode(', ', $excludedCodes) : 'Aucun';
+
         $referentielList = $referentiel->map(function($item) {
             return "[{$item->code}] {$item->title} ({$item->family_name})";
         })->implode("\n");
 
         $prompt = "Tu es un expert en orientation professionnelle spécialisé dans le 'Matching Humain'.
-Ton but est de proposer à l'utilisateur des métiers issus du référentiel ROME qui correspondent à sa personnalité, ses aspirations et ses compétences, même si ce ne sont pas ses métiers habituels.
+Ton but est de proposer à l'utilisateur des métiers issus du référentiel ROME qui correspondent à sa personnalité, ses aspirations et ses compétences.
 
 PROFIL UTILISATEUR :
 {$profile}
@@ -33,10 +38,12 @@ PROFIL UTILISATEUR :
 RÉFÉRENTIEL ROME DISPONIBLE :
 {$referentielList}
 
-CONSIGNES :
-1. Analyse le profil en profondeur (ne t'arrête pas aux titres de postes passés, regarde les traits de caractère et les aspirations).
-2. Choisis exactement 3 codes ROME dans la liste fournie.
-3. Sois audacieux : propose au moins un métier 'surprise' qui exploite un talent caché ou une aspiration latente de l'utilisateur.
+CONSIGNES CRITIQUES :
+1. Tu dois proposer exactement 12 métiers.
+2. NE SUGGÈRE PAS les codes suivants (déjà favoris ou blacklistés) : {$excludedCodesString}.
+3. Propose un mix équilibré :
+   - 6 métiers 'aligned' : proches de son profil actuel.
+   - 6 métiers 'surprise' : inattendus mais cohérents avec ses soft skills et aspirations profondes.
 4. Pour chaque métier, fournis une justification courte (2 phrases max) très personnalisée.
 
 RÉPONSES AU FORMAT JSON UNIQUEMENT :
@@ -45,10 +52,9 @@ RÉPONSES AU FORMAT JSON UNIQUEMENT :
         {
             \"code\": \"M1805\",
             \"title\": \"Développement informatique\",
-            \"reason\": \"Ta passion pour la résolution de problèmes complexes et ton autonomie...\",
+            \"reason\": \"...\",
             \"type\": \"aligned|surprise\"
-        },
-        ...
+        }
     ]
 }";
 
@@ -82,11 +88,12 @@ RÉPONSES AU FORMAT JSON UNIQUEMENT :
 
     protected function formatUserProfile(User $user)
     {
-        $skills = $user->skills->pluck('name')->implode(', ');
+        $skills = $user->skills->pluck('label')->implode(', ');
         $aspirations = $user->aspirations;
         $profileText = $user->profile_text;
         $headline = $user->headline;
+        $facts = $user->facts->pluck('content')->implode("\n- ");
 
-        return "Titre : {$headline}\nDescription : {$profileText}\nAspirations : {$aspirations}\nCompétences : {$skills}";
+        return "Titre : {$headline}\nBio : {$profileText}\nAspirations : {$aspirations}\nCompétences : {$skills}\nRécits/Expériences :\n- {$facts}";
     }
 }

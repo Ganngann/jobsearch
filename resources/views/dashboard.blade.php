@@ -50,15 +50,27 @@
                         >
                     </div>
 
-                    <div class="space-y-1 max-h-[400px] overflow-y-auto custom-scrollbar pr-1">
+                    <div class="space-y-1 mb-8">
                         <button 
                             @click="setMetier(null)"
-                            x-show="metierSearch === ''"
-                            :class="!filters.metier_id ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'text-slate-600 hover:bg-slate-50'"
-                            class="w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between"
+                            :class="(!filters.metier_id && !filters.rome) ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100'"
+                            class="w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition-all"
                         >
-                            <span>Tous les métiers</span>
+                            Tous les métiers
                         </button>
+
+                        <!-- Active ROME Filter Badge -->
+                        <template x-if="filters.rome">
+                            <div class="px-4 py-3 bg-violet-100 text-violet-700 rounded-xl text-xs font-black flex items-center justify-between group">
+                                <span>DÉCOUVERTE : <span x-text="filters.rome"></span></span>
+                                <button @click="setMetier(null)" class="opacity-50 hover:opacity-100">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+
+                    <div class="space-y-1 max-h-[400px] overflow-y-auto custom-scrollbar pr-1">
                         @php $preferredIds = $user->preferredMetiers->pluck('id')->toArray(); @endphp
                         @foreach($topMetiers as $metier)
                             @php 
@@ -232,7 +244,8 @@
                     sort: '{{ request('sort', 'score_desc') }}',
                     min_score: '{{ request('min_score', 0) }}',
                     metier_id: '{{ request('metier_id') }}',
-                    employer_id: '{{ request('employer_id') }}'
+                    employer_id: '{{ request('employer_id') }}',
+                    rome: '{{ request('rome') }}'
                 },
                 scores: {},
                 page: 1,
@@ -316,12 +329,14 @@
                 setMetier(id) {
                     this.filters.metier_id = id;
                     this.filters.employer_id = null;
+                    this.filters.rome = null;
                     this.refreshList();
                 },
 
                 setEmployer(id) {
                     this.filters.employer_id = id;
                     this.filters.metier_id = null;
+                    this.filters.rome = null;
                     this.refreshList();
                 },
 

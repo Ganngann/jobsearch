@@ -49,13 +49,25 @@ class MatchingService
         // 1. Circuit-Court : Métier (ROME)
         $blacklistedMetierIds = $user->blacklistedMetiers()->pluck('metiers.id')->toArray();
         if ($jobOffer->metier_id && in_array($jobOffer->metier_id, $blacklistedMetierIds)) {
-            return 0; // Blacklisté explicitement
+            return 0; // Blacklisté explicitement au niveau Forem
+        }
+
+        $vetoPenalty = 0;
+
+        // Handicap : Famille ROME Ignorée
+        $blacklistedRomeCodes = $user->blacklistedReferentielMetiers()->pluck('code')->toArray();
+        if ($jobOffer->metier && $jobOffer->metier->code) {
+            foreach ($blacklistedRomeCodes as $romeCode) {
+                if (str_starts_with($jobOffer->metier->code, $romeCode)) {
+                    $vetoPenalty += 40; // Gros handicap mais pas éliminatoire
+                    break;
+                }
+            }
         }
 
         // On ne court-circuite plus les métiers non-favoris à 0.
         // On calcule le score normalement pour tout le monde.
 
-        $vetoPenalty = 0;
 
         // 2. Permis Obligatoires
         $userPermitIds = $user->permits()->pluck('permits.id')->toArray();
@@ -79,7 +91,21 @@ class MatchingService
 
         // 1. Métier Favori (20%)
         $userMetierIds = $user->preferredMetiers()->pluck('metiers.id')->toArray();
+        $userRomeCodes = $user->preferredReferentielMetiers()->pluck('code')->toArray();
+        
+        $isFavorite = false;
         if ($jobOffer->metier_id && in_array($jobOffer->metier_id, $userMetierIds)) {
+            $isFavorite = true;
+        } elseif ($jobOffer->metier && $jobOffer->metier->code) {
+            foreach ($userRomeCodes as $romeCode) {
+                if (str_starts_with($jobOffer->metier->code, $romeCode)) {
+                    $isFavorite = true;
+                    break;
+                }
+            }
+        }
+
+        if ($isFavorite) {
             $score += 20;
         }
 
@@ -230,6 +256,22 @@ class MatchingService
             ->chunk(100, function($offers) use ($user) {
                 foreach ($offers as $offer) {
                     // JAMAIS d'IA automatique lors d'un matching de masse
+                    $this->match($user, $offer, false, false);
+                }
+            });
+    }
+
+    /**
+     * Recalcule les scores pour toutes les offres d'un code ROME spécifique.
+     */
+    public function triggerRomeMatch(User $user, string $romeCode): void
+    {
+        JobOffer::whereHas('metier', function($q) use ($romeCode) {
+                $q->where('code', 'LIKE', $romeCode . '%');
+            })
+            ->where('status', 'active')
+            ->chunk(100, function($offers) use ($user) {
+                foreach ($offers as $offer) {
                     $this->match($user, $offer, false, false);
                 }
             });

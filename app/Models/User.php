@@ -118,6 +118,11 @@ class User extends Authenticatable
         return $this->hasMany(DiscoverySuggestion::class);
     }
 
+    public function blacklistedReferentielMetiers(): BelongsToMany
+    {
+        return $this->belongsToMany(ReferentielMetier::class, 'user_blacklisted_referentiel')->withTimestamps();
+    }
+
     /**
      * Vérifie si le profil est prêt pour le matching.
      */
