@@ -45,10 +45,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/profile/skills/{skill}/add', [ProfileController::class, 'addSkill'])->name('profile.skills.add');
     Route::post('/profile/skills/{skill}/remove', [ProfileController::class, 'removeSkill'])->name('profile.skills.remove');
     Route::post('/profile/metiers/{metier}/add', [ProfileController::class, 'addMetier'])->name('profile.metiers.add');
+    Route::post('/profile/metiers/{metier}/remove', [ProfileController::class, 'removeMetier'])->name('profile.metiers.remove');
     Route::post('/profile/skills/{skill}/blacklist', [ProfileController::class, 'blacklistSkill'])->name('profile.skills.blacklist');
     Route::delete('/profile/skills/{skill}/blacklist', [ProfileController::class, 'unblacklistSkill'])->name('profile.skills.unblacklist');
     Route::post('/profile/metiers/{metier}/blacklist', [ProfileController::class, 'blacklistMetier'])->name('profile.metiers.blacklist');
     Route::delete('/profile/metiers/{metier}/blacklist', [ProfileController::class, 'unblacklistMetier'])->name('profile.metiers.unblacklist');
+    Route::get('/api/metiers/search', [ProfileController::class, 'searchMetiers'])->name('api.metiers.search');
 });
 
 require __DIR__.'/auth.php';

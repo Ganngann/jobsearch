@@ -330,6 +330,19 @@ class ProfileController extends Controller
     }
 
     /**
+     * Retire un métier des favoris de l'utilisateur.
+     */
+    public function removeMetier(Request $request, \App\Models\Metier $metier)
+    {
+        $user = Auth::user();
+        $user->preferredMetiers()->detach($metier->id);
+
+        $this->matchingService->triggerMetierMatch($user, $metier->id);
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
      * Ajoute un métier aux favoris de l'utilisateur.
      */
     public function addMetier(Request $request, \App\Models\Metier $metier)
@@ -339,8 +352,8 @@ class ProfileController extends Controller
         $user->preferredMetiers()->syncWithoutDetaching([$metier->id]);
         $user->blacklistedMetiers()->detach($metier->id);
 
-        // Déclencher un matching pour ce nouvel intérêt
-        $this->matchingService->triggerMassMatch($user);
+        // Déclencher un matching pour ce nouvel intérêt (uniquement sur ce métier)
+        $this->matchingService->triggerMetierMatch($user, $metier->id);
 
         return response()->json(['success' => true]);
     }
@@ -351,7 +364,25 @@ class ProfileController extends Controller
     public function unblacklistMetier(Request $request, \App\Models\Metier $metier)
     {
         $request->user()->blacklistedMetiers()->detach($metier->id);
+        
+        $this->matchingService->triggerMetierMatch($request->user(), $metier->id);
 
         return response()->json(['success' => true]);
+    }
+
+    /**
+     * Recherche de métiers par mot-clé (API).
+     */
+    public function searchMetiers(Request $request)
+    {
+        $q = $request->query('q');
+        if (!$q || strlen($q) < 2) return response()->json([]);
+
+        $metiers = \App\Models\Metier::where('label', 'like', "%{$q}%")
+            ->orWhere('code', 'like', "%{$q}%")
+            ->limit(10)
+            ->get(['id', 'label', 'code']);
+
+        return response()->json($metiers);
     }
 }

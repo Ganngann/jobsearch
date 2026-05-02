@@ -177,18 +177,37 @@
                                     </div>
 
                                     <!-- Score/Action Container -->
-                                    <div class="flex items-center gap-8 pl-6 md:border-l border-slate-100">
-                                        @if($score !== null)
+                                    <div class="flex items-center gap-6 pl-6 md:border-l border-slate-100">
+                                        @if($match)
+                                            <!-- Score Data -->
                                             <div class="text-center">
-                                                <p class="text-4xl font-black {{ $score >= 70 ? 'text-emerald-500' : ($score >= 40 ? 'text-amber-500' : 'text-slate-400') }}">
-                                                    {{ $score }}<span class="text-lg">%</span>
+                                                <p class="text-3xl font-black {{ $match->pre_score >= 70 ? 'text-emerald-500' : ($match->pre_score >= 40 ? 'text-amber-500' : 'text-slate-400') }}">
+                                                    {{ $match->pre_score }}<span class="text-xs">%</span>
                                                 </p>
-                                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-1">Match Score</p>
+                                                <p class="text-[8px] font-black uppercase tracking-widest text-slate-400 mt-1">Data Match</p>
                                             </div>
+
+                                            @if($match->final_score !== null)
+                                                <!-- Score IA -->
+                                                <div class="text-center px-4 border-l border-slate-50">
+                                                    <p class="text-3xl font-black text-indigo-600">
+                                                        {{ $match->final_score }}<span class="text-xs">%</span>
+                                                    </p>
+                                                    <p class="text-[8px] font-black uppercase tracking-widest text-indigo-400 mt-1">IA Match</p>
+                                                </div>
+                                            @else
+                                                <!-- Bouton Analyse IA -->
+                                                <form action="{{ route('jobs.match', $offer) }}" method="POST">
+                                                    @csrf
+                                                    <button type="submit" class="px-3 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all border border-indigo-100" title="Demander une analyse sémantique par IA">
+                                                        Analyse IA
+                                                    </button>
+                                                </form>
+                                            @endif
                                         @else
                                             <form action="{{ route('jobs.match', $offer) }}" method="POST">
                                                 @csrf
-                                                <button type="submit" class="group/btn relative px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all duration-300 border border-indigo-100">
+                                                <button type="submit" class="px-4 py-2 bg-slate-50 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all border border-slate-200">
                                                     Calculer Match
                                                 </button>
                                             </form>

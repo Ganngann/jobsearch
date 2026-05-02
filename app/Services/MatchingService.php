@@ -19,7 +19,7 @@ class MatchingService
     /**
      * Calcule le score de correspondance complet (Pre-score + IA si nécessaire).
      */
-    public function match(User $user, JobOffer $jobOffer, bool $forceAi = false): UserMatch
+    public function match(User $user, JobOffer $jobOffer, bool $forceAi = false, bool $triggerAi = true): UserMatch
     {
         // 1. Layer 1 — Pré-score (Statique)
         $preScore = $this->calculatePreScore($user, $jobOffer);
@@ -32,8 +32,8 @@ class MatchingService
         // 2. Layer 2 — Analyse IA
         // On lance l'IA si :
         // - On force l'analyse (demande manuelle)
-        // - OU (Le pre-score est élevé >= 70 ET pas encore d'analyse faite)
-        if ($forceAi || ($preScore >= 70 && !$match->analyzed_at)) {
+        // - OU (Le pre-score est élevé >= 70 ET pas encore d'analyse faite ET trigger autorisé)
+        if ($forceAi || ($triggerAi && $preScore >= 70 && !$match->analyzed_at)) {
             $this->performAiAnalysis($user, $jobOffer, $match);
         }
 
@@ -220,16 +220,30 @@ class MatchingService
     {
         if (!$user->isProfileMature()) return;
 
-        $activeOffers = JobOffer::whereIn('metier_id', $user->preferredMetiers()->pluck('metiers.id'))
-            ->where('status', 'active')
+        JobOffer::where('status', 'active')
             ->where(function($q) {
                 $q->whereNull('expires_at')
                   ->orWhere('expires_at', '>=', now());
             })
-            ->get();
+            ->chunk(100, function($offers) use ($user) {
+                foreach ($offers as $offer) {
+                    // JAMAIS d'IA automatique lors d'un matching de masse
+                    $this->match($user, $offer, false, false);
+                }
+            });
+    }
 
-        foreach ($activeOffers as $offer) {
-            $this->match($user, $offer);
-        }
+    /**
+     * Recalcule les scores pour toutes les offres d'un métier spécifique.
+     */
+    public function triggerMetierMatch(User $user, int $metierId): void
+    {
+        JobOffer::where('metier_id', $metierId)
+            ->where('status', 'active')
+            ->chunk(100, function($offers) use ($user) {
+                foreach ($offers as $offer) {
+                    $this->match($user, $offer, false, false);
+                }
+            });
     }
 }
