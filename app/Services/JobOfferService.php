@@ -14,10 +14,12 @@ use Illuminate\Support\Str;
 class JobOfferService
 {
     protected $foremApi;
+    protected $matchingService;
 
-    public function __construct(ForemApiService $foremApi)
+    public function __construct(ForemApiService $foremApi, MatchingService $matchingService)
     {
         $this->foremApi = $foremApi;
+        $this->matchingService = $matchingService;
     }
 
     /**
@@ -269,6 +271,20 @@ class JobOfferService
 
             return true;
         });
+
+        // APRÈS la transaction : Déclenchement du matching pour la cohorte d'utilisateurs concernés
+        if ($jobOffer->metier_id) {
+            $users = \App\Models\User::whereHas('preferredMetiers', function($q) use ($jobOffer) {
+                $q->where('metiers.id', $jobOffer->metier_id);
+            })->get();
+
+            foreach ($users as $user) {
+                // On calcule au moins le Layer 1. L'IA suivra si pre_score >= 70.
+                $this->matchingService->match($user, $jobOffer);
+            }
+        }
+
+        return true;
     }
 
     protected function sanitizeNumeric($value)

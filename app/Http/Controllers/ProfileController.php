@@ -12,10 +12,12 @@ use Illuminate\View\View;
 class ProfileController extends Controller
 {
     protected $gemini;
+    protected $matchingService;
 
-    public function __construct(\App\Services\GeminiService $gemini)
+    public function __construct(\App\Services\GeminiService $gemini, \App\Services\MatchingService $matchingService)
     {
         $this->gemini = $gemini;
+        $this->matchingService = $matchingService;
     }
 
     /**
@@ -70,11 +72,31 @@ class ProfileController extends Controller
     public function edit(Request $request): View
     {
         return view('profile.edit', [
-            'user' => $request->user(),
+            'user' => $request->user()->load(['preferredMetiers', 'blacklistedMetiers']),
             'allSkills' => \App\Models\Skill::all(),
             'allLanguages' => \App\Models\Language::all(),
             'allPermits' => \App\Models\Permit::all(),
+            'allMetiers' => \App\Models\Metier::orderBy('label')->get(),
         ]);
+    }
+
+    /**
+     * Update the user's preferred métiers.
+     */
+    public function updateMetiers(Request $request)
+    {
+        $request->validate([
+            'metiers' => ['nullable', 'array'],
+            'metiers.*' => ['exists:metiers,id'],
+        ]);
+
+        $user = $request->user();
+        $user->preferredMetiers()->sync($request->metiers ?? []);
+
+        // Démarrage à froid
+        $this->matchingService->triggerMassMatch($user);
+
+        return Redirect::route('profile.edit')->with('status', 'metiers-updated');
     }
 
     /**
@@ -112,6 +134,9 @@ class ProfileController extends Controller
         }
 
         $request->user()->skills()->sync($syncData);
+
+        // Démarrage à froid
+        $this->matchingService->triggerMassMatch($request->user());
 
         if ($request->wantsJson()) {
             return response()->json(['status' => 'success', 'message' => 'Compétences mises à jour']);
@@ -177,6 +202,9 @@ class ProfileController extends Controller
         ]);
 
         $request->user()->update($validated);
+
+        // Démarrage à froid
+        $this->matchingService->triggerMassMatch($request->user());
 
         if ($request->wantsJson()) {
             return response()->json(['status' => 'success', 'message' => 'Mobilité mise à jour']);
@@ -275,5 +303,55 @@ class ProfileController extends Controller
         session()->flash('status', "Compétence '{$skill->label}' retirée de votre profil");
 
         return response()->json(['success' => true, 'message' => 'Compétence retirée']);
+    }
+
+    /**
+     * Blackliste un métier pour l'utilisateur.
+     */
+    public function blacklistMetier(Request $request, \App\Models\Metier $metier)
+    {
+        $user = Auth::user();
+        
+        // Ajouter à la blacklist
+        $user->blacklistedMetiers()->syncWithoutDetaching([$metier->id]);
+        
+        // Supprimer des métiers préférés
+        $user->preferredMetiers()->detach($metier->id);
+        
+        // Optionnel : Supprimer les matches existants pour ce métier
+        \App\Models\UserMatch::where('user_id', $user->id)
+            ->whereHas('jobOffer', function($q) use ($metier) {
+                $q->where('metier_id', $metier->id);
+            })->delete();
+
+        session()->flash('status', "Métier '{$metier->label}' ajouté à la liste noire");
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Ajoute un métier aux favoris de l'utilisateur.
+     */
+    public function addMetier(Request $request, \App\Models\Metier $metier)
+    {
+        $user = Auth::user();
+        
+        $user->preferredMetiers()->syncWithoutDetaching([$metier->id]);
+        $user->blacklistedMetiers()->detach($metier->id);
+
+        // Déclencher un matching pour ce nouvel intérêt
+        $this->matchingService->triggerMassMatch($user);
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Retire un métier de la blacklist.
+     */
+    public function unblacklistMetier(Request $request, \App\Models\Metier $metier)
+    {
+        $request->user()->blacklistedMetiers()->detach($metier->id);
+
+        return response()->json(['success' => true]);
     }
 }

@@ -130,6 +130,35 @@
                                                 <span class="text-[10px] font-black uppercase tracking-widest text-indigo-500">{{ $offer->employer->label }}</span>
                                                 <span class="w-1 h-1 rounded-full bg-slate-300"></span>
                                                 <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">{{ $offer->location }}</span>
+                                                
+                                                @if($offer->metier)
+                                                    <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+                                                    <div class="flex items-center gap-1">
+                                                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{{ $offer->metier->label }}</span>
+                                                        
+                                                        @if(Auth::user()->preferredMetiers->contains($offer->metier->id))
+                                                            <span class="text-rose-500" title="Dans vos métiers favoris">
+                                                                <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                                                            </span>
+                                                        @else
+                                                            <button 
+                                                                onclick="addMetier({{ $offer->metier->id }})"
+                                                                class="p-1 text-slate-300 hover:text-rose-500 transition-colors"
+                                                                title="Ajouter aux métiers favoris"
+                                                            >
+                                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                                                            </button>
+                                                        @endif
+
+                                                        <button 
+                                                            onclick="blacklistMetier({{ $offer->metier->id }}, '{{ addslashes($offer->metier->label) }}')"
+                                                            class="p-1 text-slate-300 hover:text-rose-500 transition-colors"
+                                                            title="Blacklister ce métier"
+                                                        >
+                                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
+                                                        </button>
+                                                    </div>
+                                                @endif
                                             </div>
                                             <h3 class="text-xl font-black text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors">
                                                 <a href="{{ route('jobs.show', $offer) }}">
@@ -190,4 +219,25 @@
 
         </div>
     </div>
+    <script>
+        function addMetier(id) {
+            fetch(`/profile/metiers/${id}/add`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                }
+            }).then(() => window.location.reload());
+        }
+
+        function blacklistMetier(id, label) {
+            fetch(`/profile/metiers/${id}/blacklist`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                }
+            }).then(() => window.location.reload());
+        }
+    </script>
 </x-app-layout>

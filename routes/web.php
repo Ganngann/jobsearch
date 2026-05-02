@@ -24,6 +24,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile/skills', [ProfileController::class, 'updateSkills'])->name('profile.skills.update');
     Route::patch('/profile/languages', [ProfileController::class, 'updateLanguages'])->name('profile.languages.update');
     Route::patch('/profile/permits', [ProfileController::class, 'updatePermits'])->name('profile.permits.update');
+    Route::patch('/profile/metiers', [ProfileController::class, 'updateMetiers'])->name('profile.metiers.update');
     Route::patch('/profile/mobility', [ProfileController::class, 'updateMobility'])->name('profile.mobility.update');
     Route::post('/profile/magic-fill', [ProfileController::class, 'magicFill'])->name('profile.magic-fill');
     Route::post('/profile/analyze', [ProfileController::class, 'analyze'])->name('profile.analyze');
@@ -43,8 +44,11 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile/facts/{fact}/skills/{skill}', [ProfileController::class, 'detachSkillFromFact'])->name('profile.facts.skills.detach');
     Route::post('/profile/skills/{skill}/add', [ProfileController::class, 'addSkill'])->name('profile.skills.add');
     Route::post('/profile/skills/{skill}/remove', [ProfileController::class, 'removeSkill'])->name('profile.skills.remove');
+    Route::post('/profile/metiers/{metier}/add', [ProfileController::class, 'addMetier'])->name('profile.metiers.add');
     Route::post('/profile/skills/{skill}/blacklist', [ProfileController::class, 'blacklistSkill'])->name('profile.skills.blacklist');
     Route::delete('/profile/skills/{skill}/blacklist', [ProfileController::class, 'unblacklistSkill'])->name('profile.skills.unblacklist');
+    Route::post('/profile/metiers/{metier}/blacklist', [ProfileController::class, 'blacklistMetier'])->name('profile.metiers.blacklist');
+    Route::delete('/profile/metiers/{metier}/blacklist', [ProfileController::class, 'unblacklistMetier'])->name('profile.metiers.unblacklist');
 });
 
 require __DIR__.'/auth.php';

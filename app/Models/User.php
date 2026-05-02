@@ -97,4 +97,45 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Skill::class, 'user_blacklisted_skills');
     }
+
+    public function preferredMetiers(): BelongsToMany
+    {
+        return $this->belongsToMany(Metier::class, 'user_metier')->withTimestamps();
+    }
+
+    public function blacklistedMetiers(): BelongsToMany
+    {
+        return $this->belongsToMany(Metier::class, 'user_blacklisted_metiers')->withTimestamps();
+    }
+
+    /**
+     * Vérifie si le profil est prêt pour le matching.
+     */
+    public function isProfileMature(): bool
+    {
+        return empty($this->getMissingProfileElements());
+    }
+
+    /**
+     * Retourne la liste des éléments manquants pour le matching.
+     */
+    public function getMissingProfileElements(): array
+    {
+        $missing = [];
+
+        if ($this->preferredMetiers()->count() < 1) {
+            $missing[] = 'un métier préféré';
+        }
+
+        if ($this->skills()->count() < 5) {
+            $count = 5 - $this->skills()->count();
+            $missing[] = "{$count} compétence(s) technique(s) supplémentaire(s)";
+        }
+
+        if (empty($this->zip_code)) {
+            $missing[] = 'votre code postal (zone de mobilité)';
+        }
+
+        return $missing;
+    }
 }

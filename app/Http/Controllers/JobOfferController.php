@@ -32,6 +32,26 @@ class JobOfferController extends Controller
     public function dashboard(Request $request)
     {
         $user = Auth::user();
+
+        // Redirection vers l'onboarding si le profil est incomplet
+        if (!$user->isProfileMature()) {
+            $missingElements = $user->getMissingProfileElements();
+            $message = "Pour activer le matching, il vous manque encore : " . implode(', ', $missingElements) . ".";
+
+            // Déterminer l'onglet à activer prioritairement
+            $tab = 'info';
+            if ($user->preferredMetiers()->count() < 1) {
+                $tab = 'metiers';
+            } elseif ($user->skills()->count() < 5) {
+                $tab = 'skills';
+            } elseif (empty($user->zip_code)) {
+                $tab = 'mobility';
+            }
+
+            return redirect()->route('profile.edit', ['tab' => $tab])
+                ->with('status', $message);
+        }
+
         $query = JobOffer::with(['employer', 'metier', 'matches' => function($q) use ($user) {
             $q->where('user_id', $user->id);
         }]);
@@ -51,9 +71,10 @@ class JobOfferController extends Controller
             $query->where('contract_type', $contract);
         }
 
-        // Filtrage par score minimum
+        // Filtrage par score minimum (Uniquement si spécifié)
         if ($request->filled('min_score')) {
             $minScore = $request->input('min_score');
+            
             $offerIds = DB::table('user_matches')
                 ->where('user_id', $user->id)
                 ->where(function($q) use ($minScore) {
@@ -66,6 +87,13 @@ class JobOfferController extends Controller
                 ->pluck('job_offer_id');
 
             $query->whereIn('job_offers.id', $offerIds);
+        }
+
+        // On ne filtre plus par "whereHas('matches')", on affiche tout.
+        // Mais on exclut quand même les métiers blacklistés explicitement
+        $blacklistedMetierIds = $user->blacklistedMetiers()->pluck('metiers.id');
+        if ($blacklistedMetierIds->isNotEmpty()) {
+            $query->whereNotIn('metier_id', $blacklistedMetierIds);
         }
 
         // Gestion du tri

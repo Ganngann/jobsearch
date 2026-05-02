@@ -32,8 +32,8 @@ class MatchingService
         // 2. Layer 2 — Analyse IA
         // On lance l'IA si :
         // - On force l'analyse (demande manuelle)
-        // - OU (Le pre-score est élevé ET pas encore d'analyse faite)
-        if ($forceAi || ($preScore >= 30 && !$match->analyzed_at)) {
+        // - OU (Le pre-score est élevé >= 70 ET pas encore d'analyse faite)
+        if ($forceAi || ($preScore >= 70 && !$match->analyzed_at)) {
             $this->performAiAnalysis($user, $jobOffer, $match);
         }
 
@@ -42,37 +42,90 @@ class MatchingService
 
     /**
      * Calcule un score rapide basé sur les compétences, langues et permis.
+     * Respecte la stratégie de "Circuit Court" et les "Vetoes".
      */
     public function calculatePreScore(User $user, JobOffer $jobOffer): int
     {
-        $score = 0;
-
-        // Compétences (35% Hard + 15% Soft = 50% max)
-        $userSkillIds = $user->skills()->pluck('skills.id')->toArray();
-        $requiredSkills = $jobOffer->skills;
-
-        if ($requiredSkills->count() > 0) {
-            $matchedCount = $requiredSkills->whereIn('id', $userSkillIds)->count();
-            $score += ($matchedCount / $requiredSkills->count()) * 50;
+        // 1. Circuit-Court : Métier (ROME)
+        $blacklistedMetierIds = $user->blacklistedMetiers()->pluck('metiers.id')->toArray();
+        if ($jobOffer->metier_id && in_array($jobOffer->metier_id, $blacklistedMetierIds)) {
+            return 0; // Blacklisté explicitement
         }
 
-        // Langues (10%)
+        // On ne court-circuite plus les métiers non-favoris à 0.
+        // On calcule le score normalement pour tout le monde.
+
+        $vetoPenalty = 0;
+
+        // 2. Permis Obligatoires
+        $userPermitIds = $user->permits()->pluck('permits.id')->toArray();
+        $requiredPermits = $jobOffer->permits()->wherePivot('is_required', true)->get();
+        foreach ($requiredPermits as $permit) {
+            if (!in_array($permit->id, $userPermitIds)) {
+                $vetoPenalty += 30; // Pénalité pour permis manquant
+            }
+        }
+
+        // 3. Veto : Compétences Proscrites
+        $blacklistedSkillIds = $user->blacklistedSkills()->pluck('skills.id')->toArray();
+        $requiredSkills = $jobOffer->skills()->wherePivot('is_required', true)->get();
+        foreach ($requiredSkills as $skill) {
+            if (in_array($skill->id, $blacklistedSkillIds)) {
+                $vetoPenalty += 50; // Pénalité pour compétence proscrite
+            }
+        }
+
+        $score = 0;
+
+        // 1. Métier Favori (20%)
+        $userMetierIds = $user->preferredMetiers()->pluck('metiers.id')->toArray();
+        if ($jobOffer->metier_id && in_array($jobOffer->metier_id, $userMetierIds)) {
+            $score += 20;
+        }
+
+        // 4. Compétences (40% max)
+        $allJobSkills = $jobOffer->skills;
+        if ($allJobSkills->count() > 0) {
+            $userSkillIds = $user->skills()->pluck('skills.id')->toArray();
+            $matchedSkills = $allJobSkills->whereIn('id', $userSkillIds);
+            
+            $baseSkillScore = ($matchedSkills->count() / $allJobSkills->count()) * 40;
+            
+            // Pénalité si des compétences REQUISES manquent (non proscrites, juste absentes)
+            $missingRequired = $requiredSkills->whereNotIn('id', $userSkillIds);
+            if ($missingRequired->count() > 0) {
+                $baseSkillScore *= 0.7; // Réduction de 30%
+            }
+            
+            $score += $baseSkillScore;
+        }
+
+        // 5. Langues (5%)
         $userLangIds = $user->languages()->pluck('languages.id')->toArray();
         $requiredLangs = $jobOffer->languages;
         if ($requiredLangs->count() > 0) {
             $matchedLangs = $requiredLangs->whereIn('id', $userLangIds)->count();
-            $score += ($matchedLangs / $requiredLangs->count()) * 10;
+            $score += ($matchedLangs / $requiredLangs->count()) * 5;
         }
 
-        // Permis (Bonus/Filtrage simple)
-        $userPermitIds = $user->permits()->pluck('permits.id')->toArray();
-        $requiredPermits = $jobOffer->permits;
-        if ($requiredPermits->count() > 0) {
-            $hasAllPermits = $requiredPermits->whereNotIn('id', $userPermitIds)->isEmpty();
-            if ($hasAllPermits) $score += 10;
+        // 6. Permis (5%)
+        $allJobPermits = $jobOffer->permits;
+        if ($allJobPermits->count() > 0) {
+            $matchedPermits = $allJobPermits->whereIn('id', $userPermitIds)->count();
+            $score += ($matchedPermits / $allJobPermits->count()) * 5;
         }
 
-        return (int) min(100, $score);
+        // 7. Localisation (30%) - Simulation simple pour l'instant
+        if ($user->zip_code) {
+            if (str_contains($jobOffer->location ?? '', $user->zip_code)) {
+                $score += 30;
+            } else {
+                $score += 15; // À proximité ou à vérifier
+            }
+        }
+
+        $finalScore = max(0, $score - $vetoPenalty);
+        return (int) min(100, $finalScore);
     }
 
     /**
@@ -158,5 +211,25 @@ class MatchingService
             \"recommandation\": \"(conseil pour le candidat)\"
         }
         ";
+    }
+
+    /**
+     * Déclenche un calcul massif de matching pour un utilisateur (Cold Start).
+     */
+    public function triggerMassMatch(User $user): void
+    {
+        if (!$user->isProfileMature()) return;
+
+        $activeOffers = JobOffer::whereIn('metier_id', $user->preferredMetiers()->pluck('metiers.id'))
+            ->where('status', 'active')
+            ->where(function($q) {
+                $q->whereNull('expires_at')
+                  ->orWhere('expires_at', '>=', now());
+            })
+            ->get();
+
+        foreach ($activeOffers as $offer) {
+            $this->match($user, $offer);
+        }
     }
 }

@@ -21,4 +21,14 @@ class Metier extends Model
             ->withPivot(['is_required', 'experience_label'])
             ->withTimestamps();
     }
+
+    public function preferredByUsers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'user_metier')->withTimestamps();
+    }
+
+    public function blacklistedByUsers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'user_blacklisted_metiers')->withTimestamps();
+    }
 }

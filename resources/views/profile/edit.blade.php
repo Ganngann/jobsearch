@@ -5,9 +5,16 @@
         </h2>
     </x-slot>
 
-    <div class="py-12" x-data="{ tab: 'info' }">
+    <div class="py-12" x-data="{ tab: '{{ request('tab', 'info') }}' }">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             
+            @if (session('status'))
+                <div class="mb-6 p-4 bg-amber-50 border border-amber-200 text-amber-700 rounded-2xl text-sm font-bold shadow-sm flex items-center gap-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    {{ session('status') }}
+                </div>
+            @endif
+
             {{-- Tabs Navigation --}}
             <div class="flex flex-wrap gap-2 mb-8 bg-gray-200/50 p-1 rounded-2xl w-fit">
                 <button @click="tab = 'info'" :class="tab === 'info' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-600 hover:text-gray-900'" class="px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center">
@@ -17,6 +24,10 @@
                 <button @click="tab = 'facts'" :class="tab === 'facts' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-600 hover:text-gray-900'" class="px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                     Récits & Expériences
+                </button>
+                <button @click="tab = 'metiers'" :class="tab === 'metiers' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-600 hover:text-gray-900'" class="px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                    Métiers
                 </button>
                 <button @click="tab = 'skills'" :class="tab === 'skills' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-600 hover:text-gray-900'" class="px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -44,6 +55,13 @@
                 <div x-show="tab === 'facts'" x-transition class="p-4 sm:p-8 bg-white shadow sm:rounded-xl border-l-4 border-amber-500">
                     <div class="max-w-6xl mx-auto">
                         @include('profile.partials.manage-facts-list')
+                    </div>
+                </div>
+
+                {{-- Tab: Metiers --}}
+                <div x-show="tab === 'metiers'" x-transition class="p-4 sm:p-8 bg-white shadow sm:rounded-xl border-l-4 border-emerald-500">
+                    <div class="max-w-6xl mx-auto">
+                        @include('profile.partials.update-metiers-form')
                     </div>
                 </div>
 
