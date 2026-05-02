@@ -5,6 +5,9 @@
     @endphp
     <div 
         @click="selectOffer('{{ $offer->forem_id }}')"
+        data-offer-id="{{ $offer->forem_id }}"
+        data-pre-score="{{ $match->pre_score ?? 0 }}"
+        data-ai-score="{{ $match->final_score ?? '' }}"
         :class="selectedId == '{{ $offer->forem_id }}' ? 'border-indigo-500 ring-2 ring-indigo-500/10 bg-white' : 'border-slate-100 hover:border-slate-300 bg-white'"
         class="p-5 rounded-2xl border cursor-pointer transition-all duration-300 shadow-sm hover:shadow-md group relative overflow-hidden"
     >
@@ -13,22 +16,16 @@
             <!-- Data Match -->
             <div class="text-right">
                 <p class="text-lg font-black leading-none {{ $match && $match->pre_score >= 70 ? 'text-emerald-500' : ($match && $match->pre_score >= 40 ? 'text-amber-500' : 'text-slate-400') }}">
-                    {{ $match->pre_score ?? '0' }}<span class="text-[9px]">%</span>
+                    <span x-text="scores['{{ $offer->forem_id }}']?.data ?? '{{ $match->pre_score ?? 0 }}'"></span><span class="text-[9px]">%</span>
                 </p>
                 <p class="text-[7px] font-black uppercase text-slate-300 tracking-tighter">Data</p>
             </div>
 
             <!-- IA Match (Score ou Placeholder) -->
             <div class="text-right pl-4 border-l border-slate-100">
-                @if($match && $match->final_score !== null)
-                    <p class="text-lg font-black leading-none text-indigo-600">
-                        {{ $match->final_score }}<span class="text-[9px]">%</span>
-                    </p>
-                @else
-                    <p class="text-lg font-black leading-none text-slate-200">
-                        --<span class="text-[9px]">%</span>
-                    </p>
-                @endif
+                <p class="text-lg font-black leading-none" :class="scores['{{ $offer->forem_id }}']?.ia ? 'text-indigo-600' : 'text-slate-200'">
+                    <span x-text="scores['{{ $offer->forem_id }}']?.ia ?? '--'"></span><span class="text-[9px]">%</span>
+                </p>
                 <p class="text-[7px] font-black uppercase text-indigo-300 tracking-tighter">IA</p>
             </div>
         </div>

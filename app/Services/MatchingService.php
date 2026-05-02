@@ -200,15 +200,17 @@ class MatchingService
         1. Analyse comment les récits concrets du candidat répondent aux besoins du poste.
         2. Identifie les \"soft skills\" invisibles mais présents dans les récits (résilience, adaptabilité, etc.).
         3. Évalue si les aspirations du candidat sont en phase avec le poste.
-        4. Calcule un score global (0-100) basé sur cette adéquation humaine et technique.
+        4. Calcule un score global (0-100).
+
+        CONSIGNE DE STYLE : Sois EXTRÊMEMENT CONCIS. L'analyse narrative doit faire 3 lignes maximum, en allant droit au but. 
 
         Réponds UNIQUEMENT en JSON avec cette structure : 
         {
             \"score\": (int), 
             \"points_forts\": [string], 
             \"points_faibles\": [string], 
-            \"analyse_narrative\": \"(ton analyse sur comment les faits du candidat matchent le poste)\",
-            \"recommandation\": \"(conseil pour le candidat)\"
+            \"analyse_narrative\": \"(Analyse ultra-concise, max 3 phrases)\",
+            \"recommandation\": \"(Un seul conseil court)\"
         }
         ";
     }

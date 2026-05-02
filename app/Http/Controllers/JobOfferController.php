@@ -78,16 +78,35 @@ class JobOfferController extends Controller
         }
 
         // Données pour les filtres de la sidebar
+        // Données pour les filtres de la sidebar : Triés par potentiel de match personnel
         $topMetiers = \App\Models\Metier::whereHas('jobOffers')
-            ->withCount('jobOffers')
+            ->leftJoin('job_offers', 'job_offers.metier_id', '=', 'metiers.id')
+            ->leftJoin('user_matches', function($join) use ($user) {
+                $join->on('user_matches.job_offer_id', '=', 'job_offers.id')
+                     ->where('user_matches.user_id', '=', $user->id);
+            })
+            ->select('metiers.*')
+            ->selectRaw('COUNT(DISTINCT job_offers.id) as job_offers_count')
+            ->selectRaw('MAX(COALESCE(user_matches.final_score, user_matches.pre_score, 0)) as max_score')
+            ->groupBy('metiers.id')
+            ->orderBy('max_score', 'desc')
             ->orderBy('job_offers_count', 'desc')
-            ->limit(25)
+            ->limit(30)
             ->get();
 
         $topEmployers = \App\Models\Employer::whereHas('jobOffers')
-            ->withCount('jobOffers')
+            ->leftJoin('job_offers', 'job_offers.employer_id', '=', 'employers.id')
+            ->leftJoin('user_matches', function($join) use ($user) {
+                $join->on('user_matches.job_offer_id', '=', 'job_offers.id')
+                     ->where('user_matches.user_id', '=', $user->id);
+            })
+            ->select('employers.*')
+            ->selectRaw('COUNT(DISTINCT job_offers.id) as job_offers_count')
+            ->selectRaw('MAX(COALESCE(user_matches.final_score, user_matches.pre_score, 0)) as max_score')
+            ->groupBy('employers.id')
+            ->orderBy('max_score', 'desc')
             ->orderBy('job_offers_count', 'desc')
-            ->limit(10)
+            ->limit(20)
             ->get();
 
         return view('dashboard', compact('jobOffers', 'user', 'topMetiers', 'topEmployers'));
@@ -122,10 +141,22 @@ class JobOfferController extends Controller
             $jobOffer->load(['employer', 'metier', 'skills', 'languages', 'permits', 'sectors']);
         }
 
-        // On force l'analyse IA
-        $this->matchingService->match($user, $jobOffer, true);
+        // Récupérer ou créer le match de base
+        $match = $jobOffer->matches()->firstOrCreate(['user_id' => $user->id]);
+        
+        if ($match->ai_status === 'processing') {
+            return response()->json(['status' => 'already_processing']);
+        }
 
-        return back()->with('status', 'Analyse IA terminée avec succès !');
+        // Marquer comme en cours et dispatcher
+        $match->update(['ai_status' => 'processing']);
+        \App\Jobs\AnalyzeJobOffer::dispatch($user, $jobOffer, $match);
+
+        if ($request->ajax()) {
+            return response()->json(['status' => 'started', 'ai_status' => 'processing']);
+        }
+
+        return back()->with('status', 'Analyse IA lancée en arrière-plan.');
     }
 
     /**

@@ -18,6 +18,7 @@ class UserMatch extends Model
         'ai_analysis_narrative',
         'ai_recommendation',
         'ai_raw_response',
+        'ai_status',
         'analyzed_at',
     ];
 

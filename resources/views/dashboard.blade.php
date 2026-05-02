@@ -50,7 +50,7 @@
                         >
                     </div>
 
-                    <div class="space-y-1 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
+                    <div class="space-y-1 max-h-[400px] overflow-y-auto custom-scrollbar pr-1">
                         <button 
                             @click="setMetier(null)"
                             x-show="metierSearch === ''"
@@ -59,32 +59,83 @@
                         >
                             <span>Tous les métiers</span>
                         </button>
+                        @php $preferredIds = $user->preferredMetiers->pluck('id')->toArray(); @endphp
                         @foreach($topMetiers as $metier)
+                            @php 
+                                $isDiscovery = !in_array($metier->id, $preferredIds) && $metier->max_score >= 70;
+                            @endphp
                             <button 
                                 x-show="metierSearch === '' || '{{ strtolower(addslashes($metier->label)) }}'.includes(metierSearch.toLowerCase())"
                                 @click="setMetier({{ $metier->id }})"
                                 :class="filters.metier_id == {{ $metier->id }} ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'text-slate-600 hover:bg-slate-50'"
-                                class="w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between group"
+                                class="w-full text-left px-4 py-3 rounded-xl transition-all group relative"
                             >
-                                <span class="truncate pr-2">{{ $metier->label }}</span>
-                                <span class="text-[9px] opacity-60">{{ $metier->job_offers_count }}</span>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex flex-col min-w-0 pr-8">
+                                        <span class="text-xs font-bold truncate">{{ $metier->label }}</span>
+                                        <div class="flex items-center gap-2 mt-0.5">
+                                            <span class="text-[9px] opacity-40 font-black uppercase tracking-tighter">{{ $metier->job_offers_count }} offres</span>
+                                            @if($isDiscovery)
+                                                <span class="text-[9px] text-amber-500 font-black uppercase tracking-tighter flex items-center gap-1">
+                                                    ✨ Découverte
+                                                </span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Score Bubble -->
+                                    <div class="shrink-0 flex flex-col items-end">
+                                        <span class="text-[11px] font-black {{ $metier->max_score >= 70 ? 'text-emerald-500' : ($metier->max_score >= 40 ? 'text-amber-500' : 'text-slate-300') }}">
+                                            {{ round($metier->max_score) }}%
+                                        </span>
+                                    </div>
+                                </div>
                             </button>
                         @endforeach
                     </div>
                 </div>
 
                 <!-- Section: Top Employeurs -->
-                <div>
+                <div x-data="{ employerSearch: '' }">
                     <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Top Employeurs</h3>
-                    <div class="space-y-1">
+                    
+                    <div class="mb-4">
+                        <input 
+                            type="text" 
+                            x-model="employerSearch" 
+                            placeholder="Filtrer un employeur..." 
+                            class="w-full bg-slate-50 border-0 rounded-xl px-4 py-2 text-[11px] font-bold text-slate-600 focus:ring-1 focus:ring-indigo-500 transition-all"
+                        >
+                    </div>
+
+                    <div class="space-y-1 max-h-[400px] overflow-y-auto custom-scrollbar pr-1">
+                        <button 
+                            @click="setEmployer(null)"
+                            x-show="employerSearch === ''"
+                            :class="!filters.employer_id ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'text-slate-600 hover:bg-slate-50'"
+                            class="w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between"
+                        >
+                            <span>Tous les employeurs</span>
+                        </button>
                         @foreach($topEmployers as $employer)
                             <button 
+                                x-show="employerSearch === '' || '{{ strtolower(addslashes($employer->label)) }}'.includes(employerSearch.toLowerCase())"
                                 @click="setEmployer({{ $employer->id }})"
                                 :class="filters.employer_id == {{ $employer->id }} ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'text-slate-600 hover:bg-slate-50'"
-                                class="w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between"
+                                class="w-full text-left px-4 py-3 rounded-xl transition-all group relative"
                             >
-                                <span class="truncate pr-2">{{ $employer->label }}</span>
-                                <span class="text-[9px] opacity-60">{{ $employer->job_offers_count }}</span>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex flex-col min-w-0 pr-8">
+                                        <span class="text-xs font-bold truncate">{{ $employer->label }}</span>
+                                        <span class="text-[9px] opacity-40 font-black uppercase tracking-tighter mt-0.5">{{ $employer->job_offers_count }} offres</span>
+                                    </div>
+                                    
+                                    <div class="shrink-0 flex flex-col items-end">
+                                        <span class="text-[11px] font-black {{ $employer->max_score >= 70 ? 'text-emerald-500' : ($employer->max_score >= 40 ? 'text-amber-500' : 'text-slate-300') }}">
+                                            {{ round($employer->max_score) }}%
+                                        </span>
+                                    </div>
+                                </div>
                             </button>
                         @endforeach
                     </div>
@@ -174,25 +225,83 @@
                     metier_id: '{{ request('metier_id') }}',
                     employer_id: '{{ request('employer_id') }}'
                 },
+                scores: {},
                 page: 1,
                 loadingMore: false,
                 noMoreData: false,
 
                 init() {
+                    window.dashboard = this;
+                    // Initialiser les scores avec les données déjà présentes
+                    this.initializeScores();
                     if (this.selectedId) {
                         this.selectOffer(this.selectedId);
                     }
                 },
 
-                selectOffer(id) {
+                initializeScores() {
+                    document.querySelectorAll('[data-offer-id]').forEach(el => {
+                        const id = el.dataset.offerId;
+                        this.scores[id] = {
+                            data: el.dataset.preScore,
+                            ia: el.dataset.aiScore === '' ? null : el.dataset.aiScore
+                        };
+                    });
+                },
+
+                async selectOffer(id) {
                     this.selectedId = id;
                     this.previewLoading = true;
-                    fetch(`/jobs/${id}/preview`)
-                        .then(res => res.text())
-                        .then(html => {
-                            this.previewHtml = html;
-                            this.previewLoading = false;
+                    const res = await fetch(`/jobs/${id}/preview`);
+                    this.previewHtml = await res.text();
+                    this.previewLoading = false;
+
+                    // Si l'offre chargée est déjà en cours d'analyse, on relance le polling
+                    if (this.previewHtml.includes('Analyse IA...')) {
+                        this.pollAiStatus(id);
+                    }
+                },
+
+                async startAiAnalysis(offerId) {
+                    // Trouver le bouton ou l'état dans le DOM pour feedback immédiat
+                    try {
+                        await fetch(`/jobs/${offerId}/match`, {
+                            method: 'POST',
+                            headers: { 
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}', 
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
                         });
+                        // Rafraîchir le preview pour montrer l'état "processing"
+                        this.selectOffer(offerId);
+                        this.pollAiStatus(offerId);
+                    } catch (e) {
+                        console.error('AI Analysis failed to start', e);
+                    }
+                },
+
+                pollAiStatus(offerId) {
+                    const timer = setInterval(async () => {
+                        const res = await fetch(`/jobs/${offerId}/preview?check=1`);
+                        const html = await res.text();
+                        
+                        if (html.includes('id="ai-result-ready"') || html.includes('id="ai-result-failed"')) {
+                            clearInterval(timer);
+                            
+                            // Extraire le score du HTML pour mettre à jour la liste de gauche
+                            const tempDiv = document.createElement('div');
+                            tempDiv.innerHTML = html;
+                            const scoreEl = tempDiv.querySelector('#ai-result-ready');
+                            if (scoreEl && this.scores[offerId]) {
+                                this.scores[offerId].ia = scoreEl.dataset.score;
+                            }
+
+                            if (this.selectedId === offerId) {
+                                this.previewHtml = html;
+                            }
+                        }
+                    }, 3000);
                 },
 
                 setMetier(id) {
@@ -223,6 +332,7 @@
                         .then(html => {
                             document.getElementById('offers-container').innerHTML = html;
                             document.getElementById('offers-scroll-container').scrollTop = 0;
+                            this.initializeScores();
                         });
                 },
 
@@ -246,6 +356,7 @@
                                 this.noMoreData = true;
                             } else {
                                 document.getElementById('offers-container').insertAdjacentHTML('beforeend', html);
+                                this.initializeScores();
                             }
                             this.loadingMore = false;
                         });
