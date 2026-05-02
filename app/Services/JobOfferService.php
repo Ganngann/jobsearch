@@ -36,6 +36,17 @@ class JobOfferService
                 );
             }
 
+            // Smart Refresh: Si les dates changent, on invalide les détails pour forcer un re-scan complet
+            $existingOffer = JobOffer::where('forem_id', $item['id'])->first();
+            $isDetailed = $existingOffer ? $existingOffer->is_detailed : false;
+            $newExpiresAt = isset($item['fin']) ? $this->parseDate($item['fin']) : null;
+            
+            if ($existingOffer && $existingOffer->expires_at && $newExpiresAt) {
+                if ($existingOffer->expires_at->format('Y-m-d') !== $newExpiresAt->format('Y-m-d')) {
+                    $isDetailed = false; // Date de fin modifiée -> On veut rafraîchir
+                }
+            }
+
             // Job Offer
             $jobOffer = JobOffer::updateOrCreate(
                 ['forem_id' => $item['id']],
@@ -51,7 +62,10 @@ class JobOfferService
                     'contact_email' => $item['email'] ?? null,
                     'is_postulable' => $item['isPostulable'] ?? false,
                     'start_date' => isset($item['debut']) ? $this->parseDate($item['debut']) : null,
-                    'expires_at' => isset($item['fin']) ? $this->parseDate($item['fin']) : null,
+                    'expires_at' => $newExpiresAt,
+                    'last_seen_at' => now(),
+                    'status' => 'active',
+                    'is_detailed' => $isDetailed,
                 ]
             );
 
@@ -109,6 +123,17 @@ class JobOfferService
             ];
             $fullDescription = implode("\n\n", array_filter($descriptionParts));
 
+            // Content Hash pour l'IA (Titre + Description + Localisation)
+            $contentToHash = ($jobData['title'] ?? $jobData['titreOffre'] ?? $jobOffer->title) . '|' . 
+                             $fullDescription . '|' . 
+                             ($jobData['lieuxTravail'][0] ?? '');
+            $newHash = md5($contentToHash);
+
+            // Invalidation des scores IA si le contenu a changé
+            if ($jobOffer->content_hash && $jobOffer->content_hash !== $newHash) {
+                $jobOffer->matches()->delete(); // On invalide les scores existants
+            }
+
             // Update Job Offer
             $jobOffer->update([
                 'forem_ref' => $jobData['numero'],
@@ -136,6 +161,8 @@ class JobOfferService
                 'published_at' => $this->parseDate($jobData['dateDebutDiffusion'] ?? $jobData['positionDateInfo']['postedDate'] ?? null),
                 'expires_at' => $this->parseDate($jobData['dateFinDiffusion'] ?? null),
                 'is_detailed' => true,
+                'detailed_at' => now(),
+                'content_hash' => $newHash,
                 'raw_data' => $jobData,
             ]);
 

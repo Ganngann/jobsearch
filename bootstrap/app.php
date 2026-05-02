@@ -15,4 +15,14 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
+    })
+    ->withSchedule(function (\Illuminate\Console\Scheduling\Schedule $schedule) {
+        // Scan Flash toutes les 5 minutes pour les nouveautés
+        $schedule->command('forem:scan --mode=flash')->everyFiveMinutes();
+
+        // Scan Cycle toutes les 15 minutes pour rafraîchir tout le catalogue
+        $schedule->command('forem:scan --mode=cycle')->everyFifteenMinutes();
+
+        // Pull Worker tourne en continu pour les détails (limité pour éviter les chevauchements infinis)
+        $schedule->command('forem:pull-worker --sleep=5 --limit=10')->everyMinute()->withoutOverlapping();
     })->create();

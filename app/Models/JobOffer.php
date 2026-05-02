@@ -46,6 +46,10 @@ class JobOffer extends Model
         'expires_at',
         'raw_data',
         'is_detailed',
+        'status',
+        'last_seen_at',
+        'detailed_at',
+        'content_hash',
     ];
 
     protected $casts = [
@@ -57,6 +61,8 @@ class JobOffer extends Model
         'published_at' => 'datetime',
         'expires_at' => 'date',
         'working_hours' => 'decimal:2',
+        'last_seen_at' => 'datetime',
+        'detailed_at' => 'datetime',
     ];
 
     public function metier(): BelongsTo
