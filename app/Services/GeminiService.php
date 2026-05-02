@@ -21,6 +21,42 @@ class GeminiService
     }
 
     /**
+     * Envoie un prompt à Gemini et retourne la réponse sous forme de texte brut.
+     */
+    public function ask(string $prompt): ?string
+    {
+        $payload = [
+            'contents' => [
+                ['role' => 'user', 'parts' => [['text' => $prompt]]]
+            ],
+            'generationConfig' => [
+                'temperature' => 0.7,
+                'maxOutputTokens' => 4096,
+            ]
+        ];
+
+        Log::debug('GEMINI ASK REQUEST:', $payload);
+
+        $response = Http::withoutVerifying()
+            ->withHeaders(['Content-Type' => 'application/json'])
+            ->retry(3, 1000, function ($exception, $request) {
+                return $exception instanceof \Illuminate\Http\Client\ConnectionException ||
+                       ($exception->response && $exception->response->status() === 503);
+            })
+            ->post("{$this->baseUrl}?key={$this->apiKey}", $payload);
+
+        if ($response->failed()) {
+            Log::error('Gemini API request failed (ask) after retries', ['error' => $response->body()]);
+            return null;
+        }
+
+        $result = $response->json();
+        Log::debug('GEMINI ASK RESPONSE:', $result);
+        
+        return $result['candidates'][0]['content']['parts'][0]['text'] ?? null;
+    }
+
+    /**
      * Analyse un CV ou un texte brut pour en extraire un profil structuré.
      */
     public function analyzeProfile(string $text): ?array
@@ -103,9 +139,13 @@ class GeminiService
         // DEBUG: On log la requête pour voir ce qui est envoyé à l'IA
         Log::debug('GEMINI REQUEST PAYLOAD:', $payload);
 
-        $response = Http::withoutVerifying()->withHeaders([
-            'Content-Type' => 'application/json',
-        ])->post("{$this->baseUrl}?key={$this->apiKey}", $payload);
+        $response = Http::withoutVerifying()
+            ->withHeaders(['Content-Type' => 'application/json'])
+            ->retry(3, 1000, function ($exception, $request) {
+                return $exception instanceof \Illuminate\Http\Client\ConnectionException ||
+                       ($exception->response && $exception->response->status() === 503);
+            })
+            ->post("{$this->baseUrl}?key={$this->apiKey}", $payload);
 
         if ($response->failed()) {
             Log::error('Gemini API request failed', ['error' => $response->body()]);

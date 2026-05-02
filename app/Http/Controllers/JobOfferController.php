@@ -45,6 +45,13 @@ class JobOfferController extends Controller
             $query->where('employer_id', $request->employer_id);
         }
 
+        // 2b. Filtrage par ROME (Niveau Famille)
+        if ($request->filled('rome')) {
+            $query->whereHas('metier', function($q) use ($request) {
+                $q->where('code', 'LIKE', $request->rome . '%');
+            });
+        }
+
         // 3. Filtrage par Score (Data Match)
         if ($request->filled('min_score')) {
             $query->whereHas('matches', function($q) use ($user, $request) {

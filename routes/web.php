@@ -17,6 +17,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/jobs/{jobOffer}', [JobOfferController::class, 'show'])->name('jobs.show');
     Route::post('/jobs/{jobOffer}/match', [JobOfferController::class, 'match'])->name('jobs.match');
     Route::post('/jobs/{jobOffer}/refresh', [JobOfferController::class, 'refresh'])->name('jobs.refresh');
+
+    // Discovery
+    Route::get('/discovery', [\App\Http\Controllers\DiscoveryController::class, 'index'])->name('discovery.index');
+    Route::get('/discovery/suggest', [\App\Http\Controllers\DiscoveryController::class, 'suggest'])->name('discovery.suggest');
+    Route::post('/discovery/favorite/{referentiel}', [\App\Http\Controllers\DiscoveryController::class, 'toggleFavorite'])->name('discovery.favorite');
 });
 
 Route::middleware('auth')->group(function () {
