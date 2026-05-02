@@ -380,7 +380,8 @@ class ProfileController extends Controller
 
         $metiers = \App\Models\Metier::where('label', 'like', "%{$q}%")
             ->orWhere('code', 'like', "%{$q}%")
-            ->limit(10)
+            ->limit(50) // Augmenté pour plus de visibilité
+            ->orderBy('label')
             ->get(['id', 'label', 'code']);
 
         return response()->json($metiers);

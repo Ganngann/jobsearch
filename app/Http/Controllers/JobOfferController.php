@@ -4,139 +4,119 @@ namespace App\Http\Controllers;
 
 use App\Models\JobOffer;
 use App\Models\UserMatch;
-use App\Services\MatchingService;
+use App\Services\JobMatcherService;
 use App\Services\JobOfferService;
+use App\Services\MatchingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class JobOfferController extends Controller
 {
-    protected $matchingService;
     protected $jobOfferService;
-    protected $jobMatcher;
+    protected $matchingService;
+    protected $jobMatcherService;
 
     public function __construct(
-        MatchingService $matchingService, 
-        JobOfferService $jobOfferService,
-        \App\Services\JobMatcherService $jobMatcher
+        JobOfferService $jobOfferService, 
+        MatchingService $matchingService,
+        JobMatcherService $jobMatcherService
     ) {
-        $this->matchingService = $matchingService;
         $this->jobOfferService = $jobOfferService;
-        $this->jobMatcher = $jobMatcher;
+        $this->matchingService = $matchingService;
+        $this->jobMatcherService = $jobMatcherService;
     }
 
     /**
-     * Affiche le tableau de bord avec filtres.
+     * Affiche le dashboard avec filtrage avancé et exploration.
      */
     public function dashboard(Request $request)
     {
         $user = Auth::user();
+        $query = JobOffer::query();
 
-        // Redirection vers l'onboarding si le profil est incomplet
-        if (!$user->isProfileMature()) {
-            $missingElements = $user->getMissingProfileElements();
-            $message = "Pour activer le matching, il vous manque encore : " . implode(', ', $missingElements) . ".";
-
-            // Déterminer l'onglet à activer prioritairement
-            $tab = 'info';
-            if ($user->preferredMetiers()->count() < 1) {
-                $tab = 'metiers';
-            } elseif ($user->skills()->count() < 5) {
-                $tab = 'skills';
-            } elseif (empty($user->zip_code)) {
-                $tab = 'mobility';
-            }
-
-            return redirect()->route('profile.edit', ['tab' => $tab])
-                ->with('status', $message);
+        // 1. Filtrage par Métier (Favori ou Exploration)
+        if ($request->filled('metier_id')) {
+            $query->where('metier_id', $request->metier_id);
         }
 
-        $query = JobOffer::with(['employer', 'metier', 'matches' => function($q) use ($user) {
-            $q->where('user_id', $user->id);
-        }]);
+        // 2. Filtrage par Employeur
+        if ($request->filled('employer_id')) {
+            $query->where('employer_id', $request->employer_id);
+        }
 
-        // Filtrage par recherche (Titre ou Employeur)
-        if ($search = $request->input('search')) {
-            $query->where(function($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                  ->orWhereHas('employer', function($sq) use ($search) {
-                      $sq->where('label', 'like', "%{$search}%");
-                  });
+        // 3. Filtrage par Score (Data Match)
+        if ($request->filled('min_score')) {
+            $query->whereHas('matches', function($q) use ($user, $request) {
+                $q->where('user_id', $user->id)
+                  ->where('pre_score', '>=', $request->min_score);
             });
         }
 
-        // Filtrage par type de contrat
-        if ($contract = $request->input('contract')) {
-            $query->where('contract_type', $contract);
-        }
-
-        // Filtrage par score minimum (Uniquement si spécifié)
-        if ($request->filled('min_score')) {
-            $minScore = $request->input('min_score');
-            
-            $offerIds = DB::table('user_matches')
-                ->where('user_id', $user->id)
-                ->where(function($q) use ($minScore) {
-                    $q->where('final_score', '>=', $minScore)
-                      ->orWhere(function($sq) use ($minScore) {
-                          $sq->whereNull('final_score')
-                             ->where('pre_score', '>=', $minScore);
-                      });
+        // 4. Tri
+        $sort = $request->get('sort', 'score_desc');
+        switch ($sort) {
+            case 'recent':
+                $query->orderBy('published_at', 'desc');
+                break;
+            case 'score_desc':
+            default:
+                // Pour trier par score, on doit faire une jointure
+                $query->leftJoin('user_matches', function($join) use ($user) {
+                    $join->on('job_offers.id', '=', 'user_matches.job_offer_id')
+                         ->where('user_matches.user_id', '=', $user->id);
                 })
-                ->pluck('job_offer_id');
-
-            $query->whereIn('job_offers.id', $offerIds);
+                ->select('job_offers.*')
+                ->orderByRaw('COALESCE(user_matches.final_score, user_matches.pre_score) DESC NULLS LAST');
+                break;
         }
 
-        // On ne filtre plus par "whereHas('matches')", on affiche tout.
-        // Mais on exclut quand même les métiers blacklistés explicitement
-        $blacklistedMetierIds = $user->blacklistedMetiers()->pluck('metiers.id');
-        if ($blacklistedMetierIds->isNotEmpty()) {
-            $query->whereNotIn('metier_id', $blacklistedMetierIds);
+        $jobOffers = $query->with(['employer', 'metier', 'userMatch'])->paginate(20);
+
+        if ($request->ajax() || $request->has('partial')) {
+            return view('job-offers.partials.list-items', compact('jobOffers'))->render();
         }
 
-        // Gestion du tri
-        $sortBy = $request->input('sort_by', 'date_desc');
+        // Données pour les filtres de la sidebar
+        $topMetiers = \App\Models\Metier::whereHas('jobOffers')
+            ->withCount('jobOffers')
+            ->orderBy('job_offers_count', 'desc')
+            ->limit(25)
+            ->get();
 
-        if ($sortBy === 'score_desc') {
-            $query->leftJoin('user_matches', function($join) use ($user) {
-                $join->on('job_offers.id', '=', 'user_matches.job_offer_id')
-                     ->where('user_matches.user_id', '=', $user->id);
-            })
-            ->select('job_offers.*')
-            ->orderByRaw('COALESCE(user_matches.final_score, user_matches.pre_score) DESC');
-        } elseif ($sortBy === 'title_asc') {
-            $query->orderBy('title', 'asc');
-        } else {
-            $query->orderByRaw('job_offers.published_at IS NULL, job_offers.published_at DESC');
-        }
+        $topEmployers = \App\Models\Employer::whereHas('jobOffers')
+            ->withCount('jobOffers')
+            ->orderBy('job_offers_count', 'desc')
+            ->limit(10)
+            ->get();
 
-        $jobOffers = $query->paginate(12)
-            ->withQueryString();
-
-        $contractTypes = JobOffer::distinct()->pluck('contract_type')->filter()->sort();
-
-        return view('dashboard', compact('jobOffers', 'contractTypes'));
+        return view('dashboard', compact('jobOffers', 'user', 'topMetiers', 'topEmployers'));
     }
 
     /**
-     * Rafraîchit les données de l'offre depuis l'API Forem.
+     * Retourne le HTML partiel pour la prévisualisation d'une offre.
      */
-    public function refresh(JobOffer $jobOffer)
+    public function preview(JobOffer $jobOffer)
     {
-        $this->jobOfferService->syncFullDetails($jobOffer);
-        return back()->with('status', 'Données de l\'offre rafraîchies !');
+        $user = Auth::user();
+        $match = $jobOffer->matches()->where('user_id', $user->id)->first();
+        
+        // Si pas de match, on le crée à la volée (Data Match)
+        if (!$match) {
+            $match = app(\App\Services\MatchingService::class)->match($user, $jobOffer, false, false);
+        }
+
+        return view('job-offers.partials.preview', compact('jobOffer', 'match', 'user'));
     }
 
     /**
-     * Lance le matching (IA) à la demande pour une offre spécifique.
+     * Force le matching IA pour une offre spécifique.
      */
-    public function match(JobOffer $jobOffer)
+    public function match(Request $request, JobOffer $jobOffer)
     {
         $user = Auth::user();
 
-        // Si l'offre n'a pas encore ses détails complets, on les récupère d'abord
+        // On s'assure d'avoir les détails complets (skills, etc.)
         if (!$jobOffer->is_detailed) {
             $this->jobOfferService->syncFullDetails($jobOffer);
             $jobOffer->load(['employer', 'metier', 'skills', 'languages', 'permits', 'sectors']);
@@ -149,56 +129,50 @@ class JobOfferController extends Controller
     }
 
     /**
-     * Affiche le détail d'une offre et son analyse de matching.
+     * Affiche le détail complet d'une offre.
      */
     public function show($id)
     {
         $user = Auth::user();
+        $jobOffer = JobOffer::where('id', $id)->orWhere('forem_id', $id)->firstOrFail();
 
-        // On cherche par ID interne ou ID Forem
-        $jobOffer = JobOffer::where('id', $id)
-            ->orWhere('forem_id', $id)
-            ->first();
-
-        if (!$jobOffer) {
-            // On s'assure d'avoir un employeur par défaut pour la contrainte SQL
-            $placeholderEmployer = \App\Models\Employer::firstOrCreate(
-                ['label' => 'Forem (Importation...)']
-            );
-
-            // Création d'un squelette temporaire
-            $jobOffer = JobOffer::create([
-                'forem_id' => $id,
-                'forem_ref' => 'F-' . $id,
-                'title' => 'Importation en cours...',
-                'employer_id' => $placeholderEmployer->id,
-                'description' => 'Chargement des données depuis le Forem...',
-                'contract_type' => '...',
-                'working_regime' => '...',
-            ]);
-            
-            $this->jobOfferService->syncFullDetails($jobOffer);
-        }
-
-        // LAZY LOADING : Si l'offre n'a pas ses détails complets
         if (!$jobOffer->is_detailed) {
             $this->jobOfferService->syncFullDetails($jobOffer);
-            $jobOffer->refresh();
         }
 
-        $jobOffer->load(['employer', 'metier', 'skills', 'languages', 'permits', 'requiredExperiences', 'studies']);
-
-        $match = UserMatch::where('user_id', $user->id)
-            ->where('job_offer_id', $jobOffer->id)
-            ->first();
-
-        // Si aucun match n'existe (même pas le pre-score), on le crée (statique uniquement)
+        $match = $jobOffer->matches()->where('user_id', $user->id)->first();
         if (!$match) {
-            $match = $this->matchingService->match($user, $jobOffer, false);
+            $match = $this->matchingService->match($user, $jobOffer, false, false);
         }
 
-        $hardScore = $this->jobMatcher->calculateHardScore($user, $jobOffer);
+        $hardScore = $this->jobMatcherService->calculateHardScore($user, $jobOffer);
 
-        return view('job-offers.show', compact('jobOffer', 'match', 'hardScore'));
+        return view('job-offers.show', compact('jobOffer', 'match', 'user', 'hardScore'));
+    }
+
+    /**
+     * Synchronise les offres depuis le Forem.
+     */
+    public function sync()
+    {
+        // Simple redirection vers la commande ou appel direct au service
+        // Pour l'instant, on laisse l'importation massive à la console
+        return back()->with('status', 'Utilisez la commande artisan app:reset-and-import pour synchroniser 1000 offres.');
+    }
+
+    /**
+     * Sert le logo d'un employeur directement pour économiser de la mémoire.
+     */
+    public function logo(\App\Models\Employer $employer)
+    {
+        if (!$employer->logo_base64) {
+            return response()->noContent(404);
+        }
+
+        $data = base64_decode($employer->logo_base64);
+        
+        return response($data)
+            ->header('Content-Type', $employer->logo_mime_type)
+            ->header('Cache-Control', 'public, max-age=86400');
     }
 }

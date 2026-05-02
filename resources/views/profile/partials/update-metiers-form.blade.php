@@ -26,25 +26,37 @@
 
             <!-- Résultats Autocomplete -->
             <div 
-                x-show="results.length > 0" 
+                x-show="search.length >= 2" 
                 @click.away="results = []"
                 x-transition:enter="transition ease-out duration-200"
                 x-transition:enter-start="opacity-0 translate-y-2"
                 x-transition:enter-end="opacity-100 translate-y-0"
                 class="absolute z-50 w-full mt-2 bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden"
             >
-                <template x-for="item in results" :key="item.id">
-                    <button 
-                        @click="addMetier(item)"
-                        class="w-full text-left px-6 py-4 hover:bg-slate-50 border-b border-slate-50 last:border-0 flex items-center justify-between group"
-                    >
-                        <div>
-                            <span class="block font-black text-slate-900 group-hover:text-indigo-600 transition-colors" x-text="item.label"></span>
-                            <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest" x-text="'Code ROME : ' + item.code"></span>
-                        </div>
-                        <svg class="w-5 h-5 text-slate-300 group-hover:text-indigo-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                    </button>
-                </template>
+                <!-- Résultats trouvés -->
+                <div class="max-h-80 overflow-y-auto custom-scrollbar">
+                    <template x-for="item in results" :key="item.id">
+                        <button 
+                            @click="addMetier(item)"
+                            class="w-full text-left px-6 py-4 hover:bg-slate-50 border-b border-slate-50 last:border-0 flex items-center justify-between group"
+                        >
+                            <div>
+                                <span class="block font-black text-slate-900 group-hover:text-indigo-600 transition-colors" x-text="item.label"></span>
+                                <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest" x-text="'Code ROME : ' + item.code"></span>
+                            </div>
+                            <svg class="w-5 h-5 text-slate-300 group-hover:text-indigo-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        </button>
+                    </template>
+                </div>
+
+                <!-- État Vide -->
+                <div x-show="results.length === 0 && search.length >= 2" class="p-8 text-center bg-slate-50/50">
+                    <div class="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-6 h-6 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 9.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <p class="text-sm font-black text-slate-900">Aucun métier trouvé pour "<span x-text="search"></span>"</p>
+                    <p class="mt-1 text-xs text-slate-500 font-medium">Note : Seuls les métiers ayant des offres actives en base sont listés ici.</p>
+                </div>
             </div>
         </div>
 

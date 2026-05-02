@@ -124,4 +124,12 @@ class JobOffer extends Model
     {
         return $this->hasMany(UserMatch::class);
     }
+
+    /**
+     * Retourne le match de l'utilisateur connecté.
+     */
+    public function userMatch()
+    {
+        return $this->hasOne(UserMatch::class)->where('user_id', auth()->id());
+    }
 }

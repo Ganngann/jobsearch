@@ -61,7 +61,7 @@
                                 <div class="shrink-0 pt-2">
                                     @if($jobOffer->employer->logo_base64 && strlen($jobOffer->employer->logo_base64) > 100)
                                         <div class="w-32 h-32 p-6 bg-slate-50 rounded-[2rem] border border-slate-100 shadow-inner flex items-center justify-center">
-                                            <img src="data:{{ $jobOffer->employer->logo_mime_type }};base64,{{ $jobOffer->employer->logo_base64 }}" class="w-full h-full object-contain" alt="Logo">
+                                            <img src="{{ route('employers.logo', $jobOffer->employer_id) }}" class="w-full h-full object-contain" alt="Logo">
                                         </div>
                                     @else
                                         <div class="w-32 h-32 rounded-[2rem] bg-gradient-to-br from-indigo-500 to-violet-600 flex flex-col items-center justify-center text-white shadow-2xl shadow-indigo-200">

@@ -12,6 +12,8 @@ Route::get('/', function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [JobOfferController::class, 'dashboard'])->name('dashboard');
     Route::get('/search', [ForemSearchController::class, 'index'])->name('forem.search');
+    Route::get('/jobs/{jobOffer}/preview', [JobOfferController::class, 'preview'])->name('jobs.preview');
+    Route::get('/employers/{employer}/logo', [JobOfferController::class, 'logo'])->name('employers.logo');
     Route::get('/jobs/{jobOffer}', [JobOfferController::class, 'show'])->name('jobs.show');
     Route::post('/jobs/{jobOffer}/match', [JobOfferController::class, 'match'])->name('jobs.match');
     Route::post('/jobs/{jobOffer}/refresh', [JobOfferController::class, 'refresh'])->name('jobs.refresh');
