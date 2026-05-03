@@ -90,6 +90,11 @@
             text-decoration: line-through;
             opacity: 0.7;
         }
+        /* Reset browser defaults inside CV */
+        .cv-paper h1, .cv-paper h2, .cv-paper h3, .cv-paper p, .cv-paper ul, .cv-paper li {
+            margin: 0;
+            padding: 0;
+        }
     </style>
 
     <div class="h-[calc(100vh-64px)] bg-gray-50/30 overflow-hidden" 

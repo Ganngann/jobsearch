@@ -75,13 +75,9 @@
                         </div>
 
                         <template x-if="exp.description || exp.proposed_data?.description">
-                            <div class="text-[10.5px] text-gray-600 mt-0.5 leading-relaxed whitespace-pre-line">
-                                <template x-if="exp.proposed_action === 'update' && exp.proposed_data?.description">
-                                    <div x-html="renderDiff(exp.description, exp.proposed_data.description)"></div>
-                                </template>
-                                <template x-if="!(exp.proposed_action === 'update' && exp.proposed_data?.description)">
-                                    <div x-text="exp.description"></div>
-                                </template>
+                            <div class="text-[10.5px] text-gray-600 mt-0.5 leading-relaxed">
+                                <template x-if="exp.proposed_action === 'update' && exp.proposed_data?.description"><div class="whitespace-pre-line" x-html="renderDiff(exp.description, exp.proposed_data.description)"></div></template>
+                                <template x-if="!(exp.proposed_action === 'update' && exp.proposed_data?.description)"><div class="whitespace-pre-line" x-text="(exp.description || '').trim()"></div></template>
                             </div>
                         </template>
                         

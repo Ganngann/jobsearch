@@ -17,13 +17,9 @@
                             <span x-text="project.name"></span>
                         </template>
                     </h4>
-                    <div class="text-[10px] text-gray-500 mt-1 whitespace-pre-line">
-                        <template x-if="project.proposed_action === 'update' && project.proposed_data && project.proposed_data.description">
-                            <div x-html="renderDiff(project.description, project.proposed_data.description)"></div>
-                        </template>
-                        <template x-if="!(project.proposed_action === 'update' && project.proposed_data && project.proposed_data.description)">
-                            <div x-text="project.description"></div>
-                        </template>
+                    <div class="text-[10px] text-gray-500 mt-1">
+                        <template x-if="project.proposed_action === 'update' && project.proposed_data && project.proposed_data.description"><div class="whitespace-pre-line" x-html="renderDiff(project.description, project.proposed_data.description)"></div></template>
+                        <template x-if="!(project.proposed_action === 'update' && project.proposed_data && project.proposed_data.description)"><div class="whitespace-pre-line" x-text="(project.description || '').trim()"></div></template>
                     </div>
 
                     <template x-if="project.url || (project.proposed_action === 'update' && project.proposed_data && project.proposed_data.url)">

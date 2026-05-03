@@ -139,8 +139,8 @@ class ProfileChatController extends Controller
             'content' => $request->message
         ]);
 
-        // AUTO-VALIDATION : Si l'utilisateur continue d'écrire, on considère les suggestions précédentes comme validées
-        $this->autoValidatePendingChanges($user);
+        // AUTO-VALIDATION : Désactivé pour éviter les vagues de doublons et laisser le contrôle à l'utilisateur
+        // $this->autoValidatePendingChanges($user);
 
         if ($session->messages()->count() === 1) {
             $session->update(['title' => substr($request->message, 0, 50) . '...']);

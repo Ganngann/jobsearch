@@ -47,8 +47,17 @@ class AIProfileService
         ## CONTEXTE ACTUEL
         {$context}
 
+        ## RÈGLE D'EXTRACTION (CRUCIAL)
+        - Ne ré-extrais JAMAIS une information déjà présente dans le CONTEXTE ACTUEL.
+        - Analyse la dernière réponse de l'utilisateur pour y trouver des NOUVEAUTÉS.
+        - Si l'utilisateur apporte une PRÉCISION sur un élément existant (même entreprise, même diplôme), utilise `update` avec l'ID correspondant.
+        - N'utilise `add` QUE pour des éléments réellement nouveaux et absents du contexte.
+        - Si tu hésites entre `add` et `update`, préfère `update` sur l'élément le plus proche.
+        - Ne crée pas de doublons.
+
         ## RÈGLE SUR LES DATES
-        - Format : YYYY-MM-DD ou null. Jamais de texte dans une date.";
+        - Format : YYYY-MM-DD ou null. Jamais de texte dans une date.
+        - Si l'utilisateur donne juste une année, utilise YYYY-01-01.";
 
         $schema = [
             'type' => 'object',
@@ -211,14 +220,16 @@ class AIProfileService
 NÉ LE: {$birthDate}
 COMPÉTENCES: {$skills}";
         $experiences = $user->experiences->map(function($e) {
+            $status = $e->status === 'draft' ? '[EN ATTENTE] ' : '';
             $dates = "(" . ($e->start_date?->format('Y') ?? '?') . " - " . ($e->is_current ? 'Aujourd\'hui' : ($e->end_date?->format('Y') ?? '?')) . ")";
             $desc = $e->description ?: 'DESCRIPTION MANQUANTE';
-            return "- [ID: {$e->id}] {$e->title} chez {$e->company} {$dates} : {$desc}";
+            return "- [ID: {$e->id}] {$status}{$e->title} chez {$e->company} {$dates} : {$desc}";
         })->implode("\n");
-
+        
         $educations = $user->educations->map(function($e) {
+            $status = $e->status === 'draft' ? '[EN ATTENTE] ' : '';
             $desc = $e->description ?: 'DESCRIPTION MANQUANTE';
-            return "- [ID: {$e->id}] {$e->degree} à {$e->school} ({$e->graduation_year}) : {$desc}";
+            return "- [ID: {$e->id}] {$status}{$e->degree} à {$e->school} ({$e->graduation_year}) : {$desc}";
         })->implode("\n");
 
         $facts = $user->facts()->orderBy('local_id')->get()->map(function($f) {

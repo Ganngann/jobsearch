@@ -56,13 +56,9 @@
                         
                         <template x-if="edu.description || edu.proposed_data?.description">
                             <div class="mt-0.5 flex items-center gap-3">
-                                <div class="text-[10.5px] text-gray-600 leading-relaxed flex-1 whitespace-pre-line">
-                                    <template x-if="edu.proposed_action === 'update' && edu.proposed_data?.description">
-                                        <div x-html="renderDiff(edu.description, edu.proposed_data.description)"></div>
-                                    </template>
-                                    <template x-if="!(edu.proposed_action === 'update' && edu.proposed_data?.description)">
-                                        <div x-text="edu.description"></div>
-                                    </template>
+                                <div class="text-[10.5px] text-gray-600 leading-relaxed flex-1">
+                                    <template x-if="edu.proposed_action === 'update' && edu.proposed_data?.description"><div class="whitespace-pre-line" x-html="renderDiff(edu.description, edu.proposed_data.description)"></div></template>
+                                    <template x-if="!(edu.proposed_action === 'update' && edu.proposed_data?.description)"><div class="whitespace-pre-line" x-text="(edu.description || '').trim()"></div></template>
                                 </div>
                             </div>
                         </template>

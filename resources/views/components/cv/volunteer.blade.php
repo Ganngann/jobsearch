@@ -11,13 +11,9 @@
                 <div @dblclick="startEditing('volunteer', vol)" class="cursor-pointer">
                         <h4 class="text-[11px] font-bold text-gray-900" x-text="vol.role"></h4>
                         <p class="text-[10px] text-gray-500" x-text="vol.organization"></p>
-                        <div class="text-[10px] text-gray-400 mt-1 whitespace-pre-line" x-show="vol.description">
-                            <template x-if="vol.proposed_action === 'update' && vol.proposed_data && vol.proposed_data.description">
-                                <div x-html="renderDiff(vol.description, vol.proposed_data.description)"></div>
-                            </template>
-                            <template x-if="!(vol.proposed_action === 'update' && vol.proposed_data && vol.proposed_data.description)">
-                                <div x-text="vol.description"></div>
-                            </template>
+                        <div class="text-[10px] text-gray-400 mt-1" x-show="vol.description">
+                            <template x-if="vol.proposed_action === 'update' && vol.proposed_data && vol.proposed_data.description"><div class="whitespace-pre-line" x-html="renderDiff(vol.description, vol.proposed_data.description)"></div></template>
+                            <template x-if="!(vol.proposed_action === 'update' && vol.proposed_data && vol.proposed_data.description)"><div class="whitespace-pre-line" x-text="(vol.description || '').trim()"></div></template>
                         </div>
                 </div>
             </template>
