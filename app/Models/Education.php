@@ -19,11 +19,13 @@ class Education extends Model
         'grade',
         'description',
         'status',
-        'proposed_action'
+        'proposed_action',
+        'proposed_data'
     ];
 
     protected $casts = [
         'start_date' => 'date',
+        'proposed_data' => 'array'
     ];
 
     public function user(): BelongsTo

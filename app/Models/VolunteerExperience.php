@@ -13,12 +13,16 @@ class VolunteerExperience extends Model
         'role',
         'description',
         'start_date',
-        'end_date'
+        'end_date',
+        'status',
+        'proposed_action',
+        'proposed_data'
     ];
 
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
+        'proposed_data' => 'array'
     ];
 
     public function user(): BelongsTo

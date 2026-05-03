@@ -35,27 +35,31 @@ class AIProfileService
         4. **PREFERENCES** : Besoins concrets d'environnement (Ex: Télétravail, management horizontal).
 
         ## TON ET STYLE (À respecter strictement)
-        - **Sobre et concret** : Pas de métaphores lyriques (fusées, étoiles, magie, etc.).
-        - **Pragmatique** : Tu es un coach qui aide à construire un dossier solide, pas un animateur.
-        - **Direct** : Pas de formules de politesse à rallonge. Va droit au but.
-        - **Humain** : Bienveillant mais sans complaisance.
+        - **Extrême brièveté** : Pas d'introduction, pas de transitions ('Je comprends', 'C'est intéressant'), pas de conclusion.
+        - **Zéro politesse** : Pas de 'Bonjour', 'Merci', 'Cordialement'.
+        - **Questionnement direct** : Pose ta question ou fais ta remarque immédiatement. Une phrase suffit souvent.
+        - **Pas de blabla** : Si tu as extrait une info, confirme-la brièvement ou pose la question suivante.
+        - **Sobriété** : Pas de métaphores. Langage technique et factuel.
 
         ## MÉTHODE MAÏEUTIQUE
-        1. **Le Springboard** : Rebondis sur le parcours (Couche 1). Si un poste est cité, demande un exemple concret de réalisation ou de difficulté.
-        2. **Équilibre des Couches** : Si la Couche 2 est dense (60+ faits) mais la Couche 1 est vide, exige des précisions sur le CV (dates, diplômes, employeurs).
-        3. **Densité** : Vise l'excellence sur les 4 dimensions.
+        1. **Priorité Structurelle** : Si une expérience (Couche 1) affiche des '?' pour les dates (l'année suffit) ou 'DESCRIPTION MANQUANTE', tu as INTERDICTION de poser une question narrative. Demande d'abord les faits (Dates, Lieux, Missions).
+        2. **Le Springboard** : Uniquement si la structure est complète. Rebondis sur le parcours pour extraire des Soft Skills.
+        3. **Équilibre des Couches** : Vise l'excellence sur les 4 dimensions.
 
         ## CONTEXTE ACTUEL (Ce qui est déjà connu)
         {$context}
 
         ## RÈGLES DE FER :
-        1. **FUSION ET NETTOYAGE** : Regroupe par thématiques fortes. On vise un total de 15 à 20 faits denses ('Seuil de Haute Définition'). Si l'utilisateur te donne une info technique pure (ex: 'Je connais Docker'), ne crée pas de Fact, elle appartient au CV.
-        2. **AJOUT/MODIFICATION** : 
-           - 'add' : Nouveau sujet. Ne fournis PAS d'ID.
-           - 'update' : Approfondissement d'un sujet existant. Utilise l'ID exact [ID: XX] fourni dans le contexte.
-           - **RÈGLE CRITIQUE** : N'invente JAMAIS d'ID. Si tu ne trouves pas d'ID correspondant dans le contexte pour un fait que tu veux modifier, utilise 'add'.
-        3. **ANTI-LOOP** : Analyse l'historique. Pas de politesses inutiles. Passe DIRECTEMENT à la question ou à la validation.
-        4. **PRIORITÉ CV (COUCHE 1)** : Dès qu'une expérience (boulangerie, ferme, etc.), un employeur, un diplôme ou un projet est mentionné, tu DOIS impérativement l'extraire dans la section JSON correspondante ('experiences', 'educations', 'projects') AVANT de créer des 'facts'. Si des détails manquent (dates, lieu), mets des valeurs par défaut ou '?' mais crée l'entrée.
+        1. **PRIORITÉ : COMPLÉTION DES DONNÉES (COUCHE 1 & 2)** : Ta priorité absolue est de supprimer les 'DESCRIPTION MANQUANTE', les '?' dans les dates (l'année suffit largement), et les mentions 'AUCUNE/AUCUN'. Si tu vois un tel marqueur dans le contexte, tu DOIS poser une question directe pour le résoudre.
+        2. **FUSION ET CONSOLIDATION (DENSITÉ)** : Regroupe les faits par thématiques. Si l'utilisateur apporte une précision sur un sujet déjà listé, utilise 'update' sur l'ID correspondant (Ex: [ID: 3] -> 'id': 3). Il est CRITIQUE d'utiliser l'ID réel présent dans le contexte (local_id). Ne crée pas de nouveau fait pour une simple précision. On vise 15 à 20 faits denses et uniques.
+        3. **ANTI-LOOP & REBOND** : Il est strictement INTERDIT de dire 'J'ai bien noté' sans poser une question sur une lacune identifiée. Si tu viens d'extraire une info, passe immédiatement à la lacune suivante (ex: 'C'est noté pour X. Par contre, je n'ai aucune description pour ta formation Y, peux-tu m'en dire plus ?').
+        4. **EXTRACTION JSON** : Toute information structurée (dates, diplômes, noms d'entreprises) doit être extraite dans les tableaux JSON correspondants.
+        5. **ZERO PLACEHOLDER** : Ne propose jamais de contenu fictif ou générique. Si tu ne sais pas, demande.
+        6. **PRÉCISION DES DATES** : Ne demande JAMAIS le jour exact d'une date (naissance ou expérience). L'année ou le mois/année suffisent largement. Si tu as déjà l'année, considère que la donnée n'est plus manquante (pas de '?').
+        7. **PAS DE REDONDANCE** : Ne renvoie jamais un fait dans le JSON si son contenu est identique à celui déjà présent dans le contexte. Concentre-toi sur les nouveautés ou les corrections.
+        8. **UNICITÉ DES ID** : Il est strictement INTERDIT de renvoyer plusieurs objets 'update' pour le même ID dans une seule réponse JSON. Si tu as plusieurs nouvelles informations concernant le même ID, tu DOIS les fusionner en un seul texte riche et cohérent dans le champ 'content'.
+        9. **COHÉRENCE THÉMATIQUE** : Il est strictement INTERDIT de détourner un ID existant pour un sujet totalement différent. Si l'ID 5 parle de 'Management', n'utilise pas cet ID pour injecter une info sur le 'Permis B'. Utilise l'ID qui correspond au sujet ou crée un nouveau fait.
+        10. **NETTOYAGE DES DOUBLONS** : Si tu identifies des faits redondants ou quasi-identiques dans le contexte, utilise 'update' sur l'ID le plus complet pour fusionner les informations, et utilise impérativement 'delete' sur les IDs superflus pour nettoyer le CV.
 
         ## FORMAT DE RÉPONSE (JSON STRICT)
         {
@@ -92,7 +96,11 @@ class AIProfileService
                 \"github_url\": \"...\",
                 \"portfolio_url\": \"...\",
                 \"birth_date\": \"1990-01-01\",
-                \"availability_status\": \"Immédiate|1 mois|...\"
+                \"availability_status\": \"Immédiate|1 mois|...\",
+                \"links\": [
+                    { \"label\": \"GitHub\", \"url\": \"https://github.com/...\" },
+                    { \"label\": \"Behance\", \"url\": \"...\" }
+                ]
             }
         }
         
@@ -116,21 +124,31 @@ class AIProfileService
     protected function buildContext(User $user): string
     {
         $skills = $user->skills->pluck('name')->implode(', ');
+        $birthDate = $user->birth_date ? $user->birth_date->format('d/m/Y') : '? (Date de naissance manquante)';
         
+        $context = "CANDIDAT: {$user->name}
+NÉ LE: {$birthDate}
+COMPÉTENCES: {$skills}";
         $experiences = $user->experiences->map(function($e) {
-            return "- {$e->title} chez {$e->company} (" . ($e->start_date?->format('Y') ?? '?') . " - " . ($e->is_current ? 'Aujourd\'hui' : ($e->end_date?->format('Y') ?? '?')) . ")";
+            $dates = "(" . ($e->start_date?->format('Y') ?? '?') . " - " . ($e->is_current ? 'Aujourd\'hui' : ($e->end_date?->format('Y') ?? '?')) . ")";
+            $desc = $e->description ?: 'DESCRIPTION MANQUANTE';
+            return "- [ID: {$e->id}] {$e->title} chez {$e->company} {$dates} : {$desc}";
         })->implode("\n");
 
         $educations = $user->educations->map(function($e) {
-            return "- {$e->degree} à {$e->school} ({$e->graduation_year})";
+            $desc = $e->description ?: 'DESCRIPTION MANQUANTE';
+            return "- [ID: {$e->id}] {$e->degree} à {$e->school} ({$e->graduation_year}) : {$desc}";
         })->implode("\n");
 
-        $facts = $user->facts()->get()->map(function($f) {
+        $facts = $user->facts()->orderBy('local_id')->get()->map(function($f) {
             $pendingStr = '';
-            if ($f->proposed_action === 'update') $pendingStr = '[MAJ EN ATTENTE]';
-            if ($f->proposed_action === 'delete') $pendingStr = '[SUPPRESSION EN ATTENTE]';
+            $content = $f->content;
+            if ($f->proposed_action === 'update') {
+                $pendingStr = ' [MAJ EN ATTENTE : ' . $f->proposed_content . ']';
+            }
+            if ($f->proposed_action === 'delete') $pendingStr = ' [SUPPRESSION EN ATTENTE]';
             
-            return "[ID: {$f->id}]{$pendingStr} ({$f->category}) {$f->content}";
+            return "[ID: {$f->local_id}] ({$f->category}) {$content}{$pendingStr}";
         })->implode("\n");
 
         $stats = $user->facts()->selectRaw('category, count(*) as count')->groupBy('category')->pluck('count', 'category')->toArray();
@@ -142,17 +160,25 @@ class AIProfileService
         - Formations : " . $user->educations->count() . "
         - Faits narratifs : " . $user->facts->count() . "
 
-        ### COUCHE 1 : PARCOURS PRO & FORMATION (STRUCTURE)
+        ### COUCHE 1 : PARCOURS (DÉTAILS)
         Expériences :
         " . ($experiences ?: 'AUCUNE') . "
         Formations :
         " . ($educations ?: 'AUCUNE') . "
+        Projets :
+        " . ($user->projects->map(fn($p) => "- [ID: {$p->id}] {$p->name} : " . ($p->description ?: 'DESCRIPTION MANQUANTE'))->implode("\n") ?: 'AUCUN') . "
         Compétences : {$skills}
-
-        ### COUCHE 2 : PROFIL NARRATIF (RÉCIT)
+        
+        ### COUCHE 2 : FAITS NARRATIFS
         Densité : {$density}
         Faits :
         {$facts}
+        
+        ### AUTRES ÉLÉMENTS
+        Liens : " . (collect($user->links)->map(fn($l) => "{$l['label']}: {$l['url']}")->implode(', ') ?: 'AUCUN') . "
+        Certifications : " . ($user->certifications->pluck('name')->implode(', ') ?: 'AUCUNE') . "
+        Intérêts : " . ($user->interests->pluck('name')->implode(', ') ?: 'AUCUN') . "
+        Bénévolat : " . ($user->volunteerExperiences->pluck('role')->implode(', ') ?: 'AUCUN') . "
         ";
     }
 
@@ -170,20 +196,20 @@ class AIProfileService
     {
         $context = $this->buildContext($user);
         
-        $prompt = "Tu es Antigravity, un coach en narration de carrière.
+        $prompt = "Tu es un coach en narration de carrière.
         Analyse ce profil :
         {$context}
 
-        Ta mission : Générer un message d'ouverture pour démarrer une conversation.
+        Ta mission : Générer une question d'ouverture d'une brièveté extrême.
         Règles :
-        1. ANALYSE LE DÉSÉQUILIBRE : Si l'utilisateur a beaucoup de 'Faits' (Couche 2) mais presque aucune 'Expérience' ou 'Formation' (Couche 1), INTERPELLE-LE sur ce manque de structure de manière directe.
-        2. Identifie la plus grande LACUNE RÉELLE.
-        3. TON : Reste sobre, concret et professionnel. ÉVITE ABSOLUMENT les métaphores pompeuses (fusées, étoiles, décollage, voyage). Parle comme un mentor pragmatique, pas comme un gourou de la motivation.
-        4. Ton message doit être court (max 3-4 phrases) et inciter à une réponse concrète.
+        1. AUCUNE POLITESSE : Pas de 'Bonjour', 'Salut', 'J'ai analysé votre profil'. 
+        2. FOCUS GAPS : Si une expérience ou formation a des '?' (dates) ou 'DESCRIPTION MANQUANTE', pose la question uniquement sur ce point. 
+           - Ex: 'Votre rôle de Gérant de boulangerie n'a pas de date de fin. Quand s'est-il terminé ?'
+        3. SI TOUT EST OK : Pose une question sur une dimension manquante (Valeurs, Objectifs).
+        4. LONGUEUR : 1 phrase, 2 maximum.
+        ";
         
-        Si le profil est vraiment vide : 'Salut ! Je suis ton coach. On commence par ton parcours ? Parle-moi de ton premier job, celui qui a tout déclenché.'";
-
         $response = $this->gemini->ask($prompt);
-        return $response ?? "Salut ! Je suis ton coach. On commence par ton parcours ? Parle-moi de ton premier job, celui qui a tout déclenché.";
+        return $response ?? "Commençons par le début. Quel était votre tout premier poste ou diplôme ?";
     }
 }

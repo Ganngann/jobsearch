@@ -20,13 +20,15 @@ class Experience extends Model
         'end_date',
         'is_current',
         'status',
-        'proposed_action'
+        'proposed_action',
+        'proposed_data'
     ];
-
+    
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
-        'is_current' => 'boolean'
+        'is_current' => 'boolean',
+        'proposed_data' => 'array'
     ];
 
     public function user(): BelongsTo

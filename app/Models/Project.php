@@ -14,13 +14,17 @@ class Project extends Model
         'url',
         'start_date',
         'end_date',
-        'is_ongoing'
+        'is_ongoing',
+        'status',
+        'proposed_action',
+        'proposed_data'
     ];
 
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
-        'is_ongoing' => 'boolean'
+        'is_ongoing' => 'boolean',
+        'proposed_data' => 'array'
     ];
 
     public function user(): BelongsTo

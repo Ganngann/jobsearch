@@ -14,12 +14,16 @@ class Certification extends Model
         'issue_date',
         'expiration_date',
         'credential_id',
-        'credential_url'
+        'credential_url',
+        'status',
+        'proposed_action',
+        'proposed_data'
     ];
 
     protected $casts = [
         'issue_date' => 'date',
         'expiration_date' => 'date',
+        'proposed_data' => 'array'
     ];
 
     public function user(): BelongsTo

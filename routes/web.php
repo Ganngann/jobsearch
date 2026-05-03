@@ -49,6 +49,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/profile/builder/facts/{fact}/validate', [\App\Http\Controllers\ProfileChatController::class, 'validateFact'])->name('profile.builder.facts.validate');
     Route::post('/profile/builder/facts/{fact}/accept', [\App\Http\Controllers\ProfileChatController::class, 'acceptProposal'])->name('profile.builder.facts.accept');
     Route::post('/profile/builder/facts/{fact}/reject', [\App\Http\Controllers\ProfileChatController::class, 'rejectProposal'])->name('profile.builder.facts.reject');
+    Route::post('/profile/builder/experience/{id}/accept', [\App\Http\Controllers\ProfileChatController::class, 'acceptExperience'])->name('profile.builder.experience.accept');
+    Route::post('/profile/builder/education/{id}/accept', [\App\Http\Controllers\ProfileChatController::class, 'acceptEducation'])->name('profile.builder.education.accept');
+    Route::post('/profile/builder/item/{type}/{id}/accept', [\App\Http\Controllers\ProfileChatController::class, 'acceptItem'])->name('profile.builder.item.accept');
+    Route::post('/profile/builder/item/{type}/{id}/reject', [\App\Http\Controllers\ProfileChatController::class, 'rejectItem'])->name('profile.builder.item.reject');
+    Route::delete('/profile/builder/item/{type}/{id}', [\App\Http\Controllers\ProfileChatController::class, 'deleteItem'])->name('profile.builder.item.delete');
+    Route::patch('/profile/builder/item/{type}/{id}', [\App\Http\Controllers\ProfileChatController::class, 'updateItem'])->name('profile.builder.item.update');
     Route::delete('/profile/builder/facts/{fact}', [\App\Http\Controllers\ProfileChatController::class, 'deleteFact'])->name('profile.builder.facts.delete');
     Route::delete('/profile/facts/{fact}/skills/{skill}', [ProfileController::class, 'detachSkillFromFact'])->name('profile.facts.skills.detach');
     Route::post('/profile/skills/{skill}/add', [ProfileController::class, 'addSkill'])->name('profile.skills.add');

@@ -9,6 +9,7 @@ class UserFact extends Model
 {
     protected $fillable = [
         'user_id',
+        'local_id',
         'session_id',
         'experience_id',
         'content',
@@ -21,6 +22,16 @@ class UserFact extends Model
         'confidence_score',
         'source_metadata'
     ];
+
+    protected static function booted()
+    {
+        static::creating(function ($fact) {
+            if (!$fact->local_id) {
+                $maxLocalId = static::where('user_id', $fact->user_id)->max('local_id') ?? 0;
+                $fact->local_id = $maxLocalId + 1;
+            }
+        });
+    }
 
     protected $casts = [
         'source_metadata' => 'array',

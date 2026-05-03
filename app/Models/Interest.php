@@ -7,7 +7,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Interest extends Model
 {
-    protected $fillable = ['user_id', 'name'];
+    protected $fillable = ['user_id', 'name', 'status', 'proposed_action', 'proposed_data'];
+
+    protected $casts = [
+        'proposed_data' => 'array'
+    ];
 
     public function user(): BelongsTo
     {

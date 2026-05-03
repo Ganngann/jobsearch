@@ -104,8 +104,8 @@ class ProfileChatController extends Controller
         $certifications = $user->certifications()->orderBy('updated_at', 'desc')->get();
         $interests = $user->interests()->orderBy('updated_at', 'desc')->get();
         $volunteer_experiences = $user->volunteerExperiences()->orderBy('updated_at', 'desc')->get();
-        $all_experiences = $user->experiences()->where('status', '!=', 'draft')->orderBy('start_date', 'desc')->get();
-        $all_educations = $user->educations()->where('status', '!=', 'draft')->orderBy('graduation_year', 'desc')->get();
+        $all_experiences = $user->experiences()->orderBy('start_date', 'desc')->get();
+        $all_educations = $user->educations()->orderBy('graduation_year', 'desc')->get();
 
         return view('profile.builder', compact(
             'messages', 'facts', 'activeSessions', 'archivedSessions', 'sessionId', 'stats',
@@ -172,54 +172,49 @@ class ProfileChatController extends Controller
             'content' => $aiResponse['reply']
         ]);
 
-        // 5. Traiter les faits suggérés
+        // 5. Traiter les faits suggérés (avec consolidation pour éviter les écrasements)
+        $factUpdates = [];
         foreach ($aiResponse['facts'] ?? [] as $factData) {
             $rawId = $factData['id'] ?? null;
             $cleanId = $rawId ? preg_replace('/[^0-9]/', '', $rawId) : null;
             $action = $factData['action'] ?? ($cleanId ? 'update' : 'add');
 
             if ($action === 'delete' && $cleanId) {
-                $fact = UserFact::find($cleanId);
-                if ($fact && $fact->user_id === $user->id) {
-                    $fact->update(['proposed_action' => 'delete']);
+                $fact = $user->facts()->where('local_id', $cleanId)->first();
+                if ($fact) $fact->update(['proposed_action' => 'delete']);
+            } elseif ($action === 'update' && $cleanId) {
+                if (!isset($factUpdates[$cleanId])) {
+                    $factUpdates[$cleanId] = $factData;
+                } else {
+                    // Consolidation : si l'IA envoie plusieurs blocs pour le même ID, on les fusionne
+                    $factUpdates[$cleanId]['content'] .= " " . $factData['content'];
                 }
-            } elseif ($action === 'add' || !$cleanId) {
+            } else {
+                // Ajout
                 $user->facts()->create([
                     'session_id' => $sessionId,
                     'content' => $factData['content'],
                     'category' => $factData['category'] ?? 'VALEURS',
-                    'status' => 'validated',
+                    'status' => 'draft',
+                    'proposed_action' => 'add',
                     'confidence_score' => 1.0
                 ]);
-            } elseif ($cleanId) {
-                $fact = UserFact::find($cleanId);
-                if ($fact && $fact->user_id === $user->id) {
-                    $newContent = $factData['content'] ?? $fact->content;
-                    $newCategory = $factData['category'] ?? $fact->category;
+            }
+        }
 
-                    // Sécurité : ignorer si strictement identique à l'existant
-                    if ($fact->content === $newContent && $fact->category === $newCategory) {
-                        Log::debug("Fact {$cleanId} ignored: no changes detected.");
-                        continue;
-                    }
+        // Appliquer les mises à jour consolidées
+        foreach ($factUpdates as $cleanId => $factData) {
+            $fact = $user->facts()->where('local_id', $cleanId)->first();
+            if ($fact) {
+                $newContent = trim($factData['content']);
+                $newCategory = $factData['category'] ?? $fact->category;
 
+                if ($fact->content !== $newContent || $fact->category !== $newCategory) {
                     $fact->update([
                         'proposed_content' => $newContent,
                         'proposed_category' => $newCategory,
                         'proposed_action' => 'update'
                     ]);
-                    Log::debug("Fact {$cleanId} updated with proposal.");
-                } else {
-                    // Fallback : si l'IA invente un ID ou se trompe, on traite comme un ajout
-                    // pour éviter de perdre l'information.
-                    $user->facts()->create([
-                        'session_id' => $sessionId,
-                        'content' => $factData['content'],
-                        'category' => $factData['category'] ?? 'VALEURS',
-                        'status' => 'validated',
-                        'confidence_score' => 1.0
-                    ]);
-                    Log::debug("Fact ID {$cleanId} not found, falling back to 'add'.");
                 }
             }
         }
@@ -239,6 +234,26 @@ class ProfileChatController extends Controller
                     'status' => 'draft',
                     'proposed_action' => 'add'
                 ]);
+            } elseif ($expData['action'] === 'update' && isset($expData['id'])) {
+                $exp = $user->experiences()->find($expData['id']);
+                if ($exp) {
+                    $newData = array_filter([
+                        'company' => $expData['company'] ?? null,
+                        'title' => $expData['title'] ?? null,
+                        'description' => $expData['description'] ?? null,
+                        'employment_type' => $expData['employment_type'] ?? null,
+                        'start_date' => isset($expData['start_date']) ? $this->sanitizeDate($expData['start_date']) : null,
+                        'end_date' => isset($expData['end_date']) ? $this->sanitizeDate($expData['end_date']) : null,
+                        'is_current' => $expData['is_current'] ?? null,
+                    ]);
+                    
+                    if (!empty($newData)) {
+                        $exp->update([
+                            'proposed_data' => $newData,
+                            'proposed_action' => 'update'
+                        ]);
+                    }
+                }
             }
         }
 
@@ -252,23 +267,60 @@ class ProfileChatController extends Controller
                     'start_date' => $this->sanitizeDate($eduData['start_date'] ?? null),
                     'graduation_year' => $this->sanitizeYear($eduData['graduation_year'] ?? null),
                     'grade' => $eduData['grade'] ?? null,
+                    'description' => $eduData['description'] ?? null,
                     'status' => 'draft',
                     'proposed_action' => 'add'
                 ]);
+            } elseif ($eduData['action'] === 'update' && isset($eduData['id'])) {
+                $edu = $user->educations()->find($eduData['id']);
+                if ($edu) {
+                    $newData = array_filter([
+                        'school' => $eduData['school'] ?? null,
+                        'degree' => $eduData['degree'] ?? null,
+                        'field' => $eduData['field'] ?? null,
+                        'description' => $eduData['description'] ?? null,
+                        'graduation_year' => $this->sanitizeYear($eduData['graduation_year'] ?? null),
+                    ]);
+                    
+                    if (!empty($newData)) {
+                        $edu->update([
+                            'proposed_data' => $newData,
+                            'proposed_action' => 'update'
+                        ]);
+                    }
+                }
             }
         }
 
-        // 8. Traiter les projets suggérés
+        // 8. Projets
         foreach ($aiResponse['projects'] ?? [] as $projData) {
             if (($projData['action'] ?? 'add') === 'add') {
                 $user->projects()->create([
                     'name' => $projData['name'] ?? '?',
-                    'description' => $projData['description'] ?? null,
+                    'description' => $projData['description'] ?? '',
                     'url' => $projData['url'] ?? null,
                     'start_date' => $this->sanitizeDate($projData['start_date'] ?? null),
-                    'end_date' => $this->sanitizeDate($projData['end_date'] ?? null),
                     'is_ongoing' => $projData['is_ongoing'] ?? false,
+                    'status' => 'draft'
                 ]);
+            } elseif ($projData['action'] === 'update' && isset($projData['id'])) {
+                $proj = $user->projects()->find($projData['id']);
+                if ($proj) {
+                    $newData = array_filter([
+                        'name' => $projData['name'] ?? null,
+                        'description' => $projData['description'] ?? null,
+                        'url' => $projData['url'] ?? null,
+                        'start_date' => isset($projData['start_date']) ? $this->sanitizeDate($projData['start_date']) : null,
+                        'is_ongoing' => $projData['is_ongoing'] ?? null,
+                    ]);
+                    
+                    if (!empty($newData)) {
+                        $proj->update([
+                            'proposed_data' => $newData,
+                            'proposed_action' => 'update'
+                        ]);
+                    }
+                }
             }
         }
 
@@ -282,6 +334,7 @@ class ProfileChatController extends Controller
                     'expiration_date' => $this->sanitizeDate($certData['expiration_date'] ?? null),
                     'credential_id' => $certData['credential_id'] ?? null,
                     'credential_url' => $certData['credential_url'] ?? null,
+                    'status' => 'draft'
                 ]);
             }
         }
@@ -292,9 +345,10 @@ class ProfileChatController extends Controller
                 $user->volunteerExperiences()->create([
                     'organization' => $volData['organization'] ?? '?',
                     'role' => $volData['role'] ?? '?',
-                    'description' => $volData['description'] ?? null,
+                    'description' => $volData['description'] ?? '',
                     'start_date' => $this->sanitizeDate($volData['start_date'] ?? null),
                     'end_date' => $this->sanitizeDate($volData['end_date'] ?? null),
+                    'status' => 'draft'
                 ]);
             }
         }
@@ -302,17 +356,68 @@ class ProfileChatController extends Controller
         // 11. Intérêts
         foreach ($aiResponse['interests'] ?? [] as $intData) {
             if (($intData['action'] ?? 'add') === 'add') {
-                $user->interests()->firstOrCreate(['name' => $intData['name']]);
+                $user->interests()->firstOrCreate(
+                    ['name' => $intData['name'], 'user_id' => $user->id],
+                    ['status' => 'draft']
+                );
             }
         }
 
         // 12. Mises à jour utilisateur directes (Contact/Info)
         if (isset($aiResponse['user_updates'])) {
-            $user->update(array_filter($aiResponse['user_updates']));
+            $updates = array_filter($aiResponse['user_updates']);
+            
+            // On récupère les liens existants
+            $currentLinks = $user->links ?? [];
+            $newLinksFound = false;
+
+            // Si l'IA envoie les anciens champs, on les convertit en liens
+            $mapped = [
+                'github_url' => 'GitHub',
+                'linkedin_url' => 'LinkedIn',
+                'portfolio_url' => 'Portfolio'
+            ];
+
+            foreach ($mapped as $field => $label) {
+                if (isset($updates[$field]) && !empty($updates[$field])) {
+                    $currentLinks[] = ['label' => $label, 'url' => $updates[$field]];
+                    $newLinksFound = true;
+                }
+            }
+
+            // Si l'IA envoie déjà le format 'links'
+            if (isset($updates['links']) && is_array($updates['links'])) {
+                foreach($updates['links'] as $link) {
+                    if (isset($link['url'])) {
+                        $currentLinks[] = $link;
+                        $newLinksFound = true;
+                    }
+                }
+            }
+
+            if ($newLinksFound) {
+                // Déduplication par URL
+                $uniqueLinks = [];
+                foreach($currentLinks as $link) {
+                    if (isset($link['url'])) {
+                        $uniqueLinks[$link['url']] = $link;
+                    }
+                }
+                $updates['links'] = array_values($uniqueLinks);
+            }
+
+            if (isset($updates['birth_date'])) {
+                $updates['birth_date'] = $this->sanitizeDate($updates['birth_date']);
+            }
+            
+            $user->update($updates);
         }
+
+        $user = $user->fresh();
 
         return response()->json([
             'reply' => $aiResponse['reply'],
+            'user' => $user,
             'facts' => $user->facts()
                 ->with('skills')
                 ->orderByRaw('CASE WHEN proposed_action IS NOT NULL THEN 0 ELSE 1 END')
@@ -322,8 +427,9 @@ class ProfileChatController extends Controller
             'certifications' => $user->certifications()->orderBy('updated_at', 'desc')->get(),
             'interests' => $user->interests()->orderBy('updated_at', 'desc')->get(),
             'volunteer_experiences' => $user->volunteerExperiences()->orderBy('updated_at', 'desc')->get(),
-            'all_experiences' => $user->experiences()->where('status', '!=', 'draft')->orderBy('start_date', 'desc')->get(),
-            'all_educations' => $user->educations()->where('status', '!=', 'draft')->orderBy('graduation_year', 'desc')->get(),
+            'all_experiences' => $user->experiences()->orderBy('start_date', 'desc')->get(),
+            'all_educations' => $user->educations()->orderBy('graduation_year', 'desc')->get(),
+            'skills' => $user->skills()->get(),
             'activeSessions' => $user->profileSessions()->where('is_archived', false)->get(),
             'archivedSessions' => $user->profileSessions()->where('is_archived', true)->get()
         ]);
@@ -378,27 +484,80 @@ class ProfileChatController extends Controller
         return response()->json(['success' => true]);
     }
 
-    public function acceptProposal(UserFact $fact)
+    public function acceptProposal(\App\Models\UserFact $fact)
     {
         if ($fact->user_id !== Auth::id()) abort(403);
-        if ($fact->proposed_action === 'delete') {
+
+        if ($fact->proposed_action === 'update') {
+            $fact->update([
+                'content' => $fact->proposed_content,
+                'proposed_content' => null,
+                'proposed_action' => null,
+                'status' => 'validated'
+            ]);
+        } elseif ($fact->proposed_action === 'add') {
+            $fact->update([
+                'proposed_action' => null,
+                'status' => 'validated'
+            ]);
+        } elseif ($fact->proposed_action === 'delete') {
             $fact->delete();
-            return response()->json(['success' => true, 'deleted' => true]);
         }
-        $fact->update([
-            'content' => $fact->proposed_content ?? $fact->content,
-            'category' => $fact->proposed_category ?? $fact->category,
-            'proposed_action' => null,
-            'status' => 'validated'
-        ]);
-        return response()->json(['success' => true, 'fact' => $fact]);
+
+        return response()->json(['success' => true]);
     }
 
-    public function rejectProposal(UserFact $fact)
+    public function rejectProposal(\App\Models\UserFact $fact)
     {
         if ($fact->user_id !== Auth::id()) abort(403);
-        $fact->update(['proposed_action' => null]);
+
+        if ($fact->proposed_action === 'add') {
+            $fact->delete();
+        } else {
+            $fact->update([
+                'proposed_content' => null,
+                'proposed_action' => null
+            ]);
+        }
+
         return response()->json(['success' => true]);
+    }
+
+    public function updateItem(Request $request, $type, $id)
+    {
+        $user = Auth::user();
+        
+        if ($type === 'user') {
+            $user->update($request->only(['name', 'email', 'phone', 'linkedin_url', 'github_url', 'portfolio_url', 'birth_date', 'links']));
+            return response()->json(['success' => true, 'item' => $user->fresh()]);
+        }
+
+        $item = match($type) {
+            'experience' => $user->experiences()->find($id),
+            'education' => $user->educations()->find($id),
+            'project' => $user->projects()->find($id),
+            'interest' => $user->interests()->find($id),
+            'certification' => $user->certifications()->find($id),
+            'volunteer' => $user->volunteerExperiences()->find($id),
+            'fact' => $user->facts()->find($id),
+            'skill' => $user->skills()->find($id),
+            default => null
+        };
+
+        if (!$item) return response()->json(['error' => 'Item not found'], 404);
+
+        // Update all provided fields and set status to validated
+        $data = $request->all();
+        $data['status'] = 'validated'; // Manual edit validates the item
+        
+        // Sanitize dates if present
+        if (isset($data['start_date'])) $data['start_date'] = $this->sanitizeDate($data['start_date']);
+        if (isset($data['end_date'])) $data['end_date'] = $this->sanitizeDate($data['end_date']);
+        if (isset($data['issue_date'])) $data['issue_date'] = $this->sanitizeDate($data['issue_date']);
+
+        $item->update($data);
+
+        return response()->json(['success' => true, 'item' => $item]);
     }
 
     public function deleteFact(UserFact $fact)
@@ -407,4 +566,98 @@ class ProfileChatController extends Controller
         $fact->delete();
         return response()->json(['success' => true]);
     }
+
+    public function acceptItem($type, $id)
+    {
+        $user = auth()->user();
+        $model = match($type) {
+            'project' => $user->projects(),
+            'certification' => $user->certifications(),
+            'interest' => $user->interests(),
+            'volunteer' => $user->volunteerExperiences(),
+            'experience' => $user->experiences(),
+            'education' => $user->educations(),
+            default => null
+        };
+
+        if (!$model) return response()->json(['error' => 'Invalid type'], 400);
+        
+        $item = $model->findOrFail($id);
+
+        if ($item->proposed_action === 'update' && $item->proposed_data) {
+            $item->update(array_merge($item->proposed_data, [
+                'proposed_data' => null,
+                'proposed_action' => null,
+                'status' => 'validated'
+            ]));
+        } elseif ($item->proposed_action === 'delete') {
+            $item->delete();
+        } else {
+            $item->update([
+                'status' => 'validated',
+                'proposed_action' => null,
+                'proposed_data' => null
+            ]);
+        }
+        
+        return response()->json(['success' => true]);
+    }
+
+    public function rejectItem($type, $id)
+    {
+        $user = auth()->user();
+        $model = match($type) {
+            'project' => $user->projects(),
+            'certification' => $user->certifications(),
+            'interest' => $user->interests(),
+            'volunteer' => $user->volunteerExperiences(),
+            'experience' => $user->experiences(),
+            'education' => $user->educations(),
+            default => null
+        };
+
+        if (!$model) return response()->json(['error' => 'Invalid type'], 400);
+        
+        $item = $model->findOrFail($id);
+
+        if ($item->proposed_action === 'add') {
+            $item->delete();
+        } else {
+            $item->update([
+                'proposed_data' => null,
+                'proposed_action' => null
+            ]);
+        }
+
+        return response()->json(['success' => true]);
+    }
+
+    public function deleteItem($type, $id)
+    {
+        $user = auth()->user();
+        $model = match($type) {
+            'project' => $user->projects(),
+            'certification' => $user->certifications(),
+            'interest' => $user->interests(),
+            'volunteer' => $user->volunteerExperiences(),
+            'experience' => $user->experiences(),
+            'education' => $user->educations(),
+            'skill' => $user->skills(),
+            'fact' => $user->facts(),
+            default => null
+        };
+
+        if (!$model) return response()->json(['error' => 'Invalid type'], 400);
+        
+        $item = $model->findOrFail($id);
+        
+        if ($type === 'skill') {
+            $user->skills()->detach($id);
+        } else {
+            $item->delete();
+        }
+        
+        return response()->json(['success' => true]);
+    }
+
 }
