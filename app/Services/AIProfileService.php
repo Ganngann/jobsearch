@@ -34,12 +34,11 @@ class AIProfileService
         4. **PREFERENCES** : Environnement (Ex: Télétravail).
 
         ## RÈGLES DE GESTION DES FAITS (STRICT)
-        | Scénario | Action | Règle de Fer |
-        | :--- | :--- | :--- |
-        | Sujet totalement NOUVEAU | `add` | Créer un nouvel objet. |
-        | Info liée à un ID existant | `update` | **INTERDICTION** de changer le sujet de fond de l'ID. Fusionne l'ancien texte + le nouveau. |
-        | Doublon ou info répétée | `delete` | Utilise `delete` sur l'ID le moins complet. |
-        | Plusieurs infos pour 1 ID | `update` | Un SEUL objet `update` par ID dans le JSON. Fusionne tout le texte. |
+        - Chaque grande idée distincte (ex: écologie vs hiérarchie) DOIT être un FAIT SÉPARÉ (`add`).
+        - Utilise `update` pour ENRICHIR un fait existant (ajouter des détails ou nuances au MÊME sujet), mais tu ne dois JAMAIS lui faire perdre son sens initial ni changer de sujet.
+        - Lors d'un `update`, le nouveau texte DOIT conserver l'information précédente et y intégrer la nouvelle de façon naturelle. Ne supprime jamais le contexte précédent.
+        - Ne fusionne jamais deux sujets complètement différents sous un même ID. Si le fait ID 1 parle d'\"Écologie\" et que l'utilisateur ajoute \"Je déteste la hiérarchie\", crée un NOUVEAU fait (`add`).
+        - Utilise `delete` uniquement si l'utilisateur contredit ou retire explicitement un point.
 
         ## STYLE DE RÉPONSE
         - **INTERDIT** : Introductions ('C'est noté', 'Intéressant'), politesse, conclusions.
@@ -63,7 +62,7 @@ class AIProfileService
                     'items' => [
                         'type' => 'object',
                         'properties' => [
-                            'id' => ['type' => 'integer'],
+                            'id' => ['type' => ['integer', 'null']],
                             'action' => ['type' => 'string', 'enum' => ['add', 'update', 'delete']],
                             'category' => ['type' => 'string', 'enum' => ['VALEURS', 'OBJECTIFS', 'SOFT_SKILLS', 'PREFERENCES']],
                             'content' => ['type' => 'string']
@@ -81,6 +80,8 @@ class AIProfileService
                             'company' => ['type' => 'string'],
                             'title' => ['type' => 'string'],
                             'description' => ['type' => 'string'],
+                            'employment_type' => ['type' => 'string'],
+                            'location' => ['type' => 'string'],
                             'start_date' => ['type' => ['string', 'null'], 'format' => 'date'],
                             'end_date' => ['type' => ['string', 'null'], 'format' => 'date'],
                             'is_current' => ['type' => 'boolean']
@@ -98,7 +99,10 @@ class AIProfileService
                             'school' => ['type' => 'string'],
                             'degree' => ['type' => 'string'],
                             'field' => ['type' => 'string'],
-                            'graduation_year' => ['type' => 'integer']
+                            'description' => ['type' => 'string'],
+                            'start_date' => ['type' => ['string', 'null'], 'format' => 'date'],
+                            'graduation_year' => ['type' => 'integer'],
+                            'grade' => ['type' => 'string']
                         ],
                         'required' => ['action']
                     ]
@@ -114,6 +118,7 @@ class AIProfileService
                             'description' => ['type' => 'string'],
                             'url' => ['type' => ['string', 'null']],
                             'start_date' => ['type' => ['string', 'null'], 'format' => 'date'],
+                            'end_date' => ['type' => ['string', 'null'], 'format' => 'date'],
                             'is_ongoing' => ['type' => 'boolean']
                         ],
                         'required' => ['action']
@@ -128,7 +133,10 @@ class AIProfileService
                             'action' => ['type' => 'string', 'enum' => ['add', 'update', 'delete']],
                             'name' => ['type' => 'string'],
                             'issuing_organization' => ['type' => 'string'],
-                            'issue_date' => ['type' => ['string', 'null'], 'format' => 'date']
+                            'issue_date' => ['type' => ['string', 'null'], 'format' => 'date'],
+                            'expiration_date' => ['type' => ['string', 'null'], 'format' => 'date'],
+                            'credential_id' => ['type' => 'string'],
+                            'credential_url' => ['type' => 'string']
                         ],
                         'required' => ['action']
                     ]
@@ -142,7 +150,10 @@ class AIProfileService
                             'action' => ['type' => 'string', 'enum' => ['add', 'update', 'delete']],
                             'organization' => ['type' => 'string'],
                             'role' => ['type' => 'string'],
-                            'start_date' => ['type' => ['string', 'null'], 'format' => 'date']
+                            'description' => ['type' => 'string'],
+                            'start_date' => ['type' => ['string', 'null'], 'format' => 'date'],
+                            'end_date' => ['type' => ['string', 'null'], 'format' => 'date'],
+                            'is_current' => ['type' => 'boolean']
                         ],
                         'required' => ['action']
                     ]

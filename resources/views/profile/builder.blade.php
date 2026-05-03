@@ -54,10 +54,10 @@
             flex: 1;
         }
         .cv-item-draft {
-            outline: 2px dashed #fbbf24;
-            outline-offset: 4px;
-            background-color: #fffbeb;
-            padding: 10px;
+            outline: 1px dashed #fbbf24;
+            outline-offset: 2px;
+            background-color: #fffdf5;
+            padding: 4px 10px;
             border-radius: 4px;
         }
         .cv-item-new {
@@ -308,9 +308,9 @@
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
                             </button>
                         </div>
-                        <div class="space-y-6">
+                        <div class="space-y-4">
                             <template x-for="exp in all_experiences" :key="exp.id">
-                                <div class="cv-item flex gap-6" :class="(exp.status === 'draft' || exp.proposed_action) ? 'cv-item-draft' : ''">
+                                <div class="cv-item flex gap-4" :class="(exp.status === 'draft' || exp.proposed_action) ? 'cv-item-draft' : ''">
                                     <div class="cv-date">
                                         <span x-text="exp.start_date ? new Date(exp.start_date).getFullYear() : '?'"></span>
                                         — 
@@ -319,69 +319,76 @@
                                     <div class="cv-content">
                                         <template x-if="editingItem.id !== exp.id || editingItem.type !== 'experience'">
                                             <div @dblclick="startEditing('experience', exp)" class="cursor-pointer group relative">
-                                                    <div class="flex items-center gap-2">
-                                                        <h3 class="text-[12px] font-bold text-gray-900">
-                                                            <template x-if="exp.proposed_action === 'update' && exp.proposed_data && exp.proposed_data.title">
+                                                <div class="flex items-start justify-between">
+                                                    <div class="flex-1">
+                                                        <h3 class="text-[11.5px] font-bold text-gray-900 leading-tight">
+                                                            <template x-if="exp.proposed_action === 'update' && exp.proposed_data?.title">
                                                                 <span x-html="renderDiff(exp.title, exp.proposed_data.title)"></span>
                                                             </template>
-                                                            <template x-if="!(exp.proposed_action === 'update' && exp.proposed_data && exp.proposed_data.title)">
-                                                                <span x-text="exp.title"></span>
+                                                            <template x-if="!(exp.proposed_action === 'update' && exp.proposed_data?.title)">
+                                                                <span x-text="exp.title || 'Poste'"></span>
                                                             </template>
                                                             
-                                                            <template x-if="exp.employment_type || (exp.proposed_action === 'update' && exp.proposed_data && exp.proposed_data.employment_type)">
-                                                               <span class="text-[10px] text-gray-400 font-normal ml-2 italic">
-                                                                   — 
-                                                                   <template x-if="exp.proposed_action === 'update' && exp.proposed_data && exp.proposed_data.employment_type">
-                                                                       <span x-html="renderDiff(exp.employment_type, exp.proposed_data.employment_type)"></span>
-                                                                   </template>
-                                                                   <template x-if="!(exp.proposed_action === 'update' && exp.proposed_data && exp.proposed_data.employment_type)">
-                                                                       <span x-text="exp.employment_type"></span>
-                                                                   </template>
-                                                               </span>
-                                                           </template>
+                                                            <template x-if="exp.employment_type || (exp.proposed_action === 'update' && exp.proposed_data?.employment_type)">
+                                                                <span class="text-[9px] text-gray-400 font-normal ml-1.5 italic">
+                                                                    — 
+                                                                    <template x-if="exp.proposed_action === 'update' && exp.proposed_data?.employment_type">
+                                                                        <span x-html="renderDiff(exp.employment_type, exp.proposed_data.employment_type)"></span>
+                                                                    </template>
+                                                                    <template x-if="!(exp.proposed_action === 'update' && exp.proposed_data?.employment_type)">
+                                                                        <span x-text="exp.employment_type"></span>
+                                                                    </template>
+                                                                </span>
+                                                            </template>
                                                         </h3>
-                                                        <button @click.stop="deleteItem('experience', exp.id)" class="opacity-0 group-hover:opacity-100 transition-opacity text-red-400 hover:text-red-600">
+                                                    </div>
+
+                                                    <div class="flex items-center gap-2 ml-4">
+                                                        <template x-if="exp.proposed_action">
+                                                            <div class="flex gap-1">
+                                                                <button @click.stop="acceptItem('experience', exp.id)" class="text-[8px] px-2 py-0.5 bg-indigo-600 text-white rounded font-bold uppercase">OK</button>
+                                                                <button @click.stop="rejectItem('experience', exp.id)" class="text-[8px] px-2 py-0.5 bg-white border border-gray-200 text-gray-400 rounded font-bold uppercase hover:text-red-500">X</button>
+                                                            </div>
+                                                        </template>
+                                                        <button @click.stop="deleteItem('experience', exp.id)" class="opacity-0 group-hover:opacity-100 transition-opacity text-red-300 hover:text-red-500">
                                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                             </svg>
                                                         </button>
                                                     </div>
-                                                    <span class="text-[11px] font-semibold text-gray-500 flex items-center gap-2">
-                                                        <template x-if="exp.proposed_action === 'update' && exp.proposed_data && exp.proposed_data.company">
-                                                            <span x-html="renderDiff(exp.company, exp.proposed_data.company)"></span>
-                                                        </template>
-                                                        <template x-if="!(exp.proposed_action === 'update' && exp.proposed_data && exp.proposed_data.company)">
-                                                            <span x-text="exp.company"></span>
-                                                        </template>
-
-                                                        <template x-if="exp.location || (exp.proposed_action === 'update' && exp.proposed_data && exp.proposed_data.location)">
-                                                            <span class="text-[10px] text-gray-400 font-normal">
-                                                                • 
-                                                                <template x-if="exp.proposed_action === 'update' && exp.proposed_data && exp.proposed_data.location">
-                                                                    <span x-html="renderDiff(exp.location, exp.proposed_data.location)"></span>
-                                                                </template>
-                                                                <template x-if="!(exp.proposed_action === 'update' && exp.proposed_data && exp.proposed_data.location)">
-                                                                    <span x-text="exp.location"></span>
-                                                                </template>
-                                                            </span>
-                                                        </template>
-                                                    </span>
                                                 </div>
-                                                <p class="text-[11px] text-gray-600 mt-1 leading-relaxed">
-                                                    <template x-if="exp.proposed_action === 'update' && exp.proposed_data && exp.proposed_data.description">
-                                                        <span x-html="renderDiff(exp.description, exp.proposed_data.description)"></span>
+
+                                                <div class="text-[11px] font-semibold text-gray-500 flex items-center gap-2">
+                                                    <template x-if="exp.proposed_action === 'update' && exp.proposed_data?.company">
+                                                        <span x-html="renderDiff(exp.company, exp.proposed_data.company)"></span>
                                                     </template>
-                                                    <template x-if="!(exp.proposed_action === 'update' && exp.proposed_data && exp.proposed_data.description)">
-                                                        <span x-text="exp.description"></span>
+                                                    <template x-if="!(exp.proposed_action === 'update' && exp.proposed_data?.company)">
+                                                        <span x-text="exp.company || 'Entreprise'"></span>
                                                     </template>
-                                                </p>
-                                                
-                                                <template x-if="exp.proposed_action">
-                                                    <div class="mt-2 flex gap-2">
-                                                        <button @click.stop="acceptItem('experience', exp.id)" class="text-[9px] px-2 py-1 bg-indigo-600 text-white rounded font-bold">Accepter</button>
-                                                        <button @click.stop="rejectItem('experience', exp.id)" class="text-[9px] px-2 py-1 bg-white border border-gray-200 text-gray-500 rounded font-bold">Refuser</button>
+                                                    <template x-if="exp.location || (exp.proposed_action === 'update' && exp.proposed_data?.location)">
+                                                        <span class="text-[10px] text-gray-400 font-normal">
+                                                            • 
+                                                            <template x-if="exp.proposed_action === 'update' && exp.proposed_data?.location">
+                                                                <span x-html="renderDiff(exp.location, exp.proposed_data.location)"></span>
+                                                            </template>
+                                                            <template x-if="!(exp.proposed_action === 'update' && exp.proposed_data?.location)">
+                                                                <span x-text="exp.location"></span>
+                                                            </template>
+                                                        </span>
+                                                    </template>
+                                                </div>
+
+                                                <template x-if="exp.description || exp.proposed_data?.description">
+                                                    <div class="text-[10.5px] text-gray-600 mt-1.5 leading-relaxed whitespace-pre-line">
+                                                        <template x-if="exp.proposed_action === 'update' && exp.proposed_data?.description">
+                                                            <div x-html="renderDiff(exp.description, exp.proposed_data.description)"></div>
+                                                        </template>
+                                                        <template x-if="!(exp.proposed_action === 'update' && exp.proposed_data?.description)">
+                                                            <div x-text="exp.description"></div>
+                                                        </template>
                                                     </div>
                                                 </template>
+                                                
 
                                                 <div class="mt-1 opacity-0 group-hover:opacity-100 transition-opacity text-[8px] text-gray-400">Double-clic pour éditer</div>
                                             </div>
@@ -481,13 +488,18 @@
                                                     </span>
                                                 </div>
                                                 
-                                                <div class="mt-1 flex items-center gap-3">
-                                                    <template x-if="edu.proposed_action === 'update' && edu.proposed_data && edu.proposed_data.description">
-                                                        <div class="text-[11px] text-gray-600 leading-relaxed flex-1" x-html="renderDiff(edu.description, edu.proposed_data.description)"></div>
-                                                    </template>
-                                                    <template x-if="!(edu.proposed_action === 'update' && edu.proposed_data && edu.proposed_data.description)">
-                                                        <div class="text-[11px] text-gray-600 leading-relaxed flex-1" x-text="edu.description"></div>
-                                                    </template>
+                                                <template x-if="edu.description || edu.proposed_data?.description">
+                                                    <div class="mt-2 flex items-center gap-3">
+                                                        <div class="text-[10.5px] text-gray-600 leading-relaxed flex-1 whitespace-pre-line">
+                                                            <template x-if="edu.proposed_action === 'update' && edu.proposed_data?.description">
+                                                                <div x-html="renderDiff(edu.description, edu.proposed_data.description)"></div>
+                                                            </template>
+                                                            <template x-if="!(edu.proposed_action === 'update' && edu.proposed_data?.description)">
+                                                                <div x-text="edu.description"></div>
+                                                            </template>
+                                                        </div>
+                                                    </div>
+                                                </template>
 
                                                     <template x-if="edu.grade || (edu.proposed_action === 'update' && edu.proposed_data && edu.proposed_data.grade)">
                                                         <div class="px-1.5 py-0.5 bg-gray-100 text-gray-600 text-[9px] font-bold rounded border border-gray-200">
@@ -571,14 +583,14 @@
                                                     <span x-text="project.name"></span>
                                                 </template>
                                             </h4>
-                                            <p class="text-[10px] text-gray-500 mt-1">
+                                            <div class="text-[10px] text-gray-500 mt-1 whitespace-pre-line">
                                                 <template x-if="project.proposed_action === 'update' && project.proposed_data && project.proposed_data.description">
-                                                    <span x-html="renderDiff(project.description, project.proposed_data.description)"></span>
+                                                    <div x-html="renderDiff(project.description, project.proposed_data.description)"></div>
                                                 </template>
                                                 <template x-if="!(project.proposed_action === 'update' && project.proposed_data && project.proposed_data.description)">
-                                                    <span x-text="project.description"></span>
+                                                    <div x-text="project.description"></div>
                                                 </template>
-                                            </p>
+                                            </div>
 
                                             <template x-if="project.url || (project.proposed_action === 'update' && project.proposed_data && project.proposed_data.url)">
                                                 <div class="mt-1 flex items-center gap-1 text-[9px] text-indigo-500">
@@ -681,9 +693,16 @@
                                 <div class="cv-item" :class="vol.status === 'draft' ? 'cv-item-draft' : ''">
                                     <template x-if="editingItem.id !== vol.id || editingItem.type !== 'volunteer'">
                                         <div @dblclick="startEditing('volunteer', vol)" class="cursor-pointer">
-                                            <h4 class="text-[11px] font-bold text-gray-900" x-text="vol.role"></h4>
-                                            <p class="text-[10px] text-gray-500" x-text="vol.organization"></p>
-                                            <p class="text-[10px] text-gray-400 mt-1" x-show="vol.description" x-text="vol.description"></p>
+                                                <h4 class="text-[11px] font-bold text-gray-900" x-text="vol.role"></h4>
+                                                <p class="text-[10px] text-gray-500" x-text="vol.organization"></p>
+                                                <div class="text-[10px] text-gray-400 mt-1 whitespace-pre-line" x-show="vol.description">
+                                                    <template x-if="vol.proposed_action === 'update' && vol.proposed_data && vol.proposed_data.description">
+                                                        <div x-html="renderDiff(vol.description, vol.proposed_data.description)"></div>
+                                                    </template>
+                                                    <template x-if="!(vol.proposed_action === 'update' && vol.proposed_data && vol.proposed_data.description)">
+                                                        <div x-text="vol.description"></div>
+                                                    </template>
+                                                </div>
                                         </div>
                                     </template>
                                     <template x-if="editingItem.id === vol.id && editingItem.type === 'volunteer'">
