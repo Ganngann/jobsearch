@@ -13,9 +13,16 @@
                         <template x-if="project.proposed_action === 'update' && project.proposed_data && project.proposed_data.name">
                             <span x-html="renderDiff(project.name, project.proposed_data.name)"></span>
                         </template>
-                        <template x-if="!(project.proposed_action === 'update' && project.proposed_data && project.proposed_data.name)">
+                        <template x-if="project.proposed_action === 'add'">
+                            <span class="diff-added" x-text="project.name"></span>
+                        </template>
+                        <template x-if="project.proposed_action === 'delete'">
+                            <span class="diff-deleted" x-text="project.name"></span>
+                        </template>
+                        <template x-if="!project.proposed_action || (project.proposed_action === 'update' && !project.proposed_data?.name)">
                             <span x-text="project.name"></span>
                         </template>
+                        <span class="text-[8px] text-gray-300 font-normal ml-1">#<span x-text="project.id"></span></span>
                     </h4>
                     <div class="text-[10px] text-gray-500 mt-1">
                         <template x-if="project.proposed_action === 'update' && project.proposed_data && project.proposed_data.description"><div class="whitespace-pre-line" x-html="renderDiff(project.description, project.proposed_data.description)"></div></template>

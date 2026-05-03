@@ -15,6 +15,7 @@
                             <div class="space-y-1 mb-1">
                                 <p class="text-[11px] text-amber-900 leading-relaxed inline font-semibold">
                                     <span class="font-bold text-[9px] uppercase text-amber-500 mr-1" x-text="fact.category"></span>
+                                    <span class="text-[8px] text-gray-300 font-normal mr-1">#<span x-text="fact.local_id"></span></span>
                                     <span x-html="renderDiff(fact.content, fact.proposed_content)"></span>
                                 </p>
                             </div>
@@ -22,7 +23,8 @@
                         <template x-if="fact.proposed_action !== 'update'">
                             <p class="text-[11px] text-gray-700 leading-relaxed inline" :class="fact.proposed_action === 'delete' ? 'line-through text-red-400' : (fact.proposed_action === 'add' ? 'text-indigo-700 font-medium' : '')">
                                 <span class="font-bold text-[9px] uppercase text-gray-400 mr-1" x-text="fact.category"></span>
-                                <span :class="fact.proposed_action === 'add' ? 'diff-added' : ''" x-text="fact.content"></span>
+                                <span class="text-[8px] text-gray-300 font-normal mr-1">#<span x-text="fact.local_id"></span></span>
+                                <span :class="fact.proposed_action === 'add' ? 'diff-added' : (fact.proposed_action === 'delete' ? 'diff-deleted' : '')" x-text="fact.content"></span>
                             </p>
                         </template>
 

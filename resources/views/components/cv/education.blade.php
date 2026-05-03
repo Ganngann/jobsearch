@@ -11,20 +11,35 @@
                 <template x-if="edu.start_date">
                     <span x-text="new Date(edu.start_date).getFullYear() + ' — '"></span>
                 </template>
-                <span x-text="edu.graduation_year"></span>
+                <template x-if="edu.proposed_action === 'update' && edu.proposed_data.graduation_year">
+                    <span class="text-blue-600 font-bold" x-text="edu.proposed_data.graduation_year"></span>
+                </template>
+                <template x-if="!(edu.proposed_action === 'update' && edu.proposed_data.graduation_year)">
+                    <span x-text="edu.graduation_year"></span>
+                </template>
             </div>
             <div class="cv-content">
                 <template x-if="editingItem.id !== edu.id || editingItem.type !== 'education'">
                     <div @dblclick="startEditing('education', edu)" class="cursor-pointer group relative">
                         <div class="flex justify-between items-baseline">
-                            <div class="flex items-center gap-2">
-                                <h3 class="text-[12px] font-bold text-gray-900">
+                            <div class="flex-1">
+                                <template x-if="edu.proposed_action === 'delete'">
+                                    <div class="text-[10px] text-red-500 font-bold mb-0.5 uppercase tracking-tight">Suppression suggérée</div>
+                                </template>
+                                <h3 class="text-[12px] font-bold text-gray-900 leading-tight">
                                     <template x-if="edu.proposed_action === 'update' && edu.proposed_data && edu.proposed_data.degree">
                                         <span x-html="renderDiff(edu.degree, edu.proposed_data.degree)"></span>
                                     </template>
-                                    <template x-if="!(edu.proposed_action === 'update' && edu.proposed_data && edu.proposed_data.degree)">
+                                    <template x-if="edu.proposed_action === 'add'">
+                                        <span class="diff-added" x-text="edu.degree"></span>
+                                    </template>
+                                    <template x-if="edu.proposed_action === 'delete'">
+                                        <span class="diff-deleted" x-text="edu.degree"></span>
+                                    </template>
+                                    <template x-if="!edu.proposed_action || (edu.proposed_action === 'update' && !edu.proposed_data?.degree)">
                                         <span x-text="edu.degree"></span>
                                     </template>
+                                    <span class="text-[9px] text-gray-300 font-normal ml-1">#<span x-text="edu.id"></span></span>
 
                                     <template x-if="edu.field || (edu.proposed_action === 'update' && edu.proposed_data && edu.proposed_data.field)">
                                         <span class="text-[11px] text-gray-500 font-normal ml-2">

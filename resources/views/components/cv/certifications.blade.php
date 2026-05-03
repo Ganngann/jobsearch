@@ -13,6 +13,7 @@
                     <div class="flex-1">
                         <div class="flex items-center gap-2">
                             <p class="text-[11px] font-bold text-gray-700" x-text="cert.name"></p>
+                            <span class="text-[8px] text-gray-300 font-normal">#<span x-text="cert.id"></span></span>
                             <span class="text-[10px] text-gray-400" x-show="cert.issuing_organization" x-text="' — ' + cert.issuing_organization"></span>
                         </div>
                         <p class="text-[9px] text-gray-400" x-show="cert.issue_date" x-text="new Date(cert.issue_date).toLocaleDateString()"></p>

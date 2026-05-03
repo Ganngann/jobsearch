@@ -249,7 +249,7 @@ class ProfileChatController extends Controller
                         'start_date' => isset($expData['start_date']) ? $this->sanitizeDate($expData['start_date']) : null,
                         'end_date' => isset($expData['end_date']) ? $this->sanitizeDate($expData['end_date']) : null,
                         'is_current' => $expData['is_current'] ?? null,
-                    ]);
+                    ], fn($v) => !is_null($v));
                     
                     if (!empty($newData)) {
                         $exp->update([
@@ -257,6 +257,11 @@ class ProfileChatController extends Controller
                             'proposed_action' => 'update'
                         ]);
                     }
+                }
+            } elseif ($expData['action'] === 'delete' && isset($expData['id'])) {
+                $exp = $user->experiences()->find($expData['id']);
+                if ($exp) {
+                    $exp->update(['proposed_action' => 'delete']);
                 }
             }
         }
@@ -286,7 +291,7 @@ class ProfileChatController extends Controller
                         'start_date' => isset($eduData['start_date']) ? $this->sanitizeDate($eduData['start_date']) : null,
                         'graduation_year' => $this->sanitizeYear($eduData['graduation_year'] ?? null),
                         'grade' => $eduData['grade'] ?? null,
-                    ]);
+                    ], fn($v) => !is_null($v));
                     
                     if (!empty($newData)) {
                         $edu->update([
@@ -294,6 +299,11 @@ class ProfileChatController extends Controller
                             'proposed_action' => 'update'
                         ]);
                     }
+                }
+            } elseif ($eduData['action'] === 'delete' && isset($eduData['id'])) {
+                $edu = $user->educations()->find($eduData['id']);
+                if ($edu) {
+                    $edu->update(['proposed_action' => 'delete']);
                 }
             }
         }
@@ -318,7 +328,7 @@ class ProfileChatController extends Controller
                         'url' => $projData['url'] ?? null,
                         'start_date' => isset($projData['start_date']) ? $this->sanitizeDate($projData['start_date']) : null,
                         'is_ongoing' => $projData['is_ongoing'] ?? null,
-                    ]);
+                    ], fn($v) => !is_null($v));
                     
                     if (!empty($newData)) {
                         $proj->update([
@@ -326,6 +336,11 @@ class ProfileChatController extends Controller
                             'proposed_action' => 'update'
                         ]);
                     }
+                }
+            } elseif ($projData['action'] === 'delete' && isset($projData['id'])) {
+                $proj = $user->projects()->find($projData['id']);
+                if ($proj) {
+                    $proj->update(['proposed_action' => 'delete']);
                 }
             }
         }
@@ -352,7 +367,7 @@ class ProfileChatController extends Controller
                         'expiration_date' => isset($certData['expiration_date']) ? $this->sanitizeDate($certData['expiration_date']) : null,
                         'credential_id' => $certData['credential_id'] ?? null,
                         'credential_url' => $certData['credential_url'] ?? null,
-                    ]);
+                    ], fn($v) => !is_null($v));
                     if (!empty($newData)) {
                         $cert->update(['proposed_data' => $newData, 'proposed_action' => 'update']);
                     }
@@ -384,7 +399,7 @@ class ProfileChatController extends Controller
                         'description' => $volData['description'] ?? null,
                         'start_date' => isset($volData['start_date']) ? $this->sanitizeDate($volData['start_date']) : null,
                         'end_date' => isset($volData['end_date']) ? $this->sanitizeDate($volData['end_date']) : null,
-                    ]);
+                    ], fn($v) => !is_null($v));
                     if (!empty($newData)) {
                         $vol->update(['proposed_data' => $newData, 'proposed_action' => 'update']);
                     }

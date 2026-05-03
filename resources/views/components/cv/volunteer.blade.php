@@ -9,7 +9,10 @@
         <div class="cv-item" :class="vol.status === 'draft' ? 'cv-item-draft' : ''">
             <template x-if="editingItem.id !== vol.id || editingItem.type !== 'volunteer'">
                 <div @dblclick="startEditing('volunteer', vol)" class="cursor-pointer">
-                        <h4 class="text-[11px] font-bold text-gray-900" x-text="vol.role"></h4>
+                        <div class="flex items-center gap-2">
+                            <h4 class="text-[11px] font-bold text-gray-900" x-text="vol.role"></h4>
+                            <span class="text-[8px] text-gray-300 font-normal">#<span x-text="vol.id"></span></span>
+                        </div>
                         <p class="text-[10px] text-gray-500" x-text="vol.organization"></p>
                         <div class="text-[10px] text-gray-400 mt-1" x-show="vol.description">
                             <template x-if="vol.proposed_action === 'update' && vol.proposed_data && vol.proposed_data.description"><div class="whitespace-pre-line" x-html="renderDiff(vol.description, vol.proposed_data.description)"></div></template>

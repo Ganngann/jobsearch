@@ -5,7 +5,7 @@
                 <span @dblclick="startEditing('interest', interest)"
                       class="text-[9px] font-bold text-gray-400 uppercase tracking-wider px-3 py-1 bg-gray-50 rounded-full border border-gray-100 cursor-pointer hover:border-indigo-300" 
                       :class="interest.status === 'draft' ? 'border-amber-200 bg-amber-50' : ''"
-                      x-text="interest.name"></span>
+                      x-text="interest.name + ' (#' + interest.id + ')'"></span>
             </template>
             <template x-if="editingItem.id === interest.id && editingItem.type === 'interest'">
                 <input type="text" x-model="editingData.name" @keyup.enter="saveManualEdit()" @blur="saveManualEdit()"

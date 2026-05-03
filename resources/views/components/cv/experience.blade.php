@@ -10,20 +10,35 @@
             <div class="cv-date pt-0.5">
                 <span x-text="exp.start_date ? new Date(exp.start_date).getFullYear() : '?'"></span>
                 — 
-                <span x-text="exp.is_current ? 'Présent' : (exp.end_date ? new Date(exp.end_date).getFullYear() : '?')"></span>
+                <template x-if="exp.proposed_action === 'update' && (exp.proposed_data.is_current !== undefined || exp.proposed_data.end_date)">
+                    <span class="text-blue-600 font-bold" x-text="exp.proposed_data.is_current ? 'Présent' : (exp.proposed_data.end_date ? new Date(exp.proposed_data.end_date).getFullYear() : '?')"></span>
+                </template>
+                <template x-if="!(exp.proposed_action === 'update' && (exp.proposed_data.is_current !== undefined || exp.proposed_data.end_date))">
+                    <span x-text="exp.is_current ? 'Présent' : (exp.end_date ? new Date(exp.end_date).getFullYear() : '?')"></span>
+                </template>
             </div>
             <div class="cv-content">
                 <template x-if="editingItem.id !== exp.id || editingItem.type !== 'experience'">
                     <div @dblclick="startEditing('experience', exp)" class="cursor-pointer group relative">
                         <div class="flex items-start justify-between">
                             <div class="flex-1">
+                                <template x-if="exp.proposed_action === 'delete'">
+                                    <div class="text-[9px] text-red-500 font-bold mb-0.5 uppercase tracking-tight">Suppression suggérée</div>
+                                </template>
                                 <h3 class="text-[11.5px] font-bold text-gray-900 leading-tight">
                                     <template x-if="exp.proposed_action === 'update' && exp.proposed_data?.title">
                                         <span x-html="renderDiff(exp.title, exp.proposed_data.title)"></span>
                                     </template>
-                                    <template x-if="!(exp.proposed_action === 'update' && exp.proposed_data?.title)">
+                                    <template x-if="exp.proposed_action === 'add'">
+                                        <span class="diff-added" x-text="exp.title || 'Poste'"></span>
+                                    </template>
+                                    <template x-if="exp.proposed_action === 'delete'">
+                                        <span class="diff-deleted" x-text="exp.title || 'Poste'"></span>
+                                    </template>
+                                    <template x-if="!exp.proposed_action || (exp.proposed_action === 'update' && !exp.proposed_data?.title)">
                                         <span x-text="exp.title || 'Poste'"></span>
                                     </template>
+                                    <span class="text-[9px] text-gray-300 font-normal ml-1">#<span x-text="exp.id"></span></span>
                                     
                                     <template x-if="exp.employment_type || (exp.proposed_action === 'update' && exp.proposed_data?.employment_type)">
                                         <span class="text-[9px] text-gray-400 font-normal ml-1.5 italic">
