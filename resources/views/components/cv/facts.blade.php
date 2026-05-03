@@ -1,14 +1,14 @@
 <div class="flex items-center justify-between group">
     <div class="cv-section-title mb-0">Points Forts & Atouts</div>
-    <button @click="startCreating('fact')" class="opacity-0 group-hover:opacity-100 transition-opacity text-indigo-600 hover:text-indigo-800 mb-6">
+    <button @click="startCreating('fact')" class="opacity-0 group-hover:opacity-100 transition-opacity text-indigo-600 hover:text-indigo-800 mb-2">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
     </button>
 </div>
-<div class="grid grid-cols-1 gap-3">
+<div class="grid grid-cols-1 gap-1.5">
     <template x-for="fact in filteredFacts" :key="fact.id">
-        <div class="relative group" :class="fact.proposed_action ? 'bg-amber-50 p-3 rounded-lg border-2 border-amber-200' : ''">
+        <div class="relative group" :class="fact.proposed_action ? 'bg-amber-50 p-2 rounded-lg border-2 border-amber-200' : ''">
             <template x-if="editingItem.id !== fact.id || editingItem.type !== 'fact'">
-                <div @dblclick="startEditing('fact', fact)" class="flex gap-3 items-start cursor-pointer relative group">
+                <div @dblclick="startEditing('fact', fact)" class="flex gap-2 items-start cursor-pointer relative group">
                     <div class="w-1.5 h-1.5 bg-indigo-400 rounded-full mt-1.5 flex-shrink-0" :class="fact.proposed_action ? 'bg-amber-400' : ''"></div>
                     <div class="flex-1">
                         <template x-if="fact.proposed_action === 'update'">

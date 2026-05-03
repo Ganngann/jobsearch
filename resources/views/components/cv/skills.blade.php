@@ -1,10 +1,10 @@
-<div class="flex items-center gap-2 mt-6 mb-2 group">
+<div class="flex items-center gap-2 mt-2 mb-2 group">
     <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Compétences Techniques</div>
     <button @click="startCreating('skill')" class="opacity-0 group-hover:opacity-100 transition-opacity text-indigo-600 hover:text-indigo-800">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
     </button>
 </div>
-<div class="flex flex-wrap gap-2 mb-8">
+<div class="flex flex-wrap gap-2 mb-4">
     <template x-for="skill in skills" :key="skill.id">
         <div class="relative group">
             <template x-if="editingItem.id !== skill.id || editingItem.type !== 'skill'">

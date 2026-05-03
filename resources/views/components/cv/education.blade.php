@@ -1,13 +1,13 @@
 <div class="flex items-center justify-between group">
     <div class="cv-section-title mb-0">Formations</div>
-    <button @click="startCreating('education')" class="opacity-0 group-hover:opacity-100 transition-opacity text-indigo-600 hover:text-indigo-800 mb-6">
+    <button @click="startCreating('education')" class="opacity-0 group-hover:opacity-100 transition-opacity text-indigo-600 hover:text-indigo-800 mb-2">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
     </button>
 </div>
-<div class="space-y-4">
+<div class="space-y-2">
     <template x-for="edu in all_educations" :key="edu.id">
-        <div class="cv-item flex gap-6" :class="(edu.status === 'draft' || edu.proposed_action) ? 'cv-item-draft' : ''">
-            <div class="cv-date">
+        <div class="cv-item flex gap-3" :class="(edu.status === 'draft' || edu.proposed_action) ? 'cv-item-draft' : ''">
+            <div class="cv-date pt-0.5">
                 <template x-if="edu.start_date">
                     <span x-text="new Date(edu.start_date).getFullYear() + ' — '"></span>
                 </template>
@@ -55,7 +55,7 @@
                         </div>
                         
                         <template x-if="edu.description || edu.proposed_data?.description">
-                            <div class="mt-2 flex items-center gap-3">
+                            <div class="mt-0.5 flex items-center gap-3">
                                 <div class="text-[10.5px] text-gray-600 leading-relaxed flex-1 whitespace-pre-line">
                                     <template x-if="edu.proposed_action === 'update' && edu.proposed_data?.description">
                                         <div x-html="renderDiff(edu.description, edu.proposed_data.description)"></div>

@@ -1,13 +1,13 @@
 <div class="flex items-center justify-between group">
     <div class="cv-section-title mb-0">Expériences Professionnelles</div>
-    <button @click="startCreating('experience')" class="opacity-0 group-hover:opacity-100 transition-opacity text-indigo-600 hover:text-indigo-800 mb-6">
+    <button @click="startCreating('experience')" class="opacity-0 group-hover:opacity-100 transition-opacity text-indigo-600 hover:text-indigo-800 mb-2">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
     </button>
 </div>
-<div class="space-y-4">
+<div class="space-y-2">
     <template x-for="exp in all_experiences" :key="exp.id">
-        <div class="cv-item flex gap-4" :class="(exp.status === 'draft' || exp.proposed_action) ? 'cv-item-draft' : ''">
-            <div class="cv-date">
+        <div class="cv-item flex gap-3" :class="(exp.status === 'draft' || exp.proposed_action) ? 'cv-item-draft' : ''">
+            <div class="cv-date pt-0.5">
                 <span x-text="exp.start_date ? new Date(exp.start_date).getFullYear() : '?'"></span>
                 — 
                 <span x-text="exp.is_current ? 'Présent' : (exp.end_date ? new Date(exp.end_date).getFullYear() : '?')"></span>
@@ -75,7 +75,7 @@
                         </div>
 
                         <template x-if="exp.description || exp.proposed_data?.description">
-                            <div class="text-[10.5px] text-gray-600 mt-1.5 leading-relaxed whitespace-pre-line">
+                            <div class="text-[10.5px] text-gray-600 mt-0.5 leading-relaxed whitespace-pre-line">
                                 <template x-if="exp.proposed_action === 'update' && exp.proposed_data?.description">
                                     <div x-html="renderDiff(exp.description, exp.proposed_data.description)"></div>
                                 </template>

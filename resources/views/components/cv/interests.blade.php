@@ -1,4 +1,4 @@
-<div class="mt-12 flex flex-wrap gap-2 pt-6 border-t border-gray-100">
+<div class="mt-4 flex flex-wrap gap-2 pt-3 border-t border-gray-100">
     <template x-for="interest in interests" :key="interest.id">
         <div>
             <template x-if="editingItem.id !== interest.id || editingItem.type !== 'interest'">

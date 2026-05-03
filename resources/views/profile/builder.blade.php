@@ -27,8 +27,8 @@
             text-transform: uppercase;
             letter-spacing: 0.15em;
             color: #4f46e5;
-            margin-top: 25px;
-            margin-bottom: 15px;
+            margin-top: 15px;
+            margin-bottom: 10px;
             display: flex;
             items-center;
             gap: 10px;
@@ -40,7 +40,7 @@
             background: #e5e7eb;
         }
         .cv-item {
-            margin-bottom: 18px;
+            margin-bottom: 12px;
         }
         .cv-date {
             font-size: 10px;
@@ -55,9 +55,9 @@
         }
         .cv-item-draft {
             outline: 1px dashed #fbbf24;
-            outline-offset: 2px;
+            outline-offset: 1px;
             background-color: #fffdf5;
-            padding: 4px 10px;
+            padding: 2px 6px;
             border-radius: 4px;
         }
         .cv-item-new {
