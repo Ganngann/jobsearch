@@ -7,11 +7,13 @@ export default (initialData) => ({
     volunteer_experiences: initialData.volunteer_experiences || [],
     all_experiences: initialData.all_experiences || [],
     all_educations: initialData.all_educations || [],
+    languages: initialData.languages || [],
     activeSessions: initialData.activeSessions || [],
     archivedSessions: initialData.archivedSessions || [],
     currentSessionId: initialData.currentSessionId,
     user: initialData.user,
     skills: initialData.skills || [],
+    allAvailableLanguages: initialData.allAvailableLanguages || [],
     routes: initialData.routes || {},
     
     newMessage: '',
@@ -69,6 +71,7 @@ export default (initialData) => ({
             this.volunteer_experiences = data.volunteer_experiences;
             this.all_experiences = data.all_experiences;
             this.all_educations = data.all_educations;
+            this.languages = data.languages || [];
             this.skills = data.skills;
             this.user = data.user;
             this.activeSessions = data.activeSessions;
@@ -232,6 +235,7 @@ export default (initialData) => ({
         if (type === 'certification') return this.certifications;
         if (type === 'volunteer') return this.volunteer_experiences;
         if (type === 'interest') return this.interests;
+        if (type === 'language') return this.languages;
         return [];
     },
 
@@ -242,6 +246,7 @@ export default (initialData) => ({
         else if (type === 'certification') this.certifications = newList;
         else if (type === 'volunteer') this.volunteer_experiences = newList;
         else if (type === 'interest') this.interests = newList;
+        else if (type === 'language') this.languages = newList;
     },
 
     async deleteItem(type, id) {
@@ -268,7 +273,8 @@ export default (initialData) => ({
             'certification': 'certifications',
             'volunteer': 'volunteer_experiences',
             'skill': 'skills',
-            'fact': 'facts'
+            'fact': 'facts',
+            'language': 'languages'
         };
         const arrayName = arrays[type];
         if (arrayName) {
@@ -285,7 +291,8 @@ export default (initialData) => ({
             'certification': 'certifications',
             'volunteer': 'volunteer_experiences',
             'skill': 'skills',
-            'fact': 'facts'
+            'fact': 'facts',
+            'language': 'languages'
         };
         const arrayName = arrays[type];
         if (arrayName) {
@@ -362,7 +369,8 @@ export default (initialData) => ({
             'certification': 'certifications',
             'volunteer': 'volunteer_experiences',
             'skill': 'skills',
-            'fact': 'facts'
+            'fact': 'facts',
+            'language': 'languages'
         };
         const arrayName = arrays[type];
         if (arrayName) {
@@ -374,6 +382,9 @@ export default (initialData) => ({
         const newItem = { id: 'new', _isNew: true };
         if (type === 'fact') {
             newItem.category = 'VALEURS';
+        } else if (type === 'language') {
+            newItem.label = 'Français';
+            newItem.level = 'Intermédiaire';
         }
         this.addLocalItem(type, newItem);
         this.editingItem = { type, id: 'new' };
@@ -424,7 +435,8 @@ export default (initialData) => ({
             'certification': 'certifications',
             'volunteer': 'volunteer_experiences',
             'skill': 'skills',
-            'fact': 'facts'
+            'fact': 'facts',
+            'language': 'languages'
         };
         const arrayName = arrays[type];
         if (arrayName) {

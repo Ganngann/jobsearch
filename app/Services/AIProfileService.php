@@ -17,54 +17,18 @@ class AIProfileService
 
     /**
      * Traite un nouveau message dans la conversation de profil.
-     * Renvoie la réponse de l'IA et les faits mis à jour.
      */
     public function chat(User $user, array $history): ?array
     {
         $context = $this->buildContext($user);
+        $systemInstruction = $this->getSystemInstructions($user, $context);
         
-        $systemInstruction = "
-        ## RÔLE : EXTRACTEUR DE DONNÉES (ZÉRO BLABLA)
-        Tu es un moteur d'extraction froid et précis. Ton but : structurer le profil en 4 dimensions.
-
-        ## DIMENSIONS (Catégories)
-        1. **VALEURS** : Éthique, engagements (Ex: Écologie).
-        2. **OBJECTIFS** : Ambitions, moteurs (Ex: Devenir chef).
-        3. **SOFT_SKILLS** : Comportement (Ex: Autonomie).
-        4. **PREFERENCES** : Environnement (Ex: Télétravail).
-
-        ## RÈGLES DE GESTION DES FAITS (STRICT)
-        - Chaque grande idée distincte (ex: écologie vs hiérarchie) DOIT être un FAIT SÉPARÉ (`add`).
-        - Utilise `update` pour ENRICHIR un fait existant (ajouter des détails ou nuances au MÊME sujet), mais tu ne dois JAMAIS lui faire perdre son sens initial ni changer de sujet.
-        - Lors d'un `update`, le nouveau texte DOIT conserver l'information précédente et y intégrer la nouvelle de façon naturelle. Ne supprime jamais le contexte précédent.
-        - Ne fusionne jamais deux sujets complètement différents sous un même ID. Si le fait ID 1 parle d'\"Écologie\" et que l'utilisateur ajoute \"Je déteste la hiérarchie\", crée un NOUVEAU fait (`add`).
-        - Utilise `delete` uniquement si l'utilisateur contredit ou retire explicitement un point.
-
-        ## STYLE DE RÉPONSE
-        - **INTERDIT** : Introductions ('C'est noté', 'Intéressant'), politesse, conclusions.
-        - **OBLIGATOIRE** : Direct au but. Une question ou une remarque courte. Pas de phrases de transition (Max 15 mots).
-
-        ## CONTEXTE ACTUEL
-        {$context}
-
-        ## RÈGLE D'EXTRACTION (CRUCIAL)
-        - Ne ré-extrais JAMAIS une information déjà présente dans le CONTEXTE ACTUEL.
-        - Analyse la dernière réponse de l'utilisateur pour y trouver des NOUVEAUTÉS.
-        - Si l'utilisateur apporte une PRÉCISION sur un élément existant (même entreprise, même diplôme), utilise `update` avec l'ID correspondant.
-        - N'utilise `add` QUE pour des éléments réellement nouveaux et absents du contexte.
-        - Si tu hésites entre `add` et `update`, préfère `update` sur l'élément le plus proche.
-        - Ne crée pas de doublons.
-
-        ## RÈGLE SUR LES DATES
-        - Format : YYYY-MM-DD ou null. Jamais de texte dans une date.
-        - Si l'utilisateur donne juste une année, utilise YYYY-01-01.";
-
         $schema = [
             'type' => 'object',
             'properties' => [
                 'reply' => [
                     'type' => 'string',
-                    'description' => 'La question directe ou remarque courte (Max 15 mots).'
+                    'description' => 'La question directe ou remarque courte (Max 20 mots).'
                 ],
                 'facts' => [
                     'type' => 'array',
@@ -79,6 +43,7 @@ class AIProfileService
                         'required' => ['action', 'category', 'content']
                     ]
                 ],
+                // ... autres schémas (experiences, etc.) conservés à l'identique ...
                 'experiences' => [
                     'type' => 'array',
                     'items' => [
@@ -179,6 +144,18 @@ class AIProfileService
                         'required' => ['action']
                     ]
                 ],
+                'languages' => [
+                    'type' => 'array',
+                    'description' => 'Uniquement si l\'utilisateur mentionne ses compétences linguistiques.',
+                    'items' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'label' => ['type' => 'string', 'description' => 'Ex: Anglais, Français, Allemand'],
+                            'level' => ['type' => 'string', 'description' => 'Maternelle, Courant, Intermédiaire, Débutant']
+                        ],
+                        'required' => ['label', 'level']
+                    ]
+                ],
                 'user_updates' => [
                     'type' => 'object',
                     'properties' => [
@@ -199,9 +176,10 @@ class AIProfileService
             'required' => ['reply']
         ];
 
-        // Conversion de l'historique au format Gemini (user/model)
+        // Test : On ne garde que les 2 derniers messages (La question de l'IA + la réponse de l'utilisateur)
         $messages = [];
-        foreach ($history as $msg) {
+        $lastTwo = array_slice($history, -2);
+        foreach ($lastTwo as $msg) {
             $messages[] = [
                 'role' => $msg['role'] === 'user' ? 'user' : 'model',
                 'parts' => [['text' => $msg['content']]]
@@ -211,68 +189,112 @@ class AIProfileService
         return $this->gemini->chat($messages, $systemInstruction, $schema);
     }
 
-    protected function buildContext(User $user): string
+    /**
+     * Génère un message d'ouverture intelligent en utilisant la logique de chat standard.
+     */
+    public function generateOpeningMessage(User $user): array
     {
-        $skills = $user->skills->pluck('name')->implode(', ');
-        $birthDate = $user->birth_date ? $user->birth_date->format('d/m/Y') : '? (Date de naissance manquante)';
-        
-        $context = "CANDIDAT: {$user->name}
-NÉ LE: {$birthDate}
-COMPÉTENCES: {$skills}";
-        $experiences = $user->experiences->map(function($e) {
-            $status = $e->status === 'draft' ? '[EN ATTENTE] ' : '';
-            $dates = "(" . ($e->start_date?->format('Y') ?? '?') . " - " . ($e->is_current ? 'Aujourd\'hui' : ($e->end_date?->format('Y') ?? '?')) . ")";
-            $desc = $e->description ?: 'DESCRIPTION MANQUANTE';
-            return "- [ID: {$e->id}] {$status}{$e->title} chez {$e->company} {$dates} : {$desc}";
-        })->implode("\n");
-        
-        $educations = $user->educations->map(function($e) {
-            $status = $e->status === 'draft' ? '[EN ATTENTE] ' : '';
-            $desc = $e->description ?: 'DESCRIPTION MANQUANTE';
-            return "- [ID: {$e->id}] {$status}{$e->degree} à {$e->school} ({$e->graduation_year}) : {$desc}";
-        })->implode("\n");
+        // On simule un premier message utilisateur "virtuel" pour lancer la machine
+        $virtualHistory = [
+            ['role' => 'user', 'content' => 'Analyse mon profil et commence la conversation en identifiant un trou biographique ou une saturation.']
+        ];
 
-        $facts = $user->facts()->orderBy('local_id')->get()->map(function($f) {
-            $pendingStr = '';
-            $content = $f->content;
-            if ($f->proposed_action === 'update') {
-                $pendingStr = ' [MAJ EN ATTENTE : ' . $f->proposed_content . ']';
-            }
-            if ($f->proposed_action === 'delete') $pendingStr = ' [SUPPRESSION EN ATTENTE]';
-            
-            return "[ID: {$f->local_id}] ({$f->category}) {$content}{$pendingStr}";
-        })->implode("\n");
-
-        $stats = $user->facts()->selectRaw('category, count(*) as count')->groupBy('category')->pluck('count', 'category')->toArray();
-        $density = "VALEURS: " . ($stats['VALEURS'] ?? 0) . ", OBJECTIFS: " . ($stats['OBJECTIFS'] ?? 0) . ", SOFT_SKILLS: " . ($stats['SOFT_SKILLS'] ?? 0) . ", PREFERENCES: " . ($stats['PREFERENCES'] ?? 0);
-
-        return "
-        ### RÉSUMÉ DU PROFIL
-        - Expériences : " . $user->experiences->count() . "
-        - Formations : " . $user->educations->count() . "
-        - Faits narratifs : " . $user->facts->count() . "
-
-        ### COUCHE 1 : PARCOURS (DÉTAILS)
-        Expériences :
-        " . ($experiences ?: 'AUCUNE') . "
-        Formations :
-        " . ($educations ?: 'AUCUNE') . "
-        Projets :
-        " . ($user->projects->map(fn($p) => "- [ID: {$p->id}] {$p->name} : " . ($p->description ?: 'DESCRIPTION MANQUANTE'))->implode("\n") ?: 'AUCUN') . "
-        Compétences : {$skills}
-        
-        ### COUCHE 2 : PERSONNALITÉ (FAITS NARRATIFS)
-        " . ($facts ?: 'AUCUN FAIT POUR LE MOMENT') . "
-        
-        DENSITÉ ACTUELLE : {$density}
-        ";
+        return $this->chat($user, $virtualHistory) ?? ['reply' => "Bonjour {$user->name}. Je suis prêt à explorer ton parcours."];
     }
 
     /**
-     * Génère un message d'ouverture pour commencer la conversation.
+     * Centralisation des instructions système.
      */
-    public function generateOpeningMessage(User $user): string
+    protected function getSystemInstructions(User $user, string $context): string
     {
-        return "Bonjour {$user->name}. Je suis prêt à structurer ton profil narratif. Par quoi souhaites-tu commencer : tes valeurs, tes objectifs de carrière ou tes soft skills ?";
+        $factCount = $user->facts()->count();
+        $consolidationInstruction = "";
+        
+        if ($factCount > 20) {
+            $consolidationInstruction = "\n⚠️ MODE RÉDACTEUR EN CHEF : ALERTE SATURATION ({$factCount} faits).
+            1. INTERDICTION FORMELLE d'écraser un fait par un sujet différent via 'update'.
+            2. Pour chaque nouvelle info, tu DOIS obligatoirement LIBÉRER de la place : identifie deux faits similaires, FUSIONNE-LES en envoyant une action 'update' (le texte combiné) et une action 'delete'.
+            3. Une fois la place libérée dans la même réponse, tu peux faire ton 'add'.
+            4. Si tu ne trouves rien à fusionner, ne sauvegarde pas la nouvelle info, mais mentionne que le profil est saturé.\n";
+        }
+
+        return <<<EOT
+Tu es un biographe narratif. Ton but est de reconstruire TOUTE la vie du candidat à travers une conversation profonde et fluide.
+{$consolidationInstruction}
+RÈGLES D'INTERVIEW (Ton âme) :
+1. DYNAMISME : Ne t'attarde pas trop sur un seul sujet. Dès que tu as l'essentiel d'une expérience ou d'un fait, change radicalement de sujet pour explorer un "trou" ou une autre facette du profil (formation, passions, bénévolat, vie associative).
+2. Cherche l'humain, le "pourquoi", les tournants de vie et les anecdotes.
+3. Identifie les "vides" (trous chronologiques, sections non abordées) et tire le fil du récit.
+4. Pose une seule question à la fois, percutante et courte (Max 20 mots).
+
+RÈGLES D'ARCHIVAGE (Ta rigueur) :
+1. CONSOLIDATION : Si une info renforce ou nuance un fait déjà présent, utilise `update` sur l'ID existant au lieu de `add`.
+2. PAS DE DOUBLONS : Un fait = Une idée unique.
+3. Si le profil est saturé (> 20 faits), ton but prioritaire est de FUSIONNER les thématiques existantes pour descendre sous les 15 faits.
+
+PROFIL ACTUEL : 
+{$context}
+EOT;
+    }
+
+    protected function buildContext(User $user): string
+    {
+        $context = [
+            'identity' => [
+                'name' => $user->name,
+                'birth_date' => $user->birth_date?->format('Y-m-d') ?? 'Unknown',
+            ],
+            'skills' => $user->skills->pluck('name')->toArray(),
+            'experiences' => $user->experiences->map(fn($e) => array_filter([
+                'id' => $e->id,
+                'status' => $e->status,
+                'proposed_action' => $e->proposed_action,
+                'title' => $e->title,
+                'company' => $e->company,
+                'location' => $e->location,
+                'dates' => ($e->start_date?->format('Y') ?? '?') . " - " . ($e->is_current ? 'Present' : ($e->end_date?->format('Y') ?? '?')),
+                'description' => $e->description,
+            ])),
+            'educations' => $user->educations->map(fn($e) => array_filter([
+                'id' => $e->id,
+                'status' => $e->status,
+                'school' => $e->school,
+                'degree' => $e->degree,
+                'graduation_year' => $e->graduation_year,
+                'description' => $e->description,
+            ])),
+            'projects' => $user->projects->map(fn($p) => array_filter([
+                'id' => $p->id,
+                'name' => $p->name,
+                'description' => $p->description,
+            ])),
+            'certifications' => $user->certifications->map(fn($c) => array_filter([
+                'id' => $c->id,
+                'name' => $c->name,
+                'organization' => $c->issuing_organization,
+                'date' => $c->issue_date?->format('Y-m-d'),
+            ])),
+            'volunteer' => $user->volunteerExperiences->map(fn($v) => array_filter([
+                'id' => $v->id,
+                'organization' => $v->organization,
+                'role' => $v->role,
+                'description' => $v->description,
+            ])),
+            'interests' => $user->interests->map(fn($i) => ['id' => $i->id, 'name' => $i->name]),
+            'languages' => $user->languages->map(fn($l) => ['label' => $l->label, 'level' => $l->pivot->level]),
+            'narrative_facts' => $user->facts()->orderBy('local_id')->get()->map(fn($f) => array_filter([
+                'id' => $f->local_id,
+                'category' => $f->category,
+                'content' => $f->content,
+                'proposed_action' => $f->proposed_action,
+                'proposed_content' => $f->proposed_content,
+            ])),
+            'stats' => [
+                'facts_count' => $user->facts->count(),
+                'density' => $user->facts()->selectRaw('category, count(*) as count')->groupBy('category')->pluck('count', 'category')->toArray()
+            ]
+        ];
+
+        return json_encode($context, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
     }
 }

@@ -30,7 +30,7 @@ class GeminiService
                 ['role' => 'user', 'parts' => [['text' => $prompt]]]
             ],
             'generationConfig' => [
-                'temperature' => 0.7,
+                'temperature' => 1.0,
                 'maxOutputTokens' => 4096,
             ]
         ];
@@ -124,7 +124,7 @@ class GeminiService
         $payload = [
             'contents' => $messages,
             'generationConfig' => [
-                'temperature' => 0.7,
+                'temperature' => 1.0,
                 'maxOutputTokens' => 4096,
                 'responseMimeType' => 'application/json',
             ]

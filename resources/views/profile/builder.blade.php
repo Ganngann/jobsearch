@@ -107,6 +107,8 @@
             volunteer_experiences: {{ Js::from($volunteer_experiences) }},
             all_experiences: {{ Js::from($all_experiences) }},
             all_educations: {{ Js::from($all_educations) }},
+            languages: {{ Js::from($languages) }},
+            allAvailableLanguages: {{ Js::from($allAvailableLanguages) }},
             activeSessions: {{ Js::from($activeSessions) }},
             archivedSessions: {{ Js::from($archivedSessions) }},
             currentSessionId: {{ Js::from($sessionId) }},
@@ -245,6 +247,9 @@
 
                             <!-- SECTION CERTIFICATIONS -->
                             <x-cv.certifications />
+                            
+                            <!-- SECTION LANGUES -->
+                            <x-cv.languages />
 
                             <!-- SECTION ENGAGEMENT -->
                             <x-cv.volunteer />
