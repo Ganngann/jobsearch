@@ -28,6 +28,13 @@ class User extends Authenticatable
         'location',
         'zip_code',
         'radius',
+        'phone',
+        'avatar',
+        'linkedin_url',
+        'github_url',
+        'portfolio_url',
+        'birth_date',
+        'availability_status',
     ];
 
     /**
@@ -118,9 +125,39 @@ class User extends Authenticatable
         return $this->hasMany(DiscoverySuggestion::class);
     }
 
+    public function experiences(): HasMany
+    {
+        return $this->hasMany(Experience::class)->orderBy('start_date', 'desc');
+    }
+
+    public function educations(): HasMany
+    {
+        return $this->hasMany(Education::class)->orderBy('graduation_year', 'desc');
+    }
+
     public function blacklistedReferentielMetiers(): BelongsToMany
     {
         return $this->belongsToMany(ReferentielMetier::class, 'user_blacklisted_referentiel')->withTimestamps();
+    }
+
+    public function projects(): HasMany
+    {
+        return $this->hasMany(Project::class)->orderBy('start_date', 'desc');
+    }
+
+    public function certifications(): HasMany
+    {
+        return $this->hasMany(Certification::class)->orderBy('issue_date', 'desc');
+    }
+
+    public function interests(): HasMany
+    {
+        return $this->hasMany(Interest::class);
+    }
+
+    public function volunteerExperiences(): HasMany
+    {
+        return $this->hasMany(VolunteerExperience::class)->orderBy('start_date', 'desc');
     }
 
     /**

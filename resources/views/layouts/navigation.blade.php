@@ -21,6 +21,9 @@
                     <x-nav-link :href="route('profile.builder')" :active="request()->routeIs('profile.builder')">
                         {{ __('Assistant Profil') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('profile.journey')" :active="request()->routeIs('profile.journey')">
+                        {{ __('Mon Parcours') }}
+                    </x-nav-link>
                     <x-nav-link :href="route('forem.search')" :active="request()->routeIs('forem.search')">
                         {{ __('Recherche Forem') }}
                     </x-nav-link>
@@ -49,6 +52,10 @@
 
                         <x-dropdown-link :href="route('profile.edit')">
                             {{ __('Modifier Profil') }}
+                        </x-dropdown-link>
+
+                        <x-dropdown-link :href="route('profile.journey')">
+                            {{ __('Mon Parcours (CV)') }}
                         </x-dropdown-link>
 
                         <!-- Authentication -->

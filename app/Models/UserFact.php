@@ -10,6 +10,7 @@ class UserFact extends Model
     protected $fillable = [
         'user_id',
         'session_id',
+        'experience_id',
         'content',
         'proposed_content',
         'category',
@@ -35,5 +36,10 @@ class UserFact extends Model
     public function skills(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
         return $this->belongsToMany(Skill::class, 'fact_skill', 'user_fact_id', 'skill_id');
+    }
+
+    public function experience(): BelongsTo
+    {
+        return $this->belongsTo(Experience::class);
     }
 }

@@ -152,6 +152,39 @@
                 <aside class="w-64 lg:w-72 flex-shrink-0 hidden md:flex flex-col" style="max-height: 80vh;">
                     <div class="bg-white border border-gray-100 shadow-sm rounded-2xl flex flex-col h-full overflow-hidden">
                         <div class="p-3 border-b border-gray-50 bg-gray-50/30">
+                            <!-- INDICATEUR DE PROFONDEUR -->
+                            <div class="mb-4 bg-indigo-600 rounded-xl p-3 text-white shadow-sm overflow-hidden relative">
+                                <div class="relative z-10">
+                                    <div class="flex justify-between items-end mb-1">
+                                        <span class="text-[10px] font-bold uppercase tracking-wider opacity-80">Profondeur de Profil</span>
+                                        <span class="text-lg font-black">{{ $stats['depth_percentage'] }}%</span>
+                                    </div>
+                                    <div class="w-full bg-white/20 rounded-full h-1.5 mb-3">
+                                        <div class="bg-white h-1.5 rounded-full transition-all duration-1000" style="width: {{ $stats['depth_percentage'] }}%"></div>
+                                    </div>
+                                    
+                                    <!-- Micro-Radar / Barres -->
+                                    <div class="grid grid-cols-4 gap-1">
+                                        @foreach(['VALEURS', 'OBJECTIFS', 'SOFT_SKILLS', 'PREFERENCES'] as $cat)
+                                            <div class="space-y-1">
+                                                <div class="flex flex-col-reverse h-8 bg-white/10 rounded-sm overflow-hidden">
+                                                    <div class="bg-white/60 w-full transition-all duration-700" 
+                                                         style="height: {{ min(100, (($stats['categories'][$cat] ?? 0) / 5) * 100) }}%"></div>
+                                                </div>
+                                                <div class="text-[6px] text-center opacity-70 uppercase font-bold">{{ substr($cat, 0, 4) }}</div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+
+                                    <div class="mt-3 pt-2 border-t border-white/10 flex justify-between items-center text-[8px] font-medium">
+                                        <span>{{ $stats['journey']['experiences'] }} Expériences</span>
+                                        <span>{{ $stats['journey']['educations'] }} Formations</span>
+                                    </div>
+                                </div>
+                                <!-- Décoration fond -->
+                                <div class="absolute -right-4 -bottom-4 w-16 h-16 bg-white/10 rounded-full blur-xl"></div>
+                            </div>
+
                             <div class="flex items-center justify-between mb-2">
                                 <h2 class="text-xs font-bold text-gray-800 flex items-center gap-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -184,6 +217,41 @@
                             </button>
                         </div>
                         <div class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-3 bg-gray-50/10">
+                            
+                            <!-- SECTION PARCOURS EN ATTENTE -->
+                            @php
+                                $draftExps = Auth::user()->experiences()->where('status', 'draft')->get();
+                                $draftEdus = Auth::user()->educations()->where('status', 'draft')->get();
+                            @endphp
+
+                            @if($draftExps->count() > 0 || $draftEdus->count() > 0)
+                                <div class="bg-amber-50 border border-amber-100 rounded-xl p-3 mb-4">
+                                    <h3 class="text-[10px] font-bold text-amber-700 uppercase tracking-tight mb-2 flex items-center gap-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                        </svg>
+                                        Parcours à valider
+                                    </h3>
+                                    <div class="space-y-2">
+                                        @foreach($draftExps as $exp)
+                                            <div class="text-[10px] bg-white/50 p-1.5 rounded border border-amber-100">
+                                                <span class="font-bold text-gray-700">{{ $exp->title }}</span>
+                                                <span class="text-gray-500">chez {{ $exp->company }}</span>
+                                            </div>
+                                        @endforeach
+                                        @foreach($draftEdus as $edu)
+                                            <div class="text-[10px] bg-white/50 p-1.5 rounded border border-amber-100">
+                                                <span class="font-bold text-gray-700">{{ $edu->degree }}</span>
+                                                <span class="text-gray-500">({{ $edu->school }})</span>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                    <a href="{{ route('profile.journey') }}" class="block mt-3 text-center text-[10px] font-bold text-amber-800 hover:underline">
+                                        Voir et valider dans mon parcours →
+                                    </a>
+                                </div>
+                            @endif
+
                             <template x-for="fact in filteredFacts" :key="fact.id">
                                 <div class="bg-white p-3 rounded-xl border border-gray-100 shadow-sm transition-all hover:shadow-md group relative"
                                      x-data="{ confirmingDelete: false }"
