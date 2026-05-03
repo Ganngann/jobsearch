@@ -96,7 +96,7 @@
                         
                         this.suggestion = await response.json();
                     } catch (error) {
-                        alert('Erreur: ' + error.message);
+                        console.error('Erreur:', error.message);
                     } finally {
                         this.loading = false;
                     }
@@ -116,7 +116,6 @@
                     // Cocher les compétences (plus complexe car elles sont dans un autre formulaire)
                     // On va simplement afficher un message pour dire que c'est fait pour les textes
                     
-                    alert('Les textes ont été appliqués. N\'oubliez pas d\'enregistrer chaque section !');
                     this.suggestion = null;
                     this.text = '';
                 }

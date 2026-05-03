@@ -211,7 +211,7 @@
                                 <div @dblclick="startEditingUser()" class="flex justify-between items-end cursor-pointer group relative">
                                     <div>
                                         <h1 class="text-2xl font-black text-gray-900 tracking-tight leading-none" x-text="user.name"></h1>
-                                        <p class="text-indigo-600 font-bold text-[11px] uppercase tracking-[0.2em] mt-3">Candidat à l'emploi</p>
+                                        <p class="text-indigo-600 font-bold text-[11px] uppercase tracking-[0.2em] mt-3" x-text="user.headline || 'Candidat à l'emploi'"></p>
                                     </div>
                                     <div class="text-right text-[10px] text-gray-500 space-y-0.5">
                                         <p x-text="user.email"></p>
@@ -237,6 +237,9 @@
                                         <input type="text" x-model="editingData.phone" class="w-full text-sm border-gray-200 rounded" placeholder="Téléphone">
                                         <input type="date" x-model="editingData.birth_date" class="w-full text-sm border-gray-200 rounded" placeholder="Date de naissance">
                                     </div>
+                                    <input type="text" x-model="editingData.headline" class="w-full text-sm border-gray-200 rounded" placeholder="Titre (ex: Développeur Fullstack)">
+                                    <textarea x-model="editingData.profile_text" class="w-full text-[10px] border-gray-200 rounded p-2" rows="3" placeholder="Résumé / À propos de vous"></textarea>
+                                    <textarea x-model="editingData.aspirations" class="w-full text-[10px] border-gray-200 rounded p-2" rows="2" placeholder="Mes aspirations professionnelles"></textarea>
                                     
                                     <!-- Link Repeater -->
                                     <div class="space-y-2">
@@ -261,22 +264,27 @@
                                     </div>
 
                                     <div class="flex justify-end gap-2 pt-2 border-t border-gray-100">
-                                        <button @click="editingItem = {type:null}" class="text-xs text-gray-400">Annuler</button>
+                                        <button @click="cancelEdit()" class="text-xs text-gray-400">Annuler</button>
                                         <button @click="saveUserEdit()" class="text-xs bg-indigo-600 text-white px-4 py-1.5 rounded font-bold transition hover:bg-indigo-700">Enregistrer</button>
                                     </div>
                                 </div>
                             </template>
                         </div>
 
-                        <!-- SECTION SKILLS -->
-                        <div class="mt-6 flex flex-wrap gap-2 mb-8">
+                        <div class="flex items-center gap-2 mt-6 mb-2 group">
+                            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Compétences Techniques</div>
+                            <button @click="startCreating('skill')" class="opacity-0 group-hover:opacity-100 transition-opacity text-indigo-600 hover:text-indigo-800">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                            </button>
+                        </div>
+                        <div class="flex flex-wrap gap-2 mb-8">
                             <template x-for="skill in skills" :key="skill.id">
                                 <div class="relative group">
                                     <template x-if="editingItem.id !== skill.id || editingItem.type !== 'skill'">
                                         <div class="relative">
                                             <span @dblclick="startEditing('skill', skill)" 
                                                   class="text-[9px] font-bold bg-gray-900 text-white px-3 py-1 rounded tracking-wider uppercase cursor-pointer hover:bg-indigo-600 transition-colors"
-                                                  x-text="skill.name"></span>
+                                                  x-text="skill.label"></span>
                                             <button @click="deleteItem('skill', skill.id)" 
                                                     class="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full w-3.5 h-3.5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 shadow-sm">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-2 w-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -286,7 +294,7 @@
                                         </div>
                                     </template>
                                     <template x-if="editingItem.id === skill.id && editingItem.type === 'skill'">
-                                        <input type="text" x-model="editingData.name" @keyup.enter="saveManualEdit()" @blur="saveManualEdit()"
+                                        <input type="text" x-model="editingData.label" @keyup.enter="saveManualEdit()" @blur="saveManualEdit()"
                                                class="text-[9px] font-bold uppercase bg-white border-indigo-600 px-2 py-1 rounded w-24">
                                     </template>
                                 </div>
@@ -294,10 +302,15 @@
                         </div>
 
                         <!-- SECTION EXPÉRIENCES -->
-                        <div class="cv-section-title">Expériences Professionnelles</div>
+                        <div class="flex items-center justify-between group">
+                            <div class="cv-section-title mb-0">Expériences Professionnelles</div>
+                            <button @click="startCreating('experience')" class="opacity-0 group-hover:opacity-100 transition-opacity text-indigo-600 hover:text-indigo-800 mb-6">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                            </button>
+                        </div>
                         <div class="space-y-6">
                             <template x-for="exp in all_experiences" :key="exp.id">
-                                <div class="cv-item flex gap-6" :class="exp.status === 'draft' ? 'cv-item-draft' : ''">
+                                <div class="cv-item flex gap-6" :class="(exp.status === 'draft' || exp.proposed_action) ? 'cv-item-draft' : ''">
                                     <div class="cv-date">
                                         <span x-text="exp.start_date ? new Date(exp.start_date).getFullYear() : '?'"></span>
                                         — 
@@ -314,6 +327,18 @@
                                                             <template x-if="!(exp.proposed_action === 'update' && exp.proposed_data && exp.proposed_data.title)">
                                                                 <span x-text="exp.title"></span>
                                                             </template>
+                                                            
+                                                            <template x-if="exp.employment_type || (exp.proposed_action === 'update' && exp.proposed_data && exp.proposed_data.employment_type)">
+                                                               <span class="text-[10px] text-gray-400 font-normal ml-2 italic">
+                                                                   — 
+                                                                   <template x-if="exp.proposed_action === 'update' && exp.proposed_data && exp.proposed_data.employment_type">
+                                                                       <span x-html="renderDiff(exp.employment_type, exp.proposed_data.employment_type)"></span>
+                                                                   </template>
+                                                                   <template x-if="!(exp.proposed_action === 'update' && exp.proposed_data && exp.proposed_data.employment_type)">
+                                                                       <span x-text="exp.employment_type"></span>
+                                                                   </template>
+                                                               </span>
+                                                           </template>
                                                         </h3>
                                                         <button @click.stop="deleteItem('experience', exp.id)" class="opacity-0 group-hover:opacity-100 transition-opacity text-red-400 hover:text-red-600">
                                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -321,12 +346,24 @@
                                                             </svg>
                                                         </button>
                                                     </div>
-                                                    <span class="text-[11px] font-semibold text-gray-500">
+                                                    <span class="text-[11px] font-semibold text-gray-500 flex items-center gap-2">
                                                         <template x-if="exp.proposed_action === 'update' && exp.proposed_data && exp.proposed_data.company">
                                                             <span x-html="renderDiff(exp.company, exp.proposed_data.company)"></span>
                                                         </template>
                                                         <template x-if="!(exp.proposed_action === 'update' && exp.proposed_data && exp.proposed_data.company)">
                                                             <span x-text="exp.company"></span>
+                                                        </template>
+
+                                                        <template x-if="exp.location || (exp.proposed_action === 'update' && exp.proposed_data && exp.proposed_data.location)">
+                                                            <span class="text-[10px] text-gray-400 font-normal">
+                                                                • 
+                                                                <template x-if="exp.proposed_action === 'update' && exp.proposed_data && exp.proposed_data.location">
+                                                                    <span x-html="renderDiff(exp.location, exp.proposed_data.location)"></span>
+                                                                </template>
+                                                                <template x-if="!(exp.proposed_action === 'update' && exp.proposed_data && exp.proposed_data.location)">
+                                                                    <span x-text="exp.location"></span>
+                                                                </template>
+                                                            </span>
                                                         </template>
                                                     </span>
                                                 </div>
@@ -363,16 +400,20 @@
                                                         <input type="checkbox" x-model="editingData.is_current" class="rounded text-indigo-600"> En poste
                                                     </label>
                                                 </div>
+                                                <div class="grid grid-cols-2 gap-2">
+                                                    <input type="text" x-model="editingData.employment_type" class="text-[10px] border-gray-200 rounded p-1" placeholder="Type (CDI, Freelance...)">
+                                                    <input type="text" x-model="editingData.location" class="text-[10px] border-gray-200 rounded p-1" placeholder="Lieu">
+                                                </div>
                                                 <textarea x-model="editingData.description" class="w-full text-[11px] border-gray-200 rounded p-1" rows="3" placeholder="Description"></textarea>
                                                 <div class="flex justify-end gap-2">
                                                     <button @click="deleteItem('experience', exp.id)" class="text-[10px] text-red-400 mr-auto hover:text-red-600">Supprimer</button>
-                                                    <button @click="editingItem = {id:null}" class="text-[10px] text-gray-400">Annuler</button>
+                                                    <button @click="cancelEdit()" class="text-[10px] text-gray-400">Annuler</button>
                                                     <button @click="saveManualEdit()" class="text-[10px] bg-indigo-600 text-white px-3 py-1 rounded font-bold">Enregistrer</button>
                                                 </div>
                                             </div>
                                         </template>
                                         
-                                        <template x-if="exp.status === 'draft' && editingItem.id !== exp.id">
+                                        <template x-if="exp.status === 'draft' && !exp.proposed_action && editingItem.id !== exp.id">
                                             <div class="mt-3 flex gap-2">
                                                 <button @click="acceptItem('experience', exp.id)" class="text-[9px] px-3 py-1 bg-indigo-600 text-white rounded font-bold hover:bg-indigo-700 shadow-sm transition-all">Valider</button>
                                                 <button @click="deleteItem('experience', exp.id)" class="text-[9px] px-3 py-1 bg-white border border-gray-200 text-gray-500 rounded hover:bg-gray-50">Supprimer</button>
@@ -384,11 +425,21 @@
                         </div>
 
                         <!-- SECTION FORMATIONS -->
-                        <div class="cv-section-title">Formations</div>
+                        <div class="flex items-center justify-between group">
+                            <div class="cv-section-title mb-0">Formations</div>
+                            <button @click="startCreating('education')" class="opacity-0 group-hover:opacity-100 transition-opacity text-indigo-600 hover:text-indigo-800 mb-6">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                            </button>
+                        </div>
                         <div class="space-y-4">
                             <template x-for="edu in all_educations" :key="edu.id">
-                                <div class="cv-item flex gap-6" :class="edu.status === 'draft' ? 'cv-item-draft' : ''">
-                                    <div class="cv-date" x-text="edu.graduation_year"></div>
+                                <div class="cv-item flex gap-6" :class="(edu.status === 'draft' || edu.proposed_action) ? 'cv-item-draft' : ''">
+                                    <div class="cv-date">
+                                        <template x-if="edu.start_date">
+                                            <span x-text="new Date(edu.start_date).getFullYear() + ' — '"></span>
+                                        </template>
+                                        <span x-text="edu.graduation_year"></span>
+                                    </div>
                                     <div class="cv-content">
                                         <template x-if="editingItem.id !== edu.id || editingItem.type !== 'education'">
                                             <div @dblclick="startEditing('education', edu)" class="cursor-pointer group relative">
@@ -400,6 +451,18 @@
                                                             </template>
                                                             <template x-if="!(edu.proposed_action === 'update' && edu.proposed_data && edu.proposed_data.degree)">
                                                                 <span x-text="edu.degree"></span>
+                                                            </template>
+
+                                                            <template x-if="edu.field || (edu.proposed_action === 'update' && edu.proposed_data && edu.proposed_data.field)">
+                                                                <span class="text-[11px] text-gray-500 font-normal ml-2">
+                                                                    — 
+                                                                    <template x-if="edu.proposed_action === 'update' && edu.proposed_data && edu.proposed_data.field">
+                                                                        <span x-html="renderDiff(edu.field, edu.proposed_data.field)"></span>
+                                                                    </template>
+                                                                    <template x-if="!(edu.proposed_action === 'update' && edu.proposed_data && edu.proposed_data.field)">
+                                                                        <span x-text="edu.field"></span>
+                                                                    </template>
+                                                                </span>
                                                             </template>
                                                         </h3>
                                                         <button @click.stop="deleteItem('education', edu.id)" class="opacity-0 group-hover:opacity-100 transition-opacity text-red-400 hover:text-red-600">
@@ -418,12 +481,23 @@
                                                     </span>
                                                 </div>
                                                 
-                                                <div class="mt-1">
+                                                <div class="mt-1 flex items-center gap-3">
                                                     <template x-if="edu.proposed_action === 'update' && edu.proposed_data && edu.proposed_data.description">
-                                                        <div class="text-[11px] text-gray-600 leading-relaxed" x-html="renderDiff(edu.description, edu.proposed_data.description)"></div>
+                                                        <div class="text-[11px] text-gray-600 leading-relaxed flex-1" x-html="renderDiff(edu.description, edu.proposed_data.description)"></div>
                                                     </template>
                                                     <template x-if="!(edu.proposed_action === 'update' && edu.proposed_data && edu.proposed_data.description)">
-                                                        <div class="text-[11px] text-gray-600 leading-relaxed" x-text="edu.description"></div>
+                                                        <div class="text-[11px] text-gray-600 leading-relaxed flex-1" x-text="edu.description"></div>
+                                                    </template>
+
+                                                    <template x-if="edu.grade || (edu.proposed_action === 'update' && edu.proposed_data && edu.proposed_data.grade)">
+                                                        <div class="px-1.5 py-0.5 bg-gray-100 text-gray-600 text-[9px] font-bold rounded border border-gray-200">
+                                                            <template x-if="edu.proposed_action === 'update' && edu.proposed_data && edu.proposed_data.grade">
+                                                                <span x-html="renderDiff(edu.grade, edu.proposed_data.grade)"></span>
+                                                            </template>
+                                                            <template x-if="!(edu.proposed_action === 'update' && edu.proposed_data && edu.proposed_data.grade)">
+                                                                <span x-text="edu.grade"></span>
+                                                            </template>
+                                                        </div>
                                                     </template>
                                                 </div>
                                                 
@@ -443,16 +517,30 @@
                                                 <input type="text" x-model="editingData.degree" class="w-full text-[11px] font-bold border-gray-200 rounded p-1" placeholder="Diplôme">
                                                 <div class="flex gap-2">
                                                     <input type="text" x-model="editingData.school" class="flex-1 text-[10px] border-gray-200 rounded p-1" placeholder="École">
-                                                    <input type="number" x-model="editingData.graduation_year" class="w-20 text-[10px] border-gray-200 rounded p-1" placeholder="Année">
+                                                    <input type="text" x-model="editingData.field" class="flex-1 text-[10px] border-gray-200 rounded p-1" placeholder="Sujet / Domaine">
+                                                </div>
+                                                <div class="flex gap-2">
+                                                    <div class="flex-1">
+                                                        <label class="text-[8px] text-gray-400">Début</label>
+                                                        <input type="date" x-model="editingData.start_date" class="w-full text-[10px] border-gray-200 rounded p-1">
+                                                    </div>
+                                                    <div class="flex-1">
+                                                        <label class="text-[8px] text-gray-400">Année diplôme</label>
+                                                        <input type="number" x-model="editingData.graduation_year" class="w-full text-[10px] border-gray-200 rounded p-1" placeholder="Année">
+                                                    </div>
+                                                    <div class="flex-1">
+                                                        <label class="text-[8px] text-gray-400">Note / Grade</label>
+                                                        <input type="text" x-model="editingData.grade" class="w-full text-[10px] border-gray-200 rounded p-1" placeholder="ex: Mention TB">
+                                                    </div>
                                                 </div>
                                                 <div class="flex justify-end gap-2">
-                                                    <button @click="editingItem = {id:null}" class="text-[9px] text-gray-400">Annuler</button>
+                                                    <button @click="cancelEdit()" class="text-[9px] text-gray-400">Annuler</button>
                                                     <button @click="saveManualEdit()" class="text-[9px] bg-indigo-600 text-white px-2 py-0.5 rounded font-bold">OK</button>
                                                 </div>
                                             </div>
                                         </template>
 
-                                        <template x-if="edu.status === 'draft' && editingItem.id !== edu.id">
+                                        <template x-if="edu.status === 'draft' && !edu.proposed_action && editingItem.id !== edu.id">
                                             <div class="mt-2 flex gap-2">
                                                 <button @click="acceptItem('education', edu.id)" class="text-[9px] px-3 py-1 bg-indigo-600 text-white rounded font-bold">Valider</button>
                                                 <button @click="deleteItem('education', edu.id)" class="text-[9px] px-3 py-1 bg-white border border-gray-200 text-gray-500 rounded">Supprimer</button>
@@ -464,10 +552,15 @@
                         </div>
 
                         <!-- SECTION PROJETS & RÉALISATIONS -->
-                        <div class="cv-section-title">Réalisations & Projets</div>
+                        <div class="flex items-center justify-between group">
+                            <div class="cv-section-title mb-0">Réalisations & Projets</div>
+                            <button @click="startCreating('project')" class="opacity-0 group-hover:opacity-100 transition-opacity text-indigo-600 hover:text-indigo-800 mb-6">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                            </button>
+                        </div>
                         <div class="grid grid-cols-2 gap-x-8 gap-y-4">
                             <template x-for="project in projects" :key="project.id">
-                                <div :class="project.status === 'draft' ? 'cv-item-draft' : ''" class="group relative">
+                                <div :class="(project.status === 'draft' || project.proposed_action) ? 'cv-item-draft' : ''" class="group relative">
                                     <template x-if="editingItem.id !== project.id || editingItem.type !== 'project'">
                                         <div @dblclick="startEditing('project', project)" class="cursor-pointer group relative">
                                             <h4 class="text-[11px] font-bold text-gray-900">
@@ -486,6 +579,18 @@
                                                     <span x-text="project.description"></span>
                                                 </template>
                                             </p>
+
+                                            <template x-if="project.url || (project.proposed_action === 'update' && project.proposed_data && project.proposed_data.url)">
+                                                <div class="mt-1 flex items-center gap-1 text-[9px] text-indigo-500">
+                                                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                                                    <template x-if="project.proposed_action === 'update' && project.proposed_data && project.proposed_data.url">
+                                                        <span x-html="renderDiff(project.url, project.proposed_data.url)"></span>
+                                                    </template>
+                                                    <template x-if="!(project.proposed_action === 'update' && project.proposed_data && project.proposed_data.url)">
+                                                        <span x-text="project.url"></span>
+                                                    </template>
+                                                </div>
+                                            </template>
                                             
                                             <template x-if="project.proposed_action">
                                                 <div class="mt-2 flex gap-2">
@@ -499,6 +604,7 @@
                                     <template x-if="editingItem.id === project.id && editingItem.type === 'project'">
                                         <div class="space-y-2 bg-white p-2 rounded shadow-sm border border-indigo-100">
                                             <input type="text" x-model="editingData.name" class="w-full text-[10px] font-bold border-gray-200 rounded p-1" placeholder="Nom du projet">
+                                            <input type="text" x-model="editingData.url" class="w-full text-[9px] border-gray-200 rounded p-1" placeholder="URL du projet">
                                             <div class="flex gap-2">
                                                 <input type="date" x-model="editingData.start_date" class="flex-1 text-[9px] border-gray-200 rounded p-1">
                                                 <label class="flex items-center gap-1 text-[9px] text-gray-500">
@@ -508,7 +614,7 @@
                                             <textarea x-model="editingData.description" class="w-full text-[9px] border-gray-200 rounded p-1" rows="2" placeholder="Description"></textarea>
                                             <div class="flex justify-end gap-1">
                                                 <button @click="deleteItem('project', project.id)" class="text-[8px] text-red-400 mr-auto hover:text-red-600">Supprimer</button>
-                                                <button @click="editingItem = {id:null}" class="text-[8px] text-gray-400">Annuler</button>
+                                                <button @click="cancelEdit()" class="text-[8px] text-gray-400">Annuler</button>
                                                 <button @click="saveManualEdit()" class="text-[8px] bg-indigo-600 text-white px-2 py-0.5 rounded">OK</button>
                                             </div>
                                         </div>
@@ -518,21 +624,45 @@
                         </div>
 
                         <!-- SECTION CERTIFICATIONS -->
-                        <div class="cv-section-title">Certifications</div>
+                        <div class="flex items-center justify-between group">
+                            <div class="cv-section-title mb-0">Certifications</div>
+                            <button @click="startCreating('certification')" class="opacity-0 group-hover:opacity-100 transition-opacity text-indigo-600 hover:text-indigo-800 mb-6">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                            </button>
+                        </div>
                         <div class="space-y-2 mb-6">
                             <template x-for="cert in certifications" :key="cert.id">
                                 <div class="relative group" :class="cert.status === 'draft' ? 'cv-item-draft' : ''">
                                     <template x-if="editingItem.id !== cert.id || editingItem.type !== 'certification'">
-                                        <div @dblclick="startEditing('certification', cert)" class="flex items-center gap-2 cursor-pointer">
+                                        <div @dblclick="startEditing('certification', cert)" class="flex items-center gap-2 cursor-pointer group relative">
                                             <div class="w-1.5 h-1.5 bg-yellow-400 rounded-full"></div>
-                                            <p class="text-[11px] font-bold text-gray-700" x-text="cert.name"></p>
+                                            <div class="flex-1">
+                                                <div class="flex items-center gap-2">
+                                                    <p class="text-[11px] font-bold text-gray-700" x-text="cert.name"></p>
+                                                    <span class="text-[10px] text-gray-400" x-show="cert.issuing_organization" x-text="' — ' + cert.issuing_organization"></span>
+                                                </div>
+                                                <p class="text-[9px] text-gray-400" x-show="cert.issue_date" x-text="new Date(cert.issue_date).toLocaleDateString()"></p>
+                                            </div>
                                         </div>
                                     </template>
                                     <template x-if="editingItem.id === cert.id && editingItem.type === 'certification'">
-                                        <div class="flex gap-2">
-                                            <input type="text" x-model="editingData.name" class="flex-1 text-[10px] border-gray-200 rounded p-1" placeholder="Nom">
-                                            <input type="date" x-model="editingData.issue_date" class="w-32 text-[10px] border-gray-200 rounded p-1">
-                                            <button @click="saveManualEdit()" class="text-[10px] text-indigo-600 font-bold">OK</button>
+                                        <div class="space-y-2 bg-gray-50 p-2 rounded border border-indigo-100">
+                                            <input type="text" x-model="editingData.name" class="w-full text-[10px] border-gray-200 rounded p-1" placeholder="Nom">
+                                            <input type="text" x-model="editingData.issuing_organization" class="w-full text-[10px] border-gray-200 rounded p-1" placeholder="Organisme">
+                                            <div class="flex gap-2">
+                                                <div class="flex-1">
+                                                    <label class="text-[8px] text-gray-400">Date d'obtention</label>
+                                                    <input type="date" x-model="editingData.issue_date" class="w-full text-[9px] border-gray-200 rounded p-1">
+                                                </div>
+                                                <div class="flex-1">
+                                                    <label class="text-[8px] text-gray-400">Date d'expiration</label>
+                                                    <input type="date" x-model="editingData.expiration_date" class="w-full text-[9px] border-gray-200 rounded p-1">
+                                                </div>
+                                            </div>
+                                            <div class="flex gap-1">
+                                                <button @click="cancelEdit()" class="text-[9px] text-gray-400 ml-auto">Annuler</button>
+                                                <button @click="saveManualEdit()" class="text-[9px] bg-indigo-600 text-white px-2 py-0.5 rounded">OK</button>
+                                            </div>
                                         </div>
                                     </template>
                                 </div>
@@ -540,7 +670,12 @@
                         </div>
 
                         <!-- SECTION BÉNÉVOLAT -->
-                        <div class="cv-section-title">Engagement Associatif</div>
+                        <div class="flex items-center justify-between group">
+                            <div class="cv-section-title mb-0">Engagement Associatif</div>
+                            <button @click="startCreating('volunteer')" class="opacity-0 group-hover:opacity-100 transition-opacity text-indigo-600 hover:text-indigo-800 mb-6">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                            </button>
+                        </div>
                         <div class="space-y-4 mb-6">
                             <template x-for="vol in volunteer_experiences" :key="vol.id">
                                 <div class="cv-item" :class="vol.status === 'draft' ? 'cv-item-draft' : ''">
@@ -548,17 +683,22 @@
                                         <div @dblclick="startEditing('volunteer', vol)" class="cursor-pointer">
                                             <h4 class="text-[11px] font-bold text-gray-900" x-text="vol.role"></h4>
                                             <p class="text-[10px] text-gray-500" x-text="vol.organization"></p>
+                                            <p class="text-[10px] text-gray-400 mt-1" x-show="vol.description" x-text="vol.description"></p>
                                         </div>
                                     </template>
                                     <template x-if="editingItem.id === vol.id && editingItem.type === 'volunteer'">
-                                        <div class="space-y-1">
+                                        <div class="space-y-2 bg-gray-50 p-2 rounded border border-indigo-100">
                                             <input type="text" x-model="editingData.role" class="w-full text-[10px] font-bold border-gray-200 rounded p-1" placeholder="Rôle">
                                             <input type="text" x-model="editingData.organization" class="w-full text-[9px] border-gray-200 rounded p-1" placeholder="Organisation">
                                             <div class="flex gap-2">
                                                 <input type="date" x-model="editingData.start_date" class="flex-1 text-[9px] border-gray-200 rounded p-1">
                                                 <input type="date" x-model="editingData.end_date" class="flex-1 text-[9px] border-gray-200 rounded p-1">
                                             </div>
-                                            <button @click="saveManualEdit()" class="text-[9px] bg-indigo-600 text-white px-2 py-0.5 rounded">OK</button>
+                                            <textarea x-model="editingData.description" class="w-full text-[9px] border-gray-200 rounded p-1" rows="2" placeholder="Description"></textarea>
+                                            <div class="flex justify-end gap-1">
+                                                <button @click="cancelEdit()" class="text-[9px] text-gray-400">Annuler</button>
+                                                <button @click="saveManualEdit()" class="text-[9px] bg-indigo-600 text-white px-2 py-0.5 rounded">OK</button>
+                                            </div>
                                         </div>
                                     </template>
                                 </div>
@@ -566,7 +706,12 @@
                         </div>
 
                         <!-- SECTION PERSONNALITÉ (FACTS) -->
-                        <div class="cv-section-title">Points Forts & Atouts</div>
+                        <div class="flex items-center justify-between group">
+                            <div class="cv-section-title mb-0">Points Forts & Atouts</div>
+                            <button @click="startCreating('fact')" class="opacity-0 group-hover:opacity-100 transition-opacity text-indigo-600 hover:text-indigo-800 mb-6">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                            </button>
+                        </div>
                         <div class="grid grid-cols-1 gap-3">
                             <template x-for="fact in filteredFacts" :key="fact.id">
                                 <div class="relative group" :class="fact.proposed_action ? 'bg-amber-50 p-3 rounded-lg border-2 border-amber-200' : ''">
@@ -618,7 +763,7 @@
                                             <textarea x-model="editingData.content" class="w-full text-[11px] border-gray-200 rounded p-1" rows="2"></textarea>
                                             <div class="flex justify-end gap-2">
                                                 <button @click="deleteItem('fact', fact.id)" class="text-[9px] text-red-400 mr-auto hover:text-red-600">Supprimer</button>
-                                                <button @click="editingItem = {id:null}" class="text-[9px] text-gray-400">Annuler</button>
+                                                <button @click="cancelEdit()" class="text-[9px] text-gray-400">Annuler</button>
                                                 <button @click="saveManualEdit()" class="text-[9px] bg-indigo-600 text-white px-3 py-1 rounded">OK</button>
                                             </div>
                                         </div>
@@ -667,6 +812,7 @@
                 archivedSessions: @json($archivedSessions) || [],
                 currentSessionId: @json($sessionId),
                 user: @json(Auth::user()),
+                skills: @json(Auth::user()->skills) || [],
                 newMessage: '',
                 isTyping: false,
                 isSyncing: false,
@@ -740,6 +886,13 @@
                     if (!dateStr) return '';
                     const date = new Date(dateStr);
                     return date.toLocaleDateString('fr-FR');
+                },
+
+                formatDateForInput(dateStr) {
+                    if (!dateStr) return '';
+                    const date = new Date(dateStr);
+                    if (isNaN(date.getTime())) return '';
+                    return date.toISOString().split('T')[0];
                 },
 
                 renderDiff(oldText, newText) {
@@ -895,7 +1048,6 @@
                 },
 
                 async deleteItem(type, id) {
-                    if (!confirm('Voulez-vous vraiment supprimer cet élément ?')) return;
                     try {
                         const response = await fetch(`/profile/builder/item/${type}/${id}`, {
                             method: 'DELETE',
@@ -961,11 +1113,21 @@
                 startEditing(type, item) {
                     this.editingItem = { type, id: item.id };
                     this.editingData = { ...item };
+                    
+                    // Format dates for HTML5 date inputs
+                    for (const key in this.editingData) {
+                        if (key.endsWith('_date') && this.editingData[key]) {
+                            this.editingData[key] = this.formatDateForInput(this.editingData[key]);
+                        }
+                    }
                 },
 
                 startEditingUser() {
                     this.editingItem = { type: 'user', id: this.user.id };
                     this.editingData = { ...this.user, links: [...(this.user.links || [])] };
+                    if (this.editingData.birth_date) {
+                        this.editingData.birth_date = this.formatDateForInput(this.editingData.birth_date);
+                    }
                 },
 
                 addLink() {
@@ -995,11 +1157,49 @@
                     } catch (error) { console.error(error); }
                 },
 
+                addLocalItem(type, newItem) {
+                    const arrays = {
+                        'experience': 'all_experiences',
+                        'education': 'all_educations',
+                        'project': 'projects',
+                        'interest': 'interests',
+                        'certification': 'certifications',
+                        'volunteer': 'volunteer_experiences',
+                        'skill': 'skills',
+                        'fact': 'facts'
+                    };
+                    const arrayName = arrays[type];
+                    if (arrayName) {
+                        this[arrayName].push(newItem);
+                    }
+                },
+
+                startCreating(type) {
+                    const newItem = { id: 'new', _isNew: true };
+                    if (type === 'fact') {
+                        newItem.category = 'VALEURS';
+                    }
+                    this.addLocalItem(type, newItem);
+                    this.editingItem = { type, id: 'new' };
+                    this.editingData = { ...newItem };
+                },
+
+                cancelEdit() {
+                    if (this.editingItem.id === 'new') {
+                        this.removeLocalItem(this.editingItem.type, 'new');
+                    }
+                    this.editingItem = { type: null, id: null };
+                },
+
                 async saveManualEdit() {
                     const { type, id } = this.editingItem;
+                    const isNew = id === 'new';
+                    const method = isNew ? 'POST' : 'PATCH';
+                    const url = isNew ? `/profile/builder/item/${type}` : `/profile/builder/item/${type}/${id}`;
+                    
                     try {
-                        const response = await fetch(`/profile/builder/item/${type}/${id}`, {
-                            method: 'PATCH',
+                        const response = await fetch(url, {
+                            method: method,
                             headers: {
                                 'Content-Type': 'application/json',
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
@@ -1008,7 +1208,12 @@
                         });
                         const data = await response.json();
                         if (data.success) {
-                            this.refreshLocalItem(type, id, data.item);
+                            if (isNew) {
+                                this.removeLocalItem(type, 'new');
+                                this.addLocalItem(type, data.item);
+                            } else {
+                                this.refreshLocalItem(type, id, data.item);
+                            }
                             this.editingItem = { type: null, id: null };
                         }
                     } catch (error) { console.error(error); }

@@ -139,6 +139,9 @@ class ProfileChatController extends Controller
             'content' => $request->message
         ]);
 
+        // AUTO-VALIDATION : Si l'utilisateur continue d'écrire, on considère les suggestions précédentes comme validées
+        $this->autoValidatePendingChanges($user);
+
         if ($session->messages()->count() === 1) {
             $session->update(['title' => substr($request->message, 0, 50) . '...']);
         }
@@ -242,6 +245,7 @@ class ProfileChatController extends Controller
                         'title' => $expData['title'] ?? null,
                         'description' => $expData['description'] ?? null,
                         'employment_type' => $expData['employment_type'] ?? null,
+                        'location' => $expData['location'] ?? null,
                         'start_date' => isset($expData['start_date']) ? $this->sanitizeDate($expData['start_date']) : null,
                         'end_date' => isset($expData['end_date']) ? $this->sanitizeDate($expData['end_date']) : null,
                         'is_current' => $expData['is_current'] ?? null,
@@ -279,7 +283,9 @@ class ProfileChatController extends Controller
                         'degree' => $eduData['degree'] ?? null,
                         'field' => $eduData['field'] ?? null,
                         'description' => $eduData['description'] ?? null,
+                        'start_date' => isset($eduData['start_date']) ? $this->sanitizeDate($eduData['start_date']) : null,
                         'graduation_year' => $this->sanitizeYear($eduData['graduation_year'] ?? null),
+                        'grade' => $eduData['grade'] ?? null,
                     ]);
                     
                     if (!empty($newData)) {
@@ -324,7 +330,6 @@ class ProfileChatController extends Controller
             }
         }
 
-        // 9. Certifications
         foreach ($aiResponse['certifications'] ?? [] as $certData) {
             if (($certData['action'] ?? 'add') === 'add') {
                 $user->certifications()->create([
@@ -334,8 +339,27 @@ class ProfileChatController extends Controller
                     'expiration_date' => $this->sanitizeDate($certData['expiration_date'] ?? null),
                     'credential_id' => $certData['credential_id'] ?? null,
                     'credential_url' => $certData['credential_url'] ?? null,
-                    'status' => 'draft'
+                    'status' => 'draft',
+                    'proposed_action' => 'add'
                 ]);
+            } elseif ($certData['action'] === 'update' && isset($certData['id'])) {
+                $cert = $user->certifications()->find($certData['id']);
+                if ($cert) {
+                    $newData = array_filter([
+                        'name' => $certData['name'] ?? null,
+                        'issuing_organization' => $certData['issuing_organization'] ?? null,
+                        'issue_date' => isset($certData['issue_date']) ? $this->sanitizeDate($certData['issue_date']) : null,
+                        'expiration_date' => isset($certData['expiration_date']) ? $this->sanitizeDate($certData['expiration_date']) : null,
+                        'credential_id' => $certData['credential_id'] ?? null,
+                        'credential_url' => $certData['credential_url'] ?? null,
+                    ]);
+                    if (!empty($newData)) {
+                        $cert->update(['proposed_data' => $newData, 'proposed_action' => 'update']);
+                    }
+                }
+            } elseif ($certData['action'] === 'delete' && isset($certData['id'])) {
+                $cert = $user->certifications()->find($certData['id']);
+                if ($cert) $cert->update(['proposed_action' => 'delete']);
             }
         }
 
@@ -348,8 +372,26 @@ class ProfileChatController extends Controller
                     'description' => $volData['description'] ?? '',
                     'start_date' => $this->sanitizeDate($volData['start_date'] ?? null),
                     'end_date' => $this->sanitizeDate($volData['end_date'] ?? null),
-                    'status' => 'draft'
+                    'status' => 'draft',
+                    'proposed_action' => 'add'
                 ]);
+            } elseif ($volData['action'] === 'update' && isset($volData['id'])) {
+                $vol = $user->volunteerExperiences()->find($volData['id']);
+                if ($vol) {
+                    $newData = array_filter([
+                        'organization' => $volData['organization'] ?? null,
+                        'role' => $volData['role'] ?? null,
+                        'description' => $volData['description'] ?? null,
+                        'start_date' => isset($volData['start_date']) ? $this->sanitizeDate($volData['start_date']) : null,
+                        'end_date' => isset($volData['end_date']) ? $this->sanitizeDate($volData['end_date']) : null,
+                    ]);
+                    if (!empty($newData)) {
+                        $vol->update(['proposed_data' => $newData, 'proposed_action' => 'update']);
+                    }
+                }
+            } elseif ($volData['action'] === 'delete' && isset($volData['id'])) {
+                $vol = $user->volunteerExperiences()->find($volData['id']);
+                if ($vol) $vol->update(['proposed_action' => 'delete']);
             }
         }
 
@@ -523,12 +565,49 @@ class ProfileChatController extends Controller
         return response()->json(['success' => true]);
     }
 
+    public function storeItem(Request $request, $type)
+    {
+        $user = Auth::user();
+        $data = $request->all();
+        $data['status'] = 'validated'; // Manual addition is pre-validated
+        
+        // Sanitize dates if present
+        if (isset($data['start_date'])) $data['start_date'] = $this->sanitizeDate($data['start_date']);
+        if (isset($data['end_date'])) $data['end_date'] = $this->sanitizeDate($data['end_date']);
+        if (isset($data['issue_date'])) $data['issue_date'] = $this->sanitizeDate($data['issue_date']);
+        if (isset($data['expiration_date'])) $data['expiration_date'] = $this->sanitizeDate($data['expiration_date']);
+
+        $item = match($type) {
+            'experience' => $user->experiences()->create($data),
+            'education' => $user->educations()->create($data),
+            'project' => $user->projects()->create($data),
+            'interest' => $user->interests()->create($data),
+            'certification' => $user->certifications()->create($data),
+            'volunteer' => $user->volunteerExperiences()->create($data),
+            'fact' => $user->facts()->create($data),
+            'skill' => (function() use ($user, $data) {
+                if (empty($data['label'])) return null;
+                $skill = \App\Models\Skill::firstOrCreate(
+                    ['label' => $data['label']],
+                    ['code' => \Illuminate\Support\Str::slug($data['label']), 'type' => 'manual', 'slug' => \Illuminate\Support\Str::slug($data['label'])]
+                );
+                $user->skills()->syncWithoutDetaching([$skill->id]);
+                return $skill;
+            })(),
+            default => null
+        };
+
+        if (!$item) return response()->json(['error' => 'Invalid type or creation failed'], 400);
+
+        return response()->json(['success' => true, 'item' => $item]);
+    }
+
     public function updateItem(Request $request, $type, $id)
     {
         $user = Auth::user();
         
         if ($type === 'user') {
-            $user->update($request->only(['name', 'email', 'phone', 'linkedin_url', 'github_url', 'portfolio_url', 'birth_date', 'links']));
+            $user->update($request->only(['name', 'email', 'phone', 'linkedin_url', 'github_url', 'portfolio_url', 'birth_date', 'links', 'headline', 'profile_text', 'aspirations']));
             return response()->json(['success' => true, 'item' => $user->fresh()]);
         }
 
@@ -554,6 +633,20 @@ class ProfileChatController extends Controller
         if (isset($data['start_date'])) $data['start_date'] = $this->sanitizeDate($data['start_date']);
         if (isset($data['end_date'])) $data['end_date'] = $this->sanitizeDate($data['end_date']);
         if (isset($data['issue_date'])) $data['issue_date'] = $this->sanitizeDate($data['issue_date']);
+        if (isset($data['expiration_date'])) $data['expiration_date'] = $this->sanitizeDate($data['expiration_date']);
+
+        if ($type === 'skill') {
+            if (isset($data['label']) && $item->label !== $data['label']) {
+                $user->skills()->detach($id);
+                $newSkill = \App\Models\Skill::firstOrCreate(
+                    ['label' => $data['label']],
+                    ['code' => \Illuminate\Support\Str::slug($data['label']), 'type' => 'manual', 'slug' => \Illuminate\Support\Str::slug($data['label'])]
+                );
+                $user->skills()->syncWithoutDetaching([$newSkill->id]);
+                return response()->json(['success' => true, 'item' => $newSkill]);
+            }
+            return response()->json(['success' => true, 'item' => $item]);
+        }
 
         $item->update($data);
 
@@ -660,4 +753,54 @@ class ProfileChatController extends Controller
         return response()->json(['success' => true]);
     }
 
+    protected function autoValidatePendingChanges($user)
+    {
+        // 1. Facts
+        $user->facts()->whereNotNull('proposed_action')->get()->each(function($fact) {
+            if ($fact->proposed_action === 'add') {
+                $fact->update(['status' => 'validated', 'proposed_action' => null]);
+            } elseif ($fact->proposed_action === 'update') {
+                $fact->update([
+                    'content' => $fact->proposed_content ?? $fact->content,
+                    'category' => $fact->proposed_category ?? $fact->category,
+                    'proposed_content' => null,
+                    'proposed_category' => null,
+                    'proposed_action' => null,
+                    'status' => 'validated'
+                ]);
+            } elseif ($fact->proposed_action === 'delete') {
+                $fact->delete();
+            }
+        });
+
+        // 2. Other structured items
+        $types = [
+            'experiences' => $user->experiences(),
+            'educations' => $user->educations(),
+            'projects' => $user->projects(),
+            'certifications' => $user->certifications(),
+            'volunteer_experiences' => $user->volunteerExperiences(),
+            'interests' => $user->interests()
+        ];
+
+        foreach ($types as $query) {
+            $query->whereNotNull('proposed_action')->get()->each(function($item) {
+                if ($item->proposed_action === 'update' && $item->proposed_data) {
+                    $item->update(array_merge($item->proposed_data, [
+                        'proposed_data' => null,
+                        'proposed_action' => null,
+                        'status' => 'validated'
+                    ]));
+                } elseif ($item->proposed_action === 'delete') {
+                    $item->delete();
+                } else {
+                    $item->update([
+                        'status' => 'validated',
+                        'proposed_action' => null,
+                        'proposed_data' => null
+                    ]);
+                }
+            });
+        }
+    }
 }

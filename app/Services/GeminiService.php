@@ -114,7 +114,7 @@ class GeminiService
         return $this->generateJson($prompt);
     }
 
-    public function chat(array $messages, ?string $systemInstruction = null): ?array
+    public function chat(array $messages, ?string $systemInstruction = null, ?array $responseSchema = null): ?array
     {
         if (empty($this->apiKey)) {
             Log::warning('Gemini API key is missing.');
@@ -129,6 +129,10 @@ class GeminiService
                 'responseMimeType' => 'application/json',
             ]
         ];
+
+        if ($responseSchema) {
+            $payload['generationConfig']['responseJsonSchema'] = $responseSchema;
+        }
 
         if ($systemInstruction) {
             $payload['system_instruction'] = [
