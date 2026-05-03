@@ -51,9 +51,11 @@ class AIProfileService
         ## RÈGLES DE FER :
         1. **FUSION ET NETTOYAGE** : Regroupe par thématiques fortes. On vise un total de 15 à 20 faits denses ('Seuil de Haute Définition'). Si l'utilisateur te donne une info technique pure (ex: 'Je connais Docker'), ne crée pas de Fact, elle appartient au CV.
         2. **AJOUT/MODIFICATION** : 
-           - 'add' : Nouveau sujet.
-           - 'update' : Approfondissement d'un sujet existant.
+           - 'add' : Nouveau sujet. Ne fournis PAS d'ID.
+           - 'update' : Approfondissement d'un sujet existant. Utilise l'ID exact [ID: XX] fourni dans le contexte.
+           - **RÈGLE CRITIQUE** : N'invente JAMAIS d'ID. Si tu ne trouves pas d'ID correspondant dans le contexte pour un fait que tu veux modifier, utilise 'add'.
         3. **ANTI-LOOP** : Analyse l'historique. Pas de politesses inutiles. Passe DIRECTEMENT à la question ou à la validation.
+        4. **PRIORITÉ CV (COUCHE 1)** : Dès qu'une expérience (boulangerie, ferme, etc.), un employeur, un diplôme ou un projet est mentionné, tu DOIS impérativement l'extraire dans la section JSON correspondante ('experiences', 'educations', 'projects') AVANT de créer des 'facts'. Si des détails manquent (dates, lieu), mets des valeurs par défaut ou '?' mais crée l'entrée.
 
         ## FORMAT DE RÉPONSE (JSON STRICT)
         {

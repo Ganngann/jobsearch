@@ -349,6 +349,93 @@
                                     </div>
                                 </div>
                             </template>
+
+                            <!-- PROJETS -->
+                            <template x-if="projects.length > 0">
+                                <div class="pt-2">
+                                    <h3 class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Projets</h3>
+                                    <div class="space-y-2">
+                                        <template x-for="project in projects" :key="project.id">
+                                            <div class="bg-white p-2.5 rounded-xl border border-gray-100 shadow-sm">
+                                                <p class="text-[10px] font-bold text-gray-800" x-text="project.name"></p>
+                                                <p class="text-[9px] text-gray-500 line-clamp-2" x-text="project.description"></p>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- CERTIFICATIONS -->
+                            <template x-if="certifications.length > 0">
+                                <div class="pt-2">
+                                    <h3 class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Certifications</h3>
+                                    <div class="space-y-2">
+                                        <template x-for="cert in certifications" :key="cert.id">
+                                            <div class="bg-white p-2.5 rounded-xl border border-gray-100 shadow-sm">
+                                                <p class="text-[10px] font-bold text-gray-800" x-text="cert.name"></p>
+                                                <p class="text-[9px] text-gray-500" x-text="cert.issuing_organization"></p>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- BÉNÉVOLAT -->
+                            <template x-if="volunteer_experiences.length > 0">
+                                <div class="pt-2">
+                                    <h3 class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Bénévolat</h3>
+                                    <div class="space-y-2">
+                                        <template x-for="vol in volunteer_experiences" :key="vol.id">
+                                            <div class="bg-white p-2.5 rounded-xl border border-gray-100 shadow-sm">
+                                                <p class="text-[10px] font-bold text-gray-800" x-text="vol.role"></p>
+                                                <p class="text-[9px] text-gray-500" x-text="vol.organization"></p>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- INTÉRÊTS -->
+                            <template x-if="interests.length > 0">
+                                <div class="pt-2 pb-4">
+                                    <h3 class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Intérêts</h3>
+                                    <div class="flex flex-wrap gap-1 px-1">
+                                        <template x-for="interest in interests" :key="interest.id">
+                                            <span class="text-[9px] bg-white border border-gray-100 px-2 py-0.5 rounded-full text-gray-600" x-text="interest.name"></span>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- EXPÉRIENCES VALIDÉES -->
+                            <template x-if="all_experiences.length > 0">
+                                <div class="pt-2">
+                                    <h3 class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Expériences</h3>
+                                    <div class="space-y-2">
+                                        <template x-for="exp in all_experiences" :key="exp.id">
+                                            <div class="bg-white p-2.5 rounded-xl border border-gray-100 shadow-sm">
+                                                <p class="text-[10px] font-bold text-gray-800" x-text="exp.title"></p>
+                                                <p class="text-[9px] text-gray-500" x-text="exp.company"></p>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- FORMATIONS VALIDÉES -->
+                            <template x-if="all_educations.length > 0">
+                                <div class="pt-2">
+                                    <h3 class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Formations</h3>
+                                    <div class="space-y-2">
+                                        <template x-for="edu in all_educations" :key="edu.id">
+                                            <div class="bg-white p-2.5 rounded-xl border border-gray-100 shadow-sm">
+                                                <p class="text-[10px] font-bold text-gray-800" x-text="edu.degree"></p>
+                                                <p class="text-[9px] text-gray-500" x-text="edu.school"></p>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
                         </div>
                     </div>
                 </aside>
@@ -362,6 +449,12 @@
             return {
                 messages: @json($messages) || [],
                 facts: @json($facts) || [],
+                projects: @json($projects) || [],
+                certifications: @json($certifications) || [],
+                interests: @json($interests) || [],
+                volunteer_experiences: @json($volunteer_experiences) || [],
+                all_experiences: @json($all_experiences) || [],
+                all_educations: @json($all_educations) || [],
                 activeSessions: @json($activeSessions) || [],
                 archivedSessions: @json($archivedSessions) || [],
                 currentSessionId: @json($sessionId),
@@ -431,6 +524,12 @@
                         });
 
                         this.facts = newFacts;
+                        this.projects = data.projects;
+                        this.certifications = data.certifications;
+                        this.interests = data.interests;
+                        this.volunteer_experiences = data.volunteer_experiences;
+                        this.all_experiences = data.all_experiences;
+                        this.all_educations = data.all_educations;
                         this.activeSessions = data.activeSessions;
                         this.archivedSessions = data.archivedSessions;
                         this.scrollToBottom();

@@ -63,7 +63,11 @@ class ProfileChatController extends Controller
             $messages = $user->profileMessages()->where('session_id', $sessionId)->orderBy('created_at', 'asc')->get();
         }
 
-        $facts = $user->facts()->with('skills')->withCount('skills')->orderBy('skills_count', 'desc')->get();
+        $facts = $user->facts()
+            ->with('skills')
+            ->orderByRaw('CASE WHEN proposed_action IS NOT NULL THEN 0 ELSE 1 END')
+            ->orderBy('updated_at', 'desc')
+            ->get();
 
         // Statistiques de profondeur (Calcul pondéré)
         $categoryCounts = [
@@ -96,7 +100,18 @@ class ProfileChatController extends Controller
             ]
         ];
 
-        return view('profile.builder', compact('messages', 'facts', 'activeSessions', 'archivedSessions', 'sessionId', 'stats'));
+        $projects = $user->projects()->orderBy('updated_at', 'desc')->get();
+        $certifications = $user->certifications()->orderBy('updated_at', 'desc')->get();
+        $interests = $user->interests()->orderBy('updated_at', 'desc')->get();
+        $volunteer_experiences = $user->volunteerExperiences()->orderBy('updated_at', 'desc')->get();
+        $all_experiences = $user->experiences()->where('status', '!=', 'draft')->orderBy('start_date', 'desc')->get();
+        $all_educations = $user->educations()->where('status', '!=', 'draft')->orderBy('graduation_year', 'desc')->get();
+
+        return view('profile.builder', compact(
+            'messages', 'facts', 'activeSessions', 'archivedSessions', 'sessionId', 'stats',
+            'projects', 'certifications', 'interests', 'volunteer_experiences',
+            'all_experiences', 'all_educations'
+        ));
     }
 
     public function resetSession()
@@ -141,6 +156,7 @@ class ProfileChatController extends Controller
             ->toArray();
 
         $aiResponse = $this->aiService->chat($user, $history);
+        Log::debug('AI RESPONSE DATA:', ['data' => $aiResponse]);
 
         if (!$aiResponse || !isset($aiResponse['reply'])) {
             return response()->json([
@@ -178,11 +194,32 @@ class ProfileChatController extends Controller
             } elseif ($cleanId) {
                 $fact = UserFact::find($cleanId);
                 if ($fact && $fact->user_id === $user->id) {
+                    $newContent = $factData['content'] ?? $fact->content;
+                    $newCategory = $factData['category'] ?? $fact->category;
+
+                    // Sécurité : ignorer si strictement identique à l'existant
+                    if ($fact->content === $newContent && $fact->category === $newCategory) {
+                        Log::debug("Fact {$cleanId} ignored: no changes detected.");
+                        continue;
+                    }
+
                     $fact->update([
-                        'proposed_content' => $factData['content'] ?? $fact->content,
-                        'proposed_category' => $factData['category'] ?? $fact->category,
+                        'proposed_content' => $newContent,
+                        'proposed_category' => $newCategory,
                         'proposed_action' => 'update'
                     ]);
+                    Log::debug("Fact {$cleanId} updated with proposal.");
+                } else {
+                    // Fallback : si l'IA invente un ID ou se trompe, on traite comme un ajout
+                    // pour éviter de perdre l'information.
+                    $user->facts()->create([
+                        'session_id' => $sessionId,
+                        'content' => $factData['content'],
+                        'category' => $factData['category'] ?? 'VALEURS',
+                        'status' => 'validated',
+                        'confidence_score' => 1.0
+                    ]);
+                    Log::debug("Fact ID {$cleanId} not found, falling back to 'add'.");
                 }
             }
         }
@@ -276,7 +313,17 @@ class ProfileChatController extends Controller
 
         return response()->json([
             'reply' => $aiResponse['reply'],
-            'facts' => $user->facts()->with('skills')->withCount('skills')->orderBy('skills_count', 'desc')->get(),
+            'facts' => $user->facts()
+                ->with('skills')
+                ->orderByRaw('CASE WHEN proposed_action IS NOT NULL THEN 0 ELSE 1 END')
+                ->orderBy('updated_at', 'desc')
+                ->get(),
+            'projects' => $user->projects()->orderBy('updated_at', 'desc')->get(),
+            'certifications' => $user->certifications()->orderBy('updated_at', 'desc')->get(),
+            'interests' => $user->interests()->orderBy('updated_at', 'desc')->get(),
+            'volunteer_experiences' => $user->volunteerExperiences()->orderBy('updated_at', 'desc')->get(),
+            'all_experiences' => $user->experiences()->where('status', '!=', 'draft')->orderBy('start_date', 'desc')->get(),
+            'all_educations' => $user->educations()->where('status', '!=', 'draft')->orderBy('graduation_year', 'desc')->get(),
             'activeSessions' => $user->profileSessions()->where('is_archived', false)->get(),
             'archivedSessions' => $user->profileSessions()->where('is_archived', true)->get()
         ]);
