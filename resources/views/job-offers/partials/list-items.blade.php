@@ -15,7 +15,8 @@
         <div class="absolute top-0 right-0 p-3 flex gap-4">
             <!-- Data Match -->
             <div class="text-right">
-                <p class="text-lg font-black leading-none {{ $match && $match->pre_score >= 70 ? 'text-emerald-500' : ($match && $match->pre_score >= 40 ? 'text-amber-500' : 'text-slate-400') }}">
+                <p class="text-lg font-black leading-none" 
+                   :class="(scores['{{ $offer->forem_id }}']?.data >= 70) ? 'text-emerald-500' : ((scores['{{ $offer->forem_id }}']?.data >= 40) ? 'text-amber-500' : 'text-slate-400')">
                     <span x-text="scores['{{ $offer->forem_id }}']?.data ?? '{{ $match->pre_score ?? 0 }}'"></span><span class="text-[9px]">%</span>
                 </p>
                 <p class="text-[7px] font-black uppercase text-slate-300 tracking-tighter">Data</p>

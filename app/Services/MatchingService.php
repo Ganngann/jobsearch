@@ -95,33 +95,50 @@ class MatchingService
 
         $score = 0;
 
-        // 3. Score Métier (Rome & Détail) (20 pts max / -20 handicap)
+        // 3. Score Métier (Rome & Détail) (20 pts max / -40 handicap)
         $userMetiers = $context['preferred_metiers'] ?? $user->preferredMetiers;
         $userFamilies = $context['preferred_families'] ?? $user->preferredReferentielMetiers;
         
+        $blacklistedMetierIds = $context['blacklisted_metier_ids'] ?? $user->blacklistedMetiers()->pluck('metiers.id')->toArray();
+        $blacklistedFamilyCodes = $context['blacklisted_family_codes'] ?? $user->blacklistedReferentielMetiers()->pluck('code')->toArray();
+
         $jobMetierId = $jobOffer->metier_id;
         $jobRomeCode = $jobOffer->metier ? $jobOffer->metier->code : null;
 
         $isFavorite = false;
         $isRefused = false;
 
-        // B. On prépare aussi la liste des IDs blacklistés pour le flag final
-        $blacklistedMetierIds = $userMetiers->where('pivot.status', 'refused')->pluck('id')->toArray();
-
-        // A. Priorité au Détail (Métier spécifique)
-        $specific = $userMetiers->firstWhere('id', $jobMetierId);
-        if ($specific) {
-            if ($specific->pivot->status === 'favorite') $isFavorite = true;
-            elseif ($specific->pivot->status === 'refused') $isRefused = true;
+        // A. Vérification Blacklist STRICTE (Table dédiée)
+        if (in_array($jobMetierId, $blacklistedMetierIds)) {
+            $isRefused = true;
         }
 
-        // B. Si pas de détail, on regarde la Famille (ROME)
-        if (!$isFavorite && !$isRefused && $jobRomeCode) {
-            foreach ($userFamilies as $family) {
-                if (str_starts_with($jobRomeCode, $family->code)) {
-                    if ($family->pivot->status === 'favorite') $isFavorite = true;
-                    elseif ($family->pivot->status === 'refused') $isRefused = true;
+        if (!$isRefused && $jobRomeCode) {
+            foreach ($blacklistedFamilyCodes as $code) {
+                if (str_starts_with($jobRomeCode, $code)) {
+                    $isRefused = true;
                     break;
+                }
+            }
+        }
+
+        // B. Vérification dans les Préférences (Pivot status)
+        if (!$isRefused) {
+            // Priorité au Détail (Métier spécifique)
+            $specific = $userMetiers->firstWhere('id', $jobMetierId);
+            if ($specific) {
+                if ($specific->pivot->status === 'favorite') $isFavorite = true;
+                elseif ($specific->pivot->status === 'refused') $isRefused = true;
+            }
+
+            // Si pas de détail, on regarde la Famille (ROME)
+            if (!$isFavorite && !$isRefused && $jobRomeCode) {
+                foreach ($userFamilies as $family) {
+                    if (str_starts_with($jobRomeCode, $family->code)) {
+                        if ($family->pivot->status === 'favorite') $isFavorite = true;
+                        elseif ($family->pivot->status === 'refused') $isRefused = true;
+                        break;
+                    }
                 }
             }
         }

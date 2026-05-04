@@ -5,7 +5,13 @@
             <div class="flex-1">
                 <div class="flex items-center gap-3 mb-3" x-data="{ 
                     isPreferred: {{ $jobOffer->metier_id ? (auth()->user()->preferredMetiers->contains($jobOffer->metier_id) ? 'true' : 'false') : 'false' }},
-                    isBlacklisted: {{ $jobOffer->metier_id ? (auth()->user()->blacklistedMetiers->contains($jobOffer->metier_id) ? 'true' : 'false') : 'false' }},
+                    isBlacklisted: {{ ($match->is_blacklisted ?? false) ? 'true' : 'false' }},
+                    matchScore: {{ $match->pre_score ?? 'null' }},
+                    init() {
+                        if (window.dashboard && this.matchScore !== null) {
+                            window.dashboard.updateOfferScore('{{ $jobOffer->forem_id }}', this.matchScore, this.isBlacklisted);
+                        }
+                    },
                     async toggleFavorite() {
                         @if($jobOffer->metier_id)
                         const action = this.isPreferred ? 'remove' : 'add';
@@ -26,7 +32,7 @@
                         });
                         this.isBlacklisted = true;
                         this.isPreferred = false;
-                        window.location.reload(); 
+                        if(window.dashboard) window.dashboard.refreshList();
                         @endif
                     }
                 }">
@@ -62,15 +68,40 @@
                 <h2 class="text-3xl font-black text-slate-900 leading-tight">
                     {{ $jobOffer->title }}
                 </h2>
-                <div class="mt-4 flex items-center gap-6">
-                    <div class="flex items-center gap-2 text-slate-500">
-                        <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-7h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-                        <span class="text-sm font-bold">{{ $jobOffer->employer->label }}</span>
+                <div class="mt-6 flex flex-wrap gap-3">
+                    <!-- Employeur -->
+                    <div class="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-100">
+                        <svg class="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-7h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                        <span class="text-[10px] font-black uppercase text-slate-700 tracking-wider">{{ $jobOffer->employer->label }}</span>
                     </div>
-                    <div class="flex items-center gap-2 text-slate-500">
-                        <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                        <span class="text-sm font-bold">{{ $jobOffer->location }}</span>
+
+                    <!-- Contrat -->
+                    <div class="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 rounded-xl border border-indigo-100">
+                        <svg class="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <span class="text-[10px] font-black uppercase text-indigo-700 tracking-wider">{{ $jobOffer->contract_type }}</span>
                     </div>
+
+                    <!-- Localisation -->
+                    <div class="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-100">
+                        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
+                        <span class="text-[10px] font-black uppercase text-slate-600 tracking-wider">{{ $jobOffer->location }}</span>
+                    </div>
+
+                    <!-- Expérience -->
+                    @if($jobOffer->experience_required)
+                    <div class="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-100">
+                        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                        <span class="text-[10px] font-black uppercase text-slate-600 tracking-wider">{{ $jobOffer->experience_required }}</span>
+                    </div>
+                    @endif
+
+                    <!-- Salaire -->
+                    @if($jobOffer->salary)
+                    <div class="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-xl border border-emerald-100">
+                        <svg class="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M12 8V7"></path></svg>
+                        <span class="text-[10px] font-black uppercase text-emerald-700 tracking-wider">{{ $jobOffer->salary }}</span>
+                    </div>
+                    @endif
                 </div>
             </div>
             
@@ -317,13 +348,51 @@
 
                 <div>
                     <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Prérequis & Permis</h3>
-                    <div class="flex flex-wrap gap-2">
-                        @foreach($jobOffer->permits as $permit)
+                    <div class="flex flex-wrap gap-2 mb-8">
+                        @forelse($jobOffer->permits as $permit)
                             @php $hasPermit = $user->permits->contains($permit->id); @endphp
                             <span class="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase border {{ $hasPermit ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-rose-50 border-rose-200 text-rose-700' }}">
                                 Permis {{ $permit->label }}
                             </span>
-                        @endforeach
+                        @empty
+                            <span class="text-[10px] font-bold text-slate-400 italic">Aucun permis spécifié</span>
+                        @endforelse
+                    </div>
+
+                    <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Langues</h3>
+                    <div class="space-y-2">
+                        @forelse($jobOffer->languages as $lang)
+                            @php 
+                                $userLang = $user->languages->where('id', $lang->id)->first();
+                                $hasLang = !is_null($userLang);
+                            @endphp
+                            <div class="flex items-center justify-between p-2 rounded-lg border {{ $hasLang ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-slate-50 border-slate-100 text-slate-400' }}">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-bold">{{ $lang->label }}</span>
+                                    @if($lang->pivot->level)
+                                        <span class="text-[9px] font-black uppercase opacity-60">({{ $lang->pivot->level }})</span>
+                                    @endif
+                                </div>
+                                @if($hasLang)
+                                    <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                @else
+                                    <span class="text-[10px] font-black uppercase opacity-40 italic">Manquant</span>
+                                @endif
+                            </div>
+                        @empty
+                            <span class="text-[10px] font-bold text-slate-400 italic">Aucune langue spécifique requise</span>
+                        @endforelse
+                    </div>
+
+                    <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mt-8 mb-4">Secteurs</h3>
+                    <div class="flex flex-wrap gap-2">
+                        @forelse($jobOffer->sectors as $sector)
+                            <span class="px-2 py-1 rounded-md bg-slate-100 text-slate-600 text-[9px] font-bold uppercase tracking-wider">
+                                {{ $sector->label }}
+                            </span>
+                        @empty
+                            <span class="text-[10px] font-bold text-slate-400 italic">Non spécifié</span>
+                        @endforelse
                     </div>
                 </div>
             </div>

@@ -31,6 +31,8 @@ class MatchChunkJob implements ShouldQueue
             'language_ids' => $this->user->languages()->pluck('languages.id')->toArray(),
             'preferred_metiers' => $this->user->preferredMetiers,
             'preferred_families' => $this->user->preferredReferentielMetiers,
+            'blacklisted_metier_ids' => $this->user->blacklistedMetiers()->pluck('metiers.id')->toArray(),
+            'blacklisted_family_codes' => $this->user->blacklistedReferentielMetiers()->pluck('code')->toArray(),
             'refused_skill_ids' => DB::table('user_skill')
                 ->where('user_id', $this->user->id)
                 ->where('status', 'refused')

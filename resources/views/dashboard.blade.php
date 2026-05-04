@@ -313,6 +313,17 @@
                     }, 3000);
                 },
 
+                updateOfferScore(offerId, score, isBlacklisted) {
+                    if (!this.scores[offerId]) {
+                        this.scores[offerId] = { data: score, ia: null };
+                    } else {
+                        this.scores[offerId].data = score;
+                    }
+                    
+                    const el = document.querySelector(`[data-offer-id="${offerId}"]`);
+                    if (el) el.dataset.preScore = score;
+                },
+
                 setMetier(id) {
                     this.filters.metier_id = id;
                     this.filters.employer_id = null;
