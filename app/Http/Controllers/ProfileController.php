@@ -305,28 +305,6 @@ class ProfileController extends Controller
     }
 
     /**
-     * Update the user's mobility.
-     */
-    public function updateMobility(Request $request)
-    {
-        $validated = $request->validate([
-            'zip_code' => ['nullable', 'string', 'max:10'],
-            'radius' => ['required', 'integer', 'min:0', 'max:500'],
-        ]);
-
-        $request->user()->update($validated);
-
-        // Démarrage à froid (Asynchrone)
-        \App\Jobs\RecalculateMatchesJob::dispatch($request->user());
-
-        if ($request->wantsJson()) {
-            return response()->json(['status' => 'success', 'message' => 'Mobilité mise à jour']);
-        }
-
-        return Redirect::route('profile.edit')->with('status', 'mobility-updated');
-    }
-
-    /**
      * Delete the user's account.
      */
     public function destroy(Request $request): RedirectResponse

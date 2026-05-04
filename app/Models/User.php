@@ -121,7 +121,7 @@ class User extends Authenticatable
 
     public function preferredMetiers(): BelongsToMany
     {
-        return $this->belongsToMany(Metier::class, 'user_metier')->withTimestamps();
+        return $this->belongsToMany(Metier::class, 'user_metier')->withPivot('status')->withTimestamps();
     }
 
     public function blacklistedMetiers(): BelongsToMany
@@ -131,7 +131,7 @@ class User extends Authenticatable
 
     public function preferredReferentielMetiers(): BelongsToMany
     {
-        return $this->belongsToMany(ReferentielMetier::class, 'user_preferred_referentiel')->withTimestamps();
+        return $this->belongsToMany(ReferentielMetier::class, 'user_preferred_referentiel')->withPivot('status')->withTimestamps();
     }
 
     public function discoverySuggestions()

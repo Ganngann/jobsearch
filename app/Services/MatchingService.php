@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\UserMatch;
 use App\Models\ZipCode;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Collection;
 
 class MatchingService
@@ -60,37 +61,9 @@ class MatchingService
      */
     public function calculatePreScore(User $user, JobOffer $jobOffer): array
     {
-        // 1. Circuit-Court : Métier (ROME)
-        $blacklistedMetierIds = $user->blacklistedMetiers()->pluck('metiers.id')->toArray();
-        if ($jobOffer->metier_id && in_array($jobOffer->metier_id, $blacklistedMetierIds)) {
-            return [
-                'score' => 0,
-                'details' => [
-                    'categories' => [],
-                    'vetoes' => 100,
-                    'is_blacklisted' => true
-                ]
-            ];
-        }
-
         $vetoPenalty = 0;
 
-        // Handicap : Famille ROME Ignorée
-        $blacklistedRomeCodes = $user->blacklistedReferentielMetiers()->pluck('code')->toArray();
-        if ($jobOffer->metier && $jobOffer->metier->code) {
-            foreach ($blacklistedRomeCodes as $romeCode) {
-                if (str_starts_with($jobOffer->metier->code, $romeCode)) {
-                    $vetoPenalty += 40; // Gros handicap mais pas éliminatoire
-                    break;
-                }
-            }
-        }
-
-        // On ne court-circuite plus les métiers non-favoris à 0.
-        // On calcule le score normalement pour tout le monde.
-
-
-        // 2. Permis Obligatoires
+        // 1. Permis Obligatoires
         $userPermitIds = $user->permits()->pluck('permits.id')->toArray();
         $requiredPermits = $jobOffer->permits()->wherePivot('is_required', true)->get();
         foreach ($requiredPermits as $permit) {
@@ -99,7 +72,7 @@ class MatchingService
             }
         }
 
-        // 3. Veto : Compétences Refusées (Handicap)
+        // 2. Veto : Compétences Refusées (Handicap)
         $refusedSkillIds = DB::table('user_skill')
             ->where('user_id', $user->id)
             ->where('status', 'refused')
@@ -115,17 +88,29 @@ class MatchingService
 
         $score = 0;
 
-        // 1. Métier Favori (20%)
-        $userMetierIds = $user->preferredMetiers()->pluck('metiers.id')->toArray();
-        $userRomeCodes = $user->preferredReferentielMetiers()->pluck('code')->toArray();
+        // 3. Score Métier (Rome & Détail) (20 pts max / -20 handicap)
+        $userMetiers = $user->preferredMetiers;
+        $userFamilies = $user->preferredReferentielMetiers;
         
+        $jobMetierId = $jobOffer->metier_id;
+        $jobRomeCode = $jobOffer->metier ? $jobOffer->metier->code : null;
+
         $isFavorite = false;
-        if ($jobOffer->metier_id && in_array($jobOffer->metier_id, $userMetierIds)) {
-            $isFavorite = true;
-        } elseif ($jobOffer->metier && $jobOffer->metier->code) {
-            foreach ($userRomeCodes as $romeCode) {
-                if (str_starts_with($jobOffer->metier->code, $romeCode)) {
-                    $isFavorite = true;
+        $isRefused = false;
+
+        // A. Priorité au Détail (Métier spécifique)
+        $specific = $userMetiers->firstWhere('id', $jobMetierId);
+        if ($specific) {
+            if ($specific->pivot->status === 'favorite') $isFavorite = true;
+            elseif ($specific->pivot->status === 'refused') $isRefused = true;
+        }
+
+        // B. Si pas de détail, on regarde la Famille (ROME)
+        if (!$isFavorite && !$isRefused && $jobRomeCode) {
+            foreach ($userFamilies as $family) {
+                if (str_starts_with($jobRomeCode, $family->code)) {
+                    if ($family->pivot->status === 'favorite') $isFavorite = true;
+                    elseif ($family->pivot->status === 'refused') $isRefused = true;
                     break;
                 }
             }
@@ -133,6 +118,8 @@ class MatchingService
 
         if ($isFavorite) {
             $score += 20;
+        } elseif ($isRefused) {
+            $score -= 20;
         }
 
         // 4. Compétences (40% max)
@@ -148,6 +135,7 @@ class MatchingService
             $missingSkills = $allJobSkills->whereNotIn('id', $userSkillIds);
 
             // Pénalité si des compétences REQUISES manquent
+            $requiredSkills = $allJobSkills->where('pivot.is_required', true);
             $missingRequired = $requiredSkills->whereNotIn('id', $userSkillIds);
             if ($missingRequired->count() > 0) {
                 $baseSkillScore *= 0.7; // Réduction de 30%

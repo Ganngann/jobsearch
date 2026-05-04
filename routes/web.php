@@ -31,9 +31,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Discovery
     Route::get('/discovery', [\App\Http\Controllers\DiscoveryController::class, 'index'])->name('discovery.index');
     Route::get('/discovery/suggest', [\App\Http\Controllers\DiscoveryController::class, 'suggest'])->name('discovery.suggest');
-    Route::post('/discovery/favorite/{referentiel}', [\App\Http\Controllers\DiscoveryController::class, 'toggleFavorite'])->name('discovery.favorite');
-    Route::post('/discovery/blacklist/{referentiel}', [\App\Http\Controllers\DiscoveryController::class, 'toggleBlacklist'])->name('discovery.blacklist');
+    Route::post('/discovery/referentiel/{referentiel}/status', [\App\Http\Controllers\DiscoveryController::class, 'setReferentielStatus'])->name('discovery.referentiel-status');
     Route::get('/discovery/children/{code}', [\App\Http\Controllers\DiscoveryController::class, 'children'])->name('discovery.children');
+    Route::post('/discovery/metiers/{metier}/status', [\App\Http\Controllers\DiscoveryController::class, 'setMetierStatus'])->name('discovery.metier-status');
 });
 
 Route::middleware('auth')->group(function () {
@@ -44,7 +44,8 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile/languages', [ProfileController::class, 'updateLanguages'])->name('profile.languages.update');
     Route::patch('/profile/permits', [ProfileController::class, 'updatePermits'])->name('profile.permits.update');
     Route::patch('/profile/metiers', [ProfileController::class, 'updateMetiers'])->name('profile.metiers.update');
-    Route::patch('/profile/mobility', [ProfileController::class, 'updateMobility'])->name('profile.mobility.update');
+    Route::get('/profile/mobility', [\App\Http\Controllers\MobilityController::class, 'index'])->name('profile.mobility.index');
+    Route::patch('/profile/mobility', [\App\Http\Controllers\MobilityController::class, 'update'])->name('profile.mobility.update');
     Route::post('/profile/magic-fill', [ProfileController::class, 'magicFill'])->name('profile.magic-fill');
     Route::post('/profile/analyze', [ProfileController::class, 'analyze'])->name('profile.analyze');
     Route::post('/profile/upload-resume', [ProfileController::class, 'uploadResume'])->name('profile.upload-resume');

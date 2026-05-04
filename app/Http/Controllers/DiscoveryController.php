@@ -24,30 +24,35 @@ class DiscoveryController extends Controller
     {
         $user = Auth::user();
         $suggestions = $user->discoverySuggestions()->get()->map(function($s) use ($user) {
-            $favoriteCodes = $user->preferredReferentielMetiers()->pluck('code')->toArray();
-            $blacklistedCodes = $user->blacklistedReferentielMetiers()->pluck('code')->toArray();
-            $favoriteMetierIds = $user->preferredMetiers()->pluck('metiers.id')->toArray();
-            $isParentFavorite = in_array($s->code, $favoriteCodes);
-
-            $blacklistedMetierIds = $user->blacklistedMetiers()->pluck('metiers.id')->toArray();
+            $pivot = $user->preferredReferentielMetiers()->where('code', $s->code)->first();
+            $isParentFavorite = $pivot && $pivot->pivot->status === 'favorite';
+            $parentStatus = $pivot ? $pivot->pivot->status : 'none';
+            $isParentRefused = $pivot && $pivot->pivot->status === 'refused';
 
             $variants = Metier::where('code', 'LIKE', $s->code . '%')
                 ->orderBy('label')
                 ->get(['id', 'code', 'label'])
-                ->map(function($v) use ($favoriteMetierIds, $blacklistedMetierIds, $isParentFavorite) {
-                    $v->is_favorite = $isParentFavorite || in_array($v->id, $favoriteMetierIds);
-                    $v->is_blacklisted = in_array($v->id, $blacklistedMetierIds);
+                ->map(function($v) use ($user, $isParentFavorite) {
+                    $pivot = $user->preferredMetiers()->where('metier_id', $v->id)->first();
+                    $v->status = $pivot ? $pivot->pivot->status : ($isParentFavorite ? 'favorite' : 'none');
+                    $v->is_blacklisted = $user->blacklistedMetiers()->where('metier_id', $v->id)->exists();
                     return $v;
                 });
+            
+            $offersCount = \App\Models\JobOffer::whereHas('metier', function($q) use ($s) {
+                $q->where('code', 'LIKE', $s->code . '%');
+            })->count();
             
             return [
                 'code' => $s->code,
                 'title' => $s->title,
                 'reason' => $s->reason,
                 'type' => $s->type,
+                'status' => $parentStatus,
                 'is_favorite' => $isParentFavorite,
-                'is_blacklisted' => in_array($s->code, $blacklistedCodes),
-                'variants' => $variants
+                'is_refused' => $isParentRefused,
+                'variants' => $variants,
+                'offers_count' => $offersCount
             ];
         });
 
@@ -85,22 +90,30 @@ class DiscoveryController extends Controller
         // Récupérer avec l'état des favoris et blacklist
         $favoriteCodes = $user->preferredReferentielMetiers()->pluck('code')->toArray();
         $blacklistedCodes = $user->blacklistedReferentielMetiers()->pluck('code')->toArray();
-        $favoriteMetierIds = $user->preferredMetiers()->pluck('metiers.id')->toArray();
-        $blacklistedMetierIds = $user->blacklistedMetiers()->pluck('metiers.id')->toArray();
         
-        $enriched = array_map(function($s) use ($favoriteCodes, $blacklistedCodes, $favoriteMetierIds, $blacklistedMetierIds) {
-            $isParentFavorite = in_array($s['code'], $favoriteCodes);
+        $enriched = array_map(function($s) use ($user) {
+            $pivot = $user->preferredReferentielMetiers()->where('code', $s['code'])->first();
+            $isParentFavorite = $pivot && $pivot->pivot->status === 'favorite';
+            $parentStatus = $pivot ? $pivot->pivot->status : 'none';
+            $isParentRefused = $pivot && $pivot->pivot->status === 'refused';
+
+            $s['status'] = $parentStatus;
             $s['is_favorite'] = $isParentFavorite;
-            $s['is_blacklisted'] = in_array($s['code'], $blacklistedCodes);
+            $s['is_refused'] = $isParentRefused;
             
             $s['variants'] = Metier::where('code', 'LIKE', $s['code'] . '%')
                 ->orderBy('label')
                 ->get(['id', 'code', 'label'])
-                ->map(function($v) use ($favoriteMetierIds, $blacklistedMetierIds, $isParentFavorite) {
-                    $v->is_favorite = $isParentFavorite || in_array($v->id, $favoriteMetierIds);
-                    $v->is_blacklisted = in_array($v->id, $blacklistedMetierIds);
+                ->map(function($v) use ($user, $isParentFavorite) {
+                    $pivot = $user->preferredMetiers()->where('metier_id', $v->id)->first();
+                    $v->status = $pivot ? $pivot->pivot->status : ($isParentFavorite ? 'favorite' : 'none');
+                    $v->is_blacklisted = $user->blacklistedMetiers()->where('metier_id', $v->id)->exists();
                     return $v;
                 });
+
+            $s['offers_count'] = \App\Models\JobOffer::whereHas('metier', function($q) use ($s) {
+                $q->where('code', 'LIKE', $s['code'] . '%');
+            })->count();
 
             return $s;
         }, $aiSuggestions);
@@ -110,34 +123,43 @@ class DiscoveryController extends Controller
         ]);
     }
 
-    public function toggleFavorite(ReferentielMetier $referentiel)
+    public function setReferentielStatus(ReferentielMetier $referentiel, Request $request)
     {
         $user = Auth::user();
-        $user->preferredReferentielMetiers()->toggle($referentiel->id);
-        
-        // Recalculer les scores pour toute la famille ROME
+        $status = $request->input('status'); // favorite, neutral, refused, none
+
+        if ($status === 'none') {
+            $user->preferredReferentielMetiers()->detach($referentiel->id);
+        } else {
+            $user->preferredReferentielMetiers()->syncWithPivotValues([$referentiel->id], ['status' => $status], false);
+        }
+
+        // Recalculer les scores pour toute la famille
         $this->matcher->triggerRomeMatch($user, $referentiel->code);
 
         return response()->json([
             'status' => 'success',
-            'is_favorite' => $user->preferredReferentielMetiers()->where('referentiel_metier_id', $referentiel->id)->exists()
+            'current_status' => $status
         ]);
     }
 
-    public function toggleBlacklist(ReferentielMetier $referentiel)
+    public function setMetierStatus(Metier $metier, Request $request)
     {
         $user = Auth::user();
-        $user->blacklistedReferentielMetiers()->toggle($referentiel->id);
-        
-        // Supprimer des favoris si on blacklist
-        $user->preferredReferentielMetiers()->detach($referentiel->id);
+        $status = $request->input('status'); // favorite, neutral, none
 
-        // Recalculer les scores pour toute la famille ROME (devraient passer à 0)
-        $this->matcher->triggerRomeMatch($user, $referentiel->code);
+        if ($status === 'none') {
+            $user->preferredMetiers()->detach($metier->id);
+        } else {
+            $user->preferredMetiers()->syncWithPivotValues([$metier->id], ['status' => $status], false);
+        }
+
+        // Recalculer les scores pour ce métier
+        $this->matcher->triggerRomeMatch($user, $metier->code);
 
         return response()->json([
             'status' => 'success',
-            'is_blacklisted' => $user->blacklistedReferentielMetiers()->where('referentiel_metier_id', $referentiel->id)->exists()
+            'current_status' => $status
         ]);
     }
 

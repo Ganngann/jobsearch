@@ -20,6 +20,7 @@
                 })
             });
             if (!response.ok) throw new Error("Erreur");
+            window.dispatchEvent(new CustomEvent('mobility-updated'));
         } catch (e) {
             console.error(e);
         } finally {

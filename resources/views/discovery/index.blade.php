@@ -70,19 +70,33 @@
                                 <template x-for="v in s.variants" :key="v.id">
                                     <div class="flex items-center justify-between gap-3 p-2 hover:bg-white rounded-xl transition-colors group/item">
                                         <span class="text-xs font-medium text-slate-600 line-clamp-2" x-text="v.label"></span>
-                                        <div class="flex items-center gap-2 shrink-0">
+                                        <div class="flex items-center gap-1 shrink-0">
+                                            <!-- Favorite (+20) -->
                                             <button 
-                                                @click="toggleMetierFavorite(v)"
-                                                class="text-slate-300 hover:text-red-500 transition-colors"
-                                                :class="v.is_favorite ? 'text-red-500' : ''"
+                                                @click="setMetierStatus(v, 'favorite')"
+                                                class="p-1 rounded-md transition-all"
+                                                :class="v.status === 'favorite' ? 'bg-red-50 text-red-500' : 'text-slate-300 hover:text-red-400'"
+                                                title="Coup de cœur (+20 pts)"
                                             >
-                                                <svg class="w-4 h-4" :fill="v.is_favorite ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                                                <svg class="w-4 h-4" :fill="v.status === 'favorite' ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                                            </button>
+
+                                            <!-- Neutral (0) -->
+                                            <button 
+                                                @click="setMetierStatus(v, 'neutral')"
+                                                class="p-1 rounded-md transition-all"
+                                                :class="v.status === 'neutral' ? 'bg-slate-100 text-slate-500' : 'text-slate-300 hover:text-slate-500'"
+                                                title="Neutre (0 pt)"
+                                            >
+                                                <svg class="w-4 h-4" :fill="v.status === 'neutral' ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                             </button>
                                             
+                                            <!-- Refused (-20) -->
                                             <button 
-                                                @click="toggleMetierBlacklist(v)"
-                                                class="text-slate-200 hover:text-slate-600 transition-colors"
-                                                :class="v.is_blacklisted ? 'text-slate-800' : ''"
+                                                @click="setMetierStatus(v, 'refused')"
+                                                class="p-1 rounded-md transition-all"
+                                                :class="v.status === 'refused' ? 'bg-black text-white' : 'text-slate-200 hover:text-slate-800'"
+                                                title="Pas pour moi (-20 pts)"
                                             >
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
                                             </button>
@@ -92,29 +106,49 @@
                             </div>
                         </div>
 
-                        <div class="flex flex-col gap-3" x-show="!s.is_blacklisted">
-                            <button 
-                                @click="toggleFavorite(s)"
-                                :class="s.is_favorite ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-slate-50 text-slate-600 border-slate-200'"
-                                class="w-full py-4 rounded-2xl border font-bold transition-all duration-300 flex items-center justify-center gap-2 hover:shadow-md"
-                            >
-                                <svg class="w-5 h-5" :fill="s.is_favorite ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
-                                <span x-text="s.is_favorite ? 'Famille en favoris' : 'Ajouter aux favoris'"></span>
-                            </button>
+                        <div class="flex flex-col gap-4">
+                            <div class="flex gap-2">
+                                <!-- Family Favorite (+20) -->
+                                <button 
+                                    @click="setReferentielStatus(s, 'favorite')"
+                                    :class="s.status === 'favorite' ? 'bg-red-50 text-red-600 border-red-200' : 'bg-slate-50 text-slate-400 border-slate-100'"
+                                    class="flex-1 py-3 rounded-2xl border font-bold transition-all flex flex-col items-center justify-center gap-1 hover:shadow-sm"
+                                    title="Coup de cœur (+20 pts)"
+                                >
+                                    <svg class="w-5 h-5" :fill="s.status === 'favorite' ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                                    <span class="text-[9px] uppercase tracking-tighter">Favori</span>
+                                </button>
+                                
+                                <!-- Family Neutral (0) -->
+                                <button 
+                                    @click="setReferentielStatus(s, 'neutral')"
+                                    :class="s.status === 'neutral' ? 'bg-slate-100 text-slate-600 border-slate-300' : 'bg-slate-50 text-slate-400 border-slate-100'"
+                                    class="flex-1 py-3 rounded-2xl border font-bold transition-all flex flex-col items-center justify-center gap-1 hover:shadow-sm"
+                                    title="Neutre (0 pt)"
+                                >
+                                    <svg class="w-5 h-5" :fill="s.status === 'neutral' ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    <span class="text-[9px] uppercase tracking-tighter">Neutre</span>
+                                </button>
+
+                                <!-- Family Refused (-20) -->
+                                <button 
+                                    @click="setReferentielStatus(s, 'refused')"
+                                    :class="s.status === 'refused' ? 'bg-black text-white border-black' : 'bg-slate-50 text-slate-400 border-slate-100'"
+                                    class="flex-1 py-3 rounded-2xl border font-bold transition-all flex flex-col items-center justify-center gap-1 hover:shadow-sm"
+                                    title="Refuser ce domaine (-20 pts)"
+                                >
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                                    <span class="text-[9px] uppercase tracking-tighter">Refusé</span>
+                                </button>
+                            </div>
                             
                             <a 
                                 :href="'/dashboard?rome=' + s.code" 
-                                class="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold text-center transition-all duration-300 hover:bg-black flex items-center justify-center gap-2"
+                                class="w-full py-6 bg-indigo-50/50 border border-indigo-100 rounded-3xl flex flex-col items-center justify-center gap-1 transition-all hover:bg-indigo-50 hover:border-indigo-300 group/count"
                             >
-                                🔍 Voir les offres
+                                <span class="text-3xl font-black text-indigo-600 group-hover:scale-110 transition-transform" x-text="s.offers_count"></span>
+                                <span class="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Offres en base</span>
                             </a>
-
-                            <button 
-                                @click="toggleBlacklist(s)"
-                                class="w-full py-2 text-[10px] font-bold text-slate-400 hover:text-red-500 transition-colors uppercase tracking-widest"
-                            >
-                                Ignorer ce domaine
-                            </button>
                         </div>
 
                         <!-- Blacklisted Overlay -->
@@ -188,101 +222,65 @@
                     }
                 },
 
-                async toggleMetierFavorite(v) {
-                    const url = v.is_favorite 
-                        ? `/profile/metiers/${v.id}/remove` 
-                        : `/profile/metiers/${v.id}/add`;
+                async setMetierStatus(v, status) {
+                    const oldStatus = v.status;
+                    const newStatus = v.status === status ? 'none' : status;
                     
                     try {
-                        const res = await fetch(url, {
+                        const res = await fetch(`/discovery/metiers/${v.id}/status`, {
                             method: 'POST',
                             headers: {
                                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
                                 'Content-Type': 'application/json'
-                            }
+                            },
+                            body: JSON.stringify({ status: newStatus })
                         });
                         const data = await res.json();
                         if (data.status === 'success') {
-                            v.is_favorite = !v.is_favorite;
-                            if (v.is_favorite) {
-                                this.favoriteMetierIds.push(v.id);
-                            } else {
-                                this.favoriteMetierIds = this.favoriteMetierIds.filter(id => id !== v.id);
-                            }
-                        }
-                    } catch (e) {
-                        console.error(e);
-                    }
-                },
-
-                async toggleMetierBlacklist(v) {
-                    const url = v.is_blacklisted 
-                        ? `/profile/metiers/${v.id}/blacklist` 
-                        : `/profile/metiers/${v.id}/blacklist`;
-                    
-                    // Note: The backend route for DELETE might be needed if it was defined as delete
-                    // But ProfileController usually handles toggle with POST in some cases.
-                    // Let's check routes again. 61: Route::delete(...)
-                    
-                    const method = v.is_blacklisted ? 'DELETE' : 'POST';
-                    const targetUrl = `/profile/metiers/${v.id}/blacklist`;
-
-                    try {
-                        const res = await fetch(targetUrl, {
-                            method: method,
-                            headers: {
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                'Content-Type': 'application/json'
-                            }
-                        });
-                        const data = await res.json();
-                        if (data.status === 'success') {
-                            v.is_blacklisted = !v.is_blacklisted;
-                        }
-                    } catch (e) {
-                        console.error(e);
-                    }
-                },
-
-                async toggleFavorite(s) {
-                    try {
-                        const res = await fetch(`/discovery/favorite/${s.code}`, {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                'Content-Type': 'application/json'
-                            }
-                        });
-                        const data = await res.json();
-                        if (data.status === 'success') {
-                            s.is_favorite = !s.is_favorite;
+                            v.status = data.current_status;
                             
-                            // Propager aux variantes si elles sont chargées
-                            if (s.variants.length > 0) {
+                            // Gérer la barre de progression (uniquement pour les favoris)
+                            if (oldStatus !== 'favorite' && v.status === 'favorite') {
+                                window.dispatchEvent(new CustomEvent('metier-added'));
+                            } else if (oldStatus === 'favorite' && v.status !== 'favorite') {
+                                window.dispatchEvent(new CustomEvent('metier-removed'));
+                            }
+                        }
+                    } catch (e) {
+                        console.error(e);
+                    }
+                },
+
+                async setReferentielStatus(s, status) {
+                    const oldStatus = s.status;
+                    const newStatus = s.status === status ? 'none' : status;
+                    
+                    try {
+                        const res = await fetch(`/discovery/referentiel/${s.code}/status`, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ status: newStatus })
+                        });
+                        const data = await res.json();
+                        if (data.status === 'success') {
+                            s.status = data.current_status;
+                            
+                            // Propager visuellement le statut aux variantes
+                            if (s.variants) {
                                 s.variants.forEach(v => {
-                                    v.is_favorite = s.is_favorite || this.favoriteMetierIds.includes(v.id);
+                                    v.status = s.status;
                                 });
                             }
-                        }
-                    } catch (e) {
-                        console.error(e);
-                    }
-                },
 
-                async toggleBlacklist(s) {
-                    try {
-                        const res = await fetch(`/discovery/blacklist/${s.code}`, {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                'Content-Type': 'application/json'
+                            // Gérer la barre de progression (uniquement pour les favoris)
+                            if (oldStatus !== 'favorite' && s.status === 'favorite') {
+                                window.dispatchEvent(new CustomEvent('metier-added'));
+                            } else if (oldStatus === 'favorite' && s.status !== 'favorite') {
+                                window.dispatchEvent(new CustomEvent('metier-removed'));
                             }
-                        });
-                        const data = await res.json();
-                        if (data.status === 'success') {
-                            s.is_blacklisted = data.is_blacklisted;
-                            // Si on blacklist, on retire le favori visuellement
-                            if (s.is_blacklisted) s.is_favorite = false;
                         }
                     } catch (e) {
                         console.error(e);
