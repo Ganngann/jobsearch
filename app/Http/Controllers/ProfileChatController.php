@@ -56,7 +56,7 @@ class ProfileChatController extends Controller
             $aiResponse = $this->aiService->generateOpeningMessage($user);
             
             // On traite les changements (faits, etc.) dès l'ouverture si l'IA en propose
-            $this->processAIChanges($user, $aiResponse, $sessionId);
+            $this->aiService->processAIChanges($user, $aiResponse, $sessionId);
 
             $user->profileMessages()->create([
                 'user_id' => $user->id,
@@ -128,6 +128,86 @@ class ProfileChatController extends Controller
         return redirect()->route('profile.builder');
     }
 
+    public function uploadDocument(Request $request, \App\Services\ResumeParserService $resumeParser)
+    {
+        $request->validate(['document' => 'required|file|max:20480']);
+        $user = Auth::user();
+        $sessionId = session('profile_builder_session');
+        
+        if (!$sessionId) {
+            return response()->json(['error' => 'No active session'], 400);
+        }
+
+        $file = $request->file('document');
+        try {
+            $text = $resumeParser->extractText($file);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
+
+        if (!$text) {
+            return response()->json(['error' => 'Impossible d\'extraire le texte du document'], 422);
+        }
+
+        // Ajouter le message utilisateur
+        $user->profileMessages()->create([
+            'user_id' => $user->id,
+            'session_id' => $sessionId,
+            'role' => 'user',
+            'content' => "J'ajoute un nouveau document pour analyse :\n\n" . substr($text, 0, 1000) . (strlen($text) > 1000 ? '...' : '')
+        ]);
+
+        $history = \App\Models\ProfileMessage::where('session_id', $sessionId)
+            ->orderBy('id', 'desc')
+            ->limit(10)
+            ->get()
+            ->sortBy('id')
+            ->values()
+            ->map(fn($m) => ['role' => $m->role, 'content' => $m->content])
+            ->toArray();
+
+        // Analyse complète (on passe tout le texte à l'IA même si on tronque le message affiché)
+        $history[count($history) - 1]['content'] = "Voici un nouveau document à analyser :\n\n" . $text;
+
+        $aiResponse = $this->aiService->chat($user, $history);
+
+        if ($aiResponse && isset($aiResponse['reply'])) {
+            $user->profileMessages()->create([
+                'user_id' => $user->id,
+                'session_id' => $sessionId,
+                'role' => 'assistant',
+                'content' => $aiResponse['reply']
+            ]);
+
+            $this->aiService->processAIChanges($user, $aiResponse, $sessionId);
+        }
+
+        return $this->getUpdatedDataResponse($user, $sessionId, $aiResponse['reply'] ?? "Document analysé.");
+    }
+
+    private function getUpdatedDataResponse($user, $sessionId, $reply)
+    {
+        return response()->json([
+            'reply' => $reply,
+            'user' => $user->fresh(),
+            'facts' => $user->facts()
+                ->with('skills')
+                ->orderByRaw('CASE WHEN proposed_action IS NOT NULL THEN 0 ELSE 1 END')
+                ->orderBy('updated_at', 'desc')
+                ->get(),
+            'projects' => $user->projects()->orderBy('updated_at', 'desc')->get(),
+            'certifications' => $user->certifications()->orderBy('updated_at', 'desc')->get(),
+            'interests' => $user->interests()->orderBy('updated_at', 'desc')->get(),
+            'volunteer_experiences' => $user->volunteerExperiences()->orderBy('updated_at', 'desc')->get(),
+            'all_experiences' => $user->experiences()->orderBy('start_date', 'desc')->get(),
+            'all_educations' => $user->educations()->orderBy('graduation_year', 'desc')->get(),
+            'languages' => $user->languages()->get()->map(fn($l) => ['id' => $l->id, 'label' => $l->label, 'level' => $l->pivot->level]),
+            'skills' => $user->skills()->get(),
+            'activeSessions' => $user->profileSessions()->where('is_archived', false)->get(),
+            'archivedSessions' => $user->profileSessions()->where('is_archived', true)->get()
+        ]);
+    }
+
     public function sendMessage(Request $request)
     {
         $request->validate(['message' => 'required|string']);
@@ -189,30 +269,12 @@ class ProfileChatController extends Controller
             'content' => $aiResponse['reply']
         ]);
 
-        // Traitement des données extraites par l'IA (Faits, Expériences, etc.)
-        $this->processAIChanges($user, $aiResponse, $sessionId);
+        // Traitement des données extraites par l'IA (Faits, Expériences, etc.) via le service unifié
+        $this->aiService->processAIChanges($user, $aiResponse, $sessionId);
 
         $user = $user->fresh();
 
-        return response()->json([
-            'reply' => $aiResponse['reply'],
-            'user' => $user,
-            'facts' => $user->facts()
-                ->with('skills')
-                ->orderByRaw('CASE WHEN proposed_action IS NOT NULL THEN 0 ELSE 1 END')
-                ->orderBy('updated_at', 'desc')
-                ->get(),
-            'projects' => $user->projects()->orderBy('updated_at', 'desc')->get(),
-            'certifications' => $user->certifications()->orderBy('updated_at', 'desc')->get(),
-            'interests' => $user->interests()->orderBy('updated_at', 'desc')->get(),
-            'volunteer_experiences' => $user->volunteerExperiences()->orderBy('updated_at', 'desc')->get(),
-            'all_experiences' => $user->experiences()->orderBy('start_date', 'desc')->get(),
-            'all_educations' => $user->educations()->orderBy('graduation_year', 'desc')->get(),
-            'languages' => $user->languages()->get()->map(fn($l) => ['id' => $l->id, 'label' => $l->label, 'level' => $l->pivot->level]),
-            'skills' => $user->skills()->get(),
-            'activeSessions' => $user->profileSessions()->where('is_archived', false)->get(),
-            'archivedSessions' => $user->profileSessions()->where('is_archived', true)->get()
-        ]);
+        return $this->getUpdatedDataResponse($user, $sessionId, $aiResponse['reply']);
     }
 
     /**
@@ -498,6 +560,7 @@ class ProfileChatController extends Controller
             'education' => $user->educations(),
             'skill' => $user->skills(),
             'fact' => $user->facts(),
+            'language' => $user->languages(),
             default => null
         };
 
@@ -507,6 +570,8 @@ class ProfileChatController extends Controller
         
         if ($type === 'skill') {
             $user->skills()->detach($id);
+        } elseif ($type === 'language') {
+            $user->languages()->detach($id);
         } else {
             $item->delete();
         }
@@ -562,291 +627,6 @@ class ProfileChatController extends Controller
                     ]);
                 }
             });
-        }
-    }
-
-    /**
-     * Traite les changements suggérés par l'IA (Faits, Expériences, etc.)
-     */
-    protected function processAIChanges(User $user, array $aiResponse, $sessionId = null)
-    {
-        // 1. Traiter les faits suggérés (avec consolidation)
-        $factUpdates = [];
-        foreach ($aiResponse['facts'] ?? [] as $factData) {
-            $rawId = $factData['id'] ?? null;
-            $cleanId = $rawId ? preg_replace('/[^0-9]/', '', $rawId) : null;
-            $action = $factData['action'] ?? ($cleanId ? 'update' : 'add');
-
-            if ($action === 'delete' && $cleanId) {
-                $fact = $user->facts()->where('local_id', $cleanId)->first();
-                if ($fact) $fact->update(['proposed_action' => 'delete']);
-            } elseif ($action === 'update' && $cleanId) {
-                if (!isset($factUpdates[$cleanId])) {
-                    $factUpdates[$cleanId] = $factData;
-                } else {
-                    $factUpdates[$cleanId]['content'] .= " " . $factData['content'];
-                }
-            } else {
-                $user->facts()->create([
-                    'session_id' => $sessionId,
-                    'content' => $factData['content'],
-                    'category' => $factData['category'] ?? 'VALEURS',
-                    'status' => 'draft',
-                    'proposed_action' => 'add',
-                    'confidence_score' => 1.0
-                ]);
-            }
-        }
-
-        foreach ($factUpdates as $cleanId => $factData) {
-            $fact = $user->facts()->where('local_id', $cleanId)->first();
-            if ($fact) {
-                $newContent = trim($factData['content']);
-                $newCategory = $factData['category'] ?? $fact->category;
-                if ($fact->content !== $newContent || $fact->category !== $newCategory) {
-                    $fact->update([
-                        'proposed_content' => $newContent,
-                        'proposed_category' => $newCategory,
-                        'proposed_action' => 'update'
-                    ]);
-                }
-            }
-        }
-
-        // 2. Traiter les expériences suggérées
-        foreach ($aiResponse['experiences'] ?? [] as $expData) {
-            if (($expData['action'] ?? 'add') === 'add') {
-                $user->experiences()->updateOrCreate(
-                    ['company' => $expData['company'] ?? '?', 'title' => $expData['title'] ?? '?'],
-                    [
-                        'company_logo' => $expData['company_logo'] ?? null,
-                        'employment_type' => $expData['employment_type'] ?? null,
-                        'description' => $expData['description'] ?? null,
-                        'location' => $expData['location'] ?? null,
-                        'start_date' => $this->sanitizeDate($expData['start_date'] ?? null),
-                        'end_date' => $this->sanitizeDate($expData['end_date'] ?? null),
-                        'is_current' => $expData['is_current'] ?? false,
-                        'status' => 'draft',
-                        'proposed_action' => 'add'
-                    ]
-                );
-            } elseif ($expData['action'] === 'update' && isset($expData['id'])) {
-                $exp = $user->experiences()->find($expData['id']);
-                if ($exp) {
-                    $newData = array_filter([
-                        'company' => $expData['company'] ?? null,
-                        'title' => $expData['title'] ?? null,
-                        'description' => $expData['description'] ?? null,
-                        'employment_type' => $expData['employment_type'] ?? null,
-                        'location' => $expData['location'] ?? null,
-                        'start_date' => isset($expData['start_date']) ? $this->sanitizeDate($expData['start_date']) : null,
-                        'end_date' => isset($expData['end_date']) ? $this->sanitizeDate($expData['end_date']) : null,
-                        'is_current' => $expData['is_current'] ?? null,
-                    ], fn($v) => !is_null($v));
-                    
-                    if (!empty($newData)) {
-                        $exp->update(['proposed_data' => $newData, 'proposed_action' => 'update']);
-                    }
-                }
-            } elseif ($expData['action'] === 'delete' && isset($expData['id'])) {
-                $exp = $user->experiences()->find($expData['id']);
-                if ($exp) $exp->update(['proposed_action' => 'delete']);
-            }
-        }
-
-        // 3. Traiter les formations suggérées
-        foreach ($aiResponse['educations'] ?? [] as $eduData) {
-            if (($eduData['action'] ?? 'add') === 'add') {
-                $user->educations()->create([
-                    'school' => $eduData['school'] ?? '?',
-                    'degree' => $eduData['degree'] ?? '?',
-                    'field' => $eduData['field'] ?? null,
-                    'start_date' => $this->sanitizeDate($eduData['start_date'] ?? null),
-                    'graduation_year' => $this->sanitizeYear($eduData['graduation_year'] ?? null),
-                    'grade' => $eduData['grade'] ?? null,
-                    'description' => $eduData['description'] ?? null,
-                    'status' => 'draft',
-                    'proposed_action' => 'add'
-                ]);
-            } elseif ($eduData['action'] === 'update' && isset($eduData['id'])) {
-                $edu = $user->educations()->find($eduData['id']);
-                if ($edu) {
-                    $newData = array_filter([
-                        'school' => $eduData['school'] ?? null,
-                        'degree' => $eduData['degree'] ?? null,
-                        'field' => $eduData['field'] ?? null,
-                        'description' => $eduData['description'] ?? null,
-                        'start_date' => isset($eduData['start_date']) ? $this->sanitizeDate($eduData['start_date']) : null,
-                        'graduation_year' => $this->sanitizeYear($eduData['graduation_year'] ?? null),
-                        'grade' => $eduData['grade'] ?? null,
-                    ], fn($v) => !is_null($v));
-                    
-                    if (!empty($newData)) {
-                        $edu->update(['proposed_data' => $newData, 'proposed_action' => 'update']);
-                    }
-                }
-            } elseif ($eduData['action'] === 'delete' && isset($eduData['id'])) {
-                $edu = $user->educations()->find($eduData['id']);
-                if ($edu) $edu->update(['proposed_action' => 'delete']);
-            }
-        }
-
-        // 4. Projets
-        foreach ($aiResponse['projects'] ?? [] as $projData) {
-            if (($projData['action'] ?? 'add') === 'add') {
-                $user->projects()->updateOrCreate(
-                    ['name' => $projData['name'] ?? '?'],
-                    [
-                        'description' => $projData['description'] ?? '',
-                        'url' => $projData['url'] ?? null,
-                        'start_date' => $this->sanitizeDate($projData['start_date'] ?? null),
-                        'is_ongoing' => $projData['is_ongoing'] ?? false,
-                        'status' => 'draft',
-                        'proposed_action' => 'add'
-                    ]
-                );
-            } elseif ($projData['action'] === 'update' && isset($projData['id'])) {
-                $proj = $user->projects()->find($projData['id']);
-                if ($proj) {
-                    $newData = array_filter([
-                        'name' => $projData['name'] ?? null,
-                        'description' => $projData['description'] ?? null,
-                        'url' => $projData['url'] ?? null,
-                        'start_date' => isset($projData['start_date']) ? $this->sanitizeDate($projData['start_date']) : null,
-                        'is_ongoing' => $projData['is_ongoing'] ?? null,
-                    ], fn($v) => !is_null($v));
-                    
-                    if (!empty($newData)) {
-                        $proj->update(['proposed_data' => $newData, 'proposed_action' => 'update']);
-                    }
-                }
-            } elseif ($projData['action'] === 'delete' && isset($projData['id'])) {
-                $proj = $user->projects()->find($projData['id']);
-                if ($proj) $proj->update(['proposed_action' => 'delete']);
-            }
-        }
-
-        // 5. Certifications
-        foreach ($aiResponse['certifications'] ?? [] as $certData) {
-            if (($certData['action'] ?? 'add') === 'add') {
-                $user->certifications()->updateOrCreate(
-                    ['name' => $certData['name'] ?? '?', 'issuing_organization' => $certData['issuing_organization'] ?? '?'],
-                    [
-                        'issue_date' => $this->sanitizeDate($certData['issue_date'] ?? null),
-                        'expiration_date' => $this->sanitizeDate($certData['expiration_date'] ?? null),
-                        'credential_id' => $certData['credential_id'] ?? null,
-                        'credential_url' => $certData['credential_url'] ?? null,
-                        'status' => 'draft',
-                        'proposed_action' => 'add'
-                    ]
-                );
-            } elseif ($certData['action'] === 'update' && isset($certData['id'])) {
-                $cert = $user->certifications()->find($certData['id']);
-                if ($cert) {
-                    $newData = array_filter([
-                        'name' => $certData['name'] ?? null,
-                        'issuing_organization' => $certData['issuing_organization'] ?? null,
-                        'issue_date' => isset($certData['issue_date']) ? $this->sanitizeDate($certData['issue_date']) : null,
-                        'expiration_date' => isset($certData['expiration_date']) ? $this->sanitizeDate($certData['expiration_date']) : null,
-                        'credential_id' => $certData['credential_id'] ?? null,
-                        'credential_url' => $certData['credential_url'] ?? null,
-                    ], fn($v) => !is_null($v));
-                    if (!empty($newData)) {
-                        $cert->update(['proposed_data' => $newData, 'proposed_action' => 'update']);
-                    }
-                }
-            } elseif ($certData['action'] === 'delete' && isset($certData['id'])) {
-                $cert = $user->certifications()->find($certData['id']);
-                if ($cert) $cert->update(['proposed_action' => 'delete']);
-            }
-        }
-
-        // 6. Bénévolat
-        foreach ($aiResponse['volunteer_experiences'] ?? [] as $volData) {
-            if (($volData['action'] ?? 'add') === 'add') {
-                $user->volunteerExperiences()->updateOrCreate(
-                    ['organization' => $volData['organization'] ?? '?', 'role' => $volData['role'] ?? '?'],
-                    [
-                        'description' => $volData['description'] ?? '',
-                        'start_date' => $this->sanitizeDate($volData['start_date'] ?? null),
-                        'end_date' => $this->sanitizeDate($volData['end_date'] ?? null),
-                        'status' => 'draft',
-                        'proposed_action' => 'add'
-                    ]
-                );
-            } elseif ($volData['action'] === 'update' && isset($volData['id'])) {
-                $vol = $user->volunteerExperiences()->find($volData['id']);
-                if ($vol) {
-                    $newData = array_filter([
-                        'organization' => $volData['organization'] ?? null,
-                        'role' => $volData['role'] ?? null,
-                        'description' => $volData['description'] ?? null,
-                        'start_date' => isset($volData['start_date']) ? $this->sanitizeDate($volData['start_date']) : null,
-                        'end_date' => isset($volData['end_date']) ? $this->sanitizeDate($volData['end_date']) : null,
-                    ], fn($v) => !is_null($v));
-                    if (!empty($newData)) {
-                        $vol->update(['proposed_data' => $newData, 'proposed_action' => 'update']);
-                    }
-                }
-            } elseif ($volData['action'] === 'delete' && isset($volData['id'])) {
-                $vol = $user->volunteerExperiences()->find($volData['id']);
-                if ($vol) $vol->update(['proposed_action' => 'delete']);
-            }
-        }
-
-        // 7. Intérêts
-        foreach ($aiResponse['interests'] ?? [] as $intData) {
-            if (($intData['action'] ?? 'add') === 'add') {
-                $user->interests()->firstOrCreate(
-                    ['name' => $intData['name'], 'user_id' => $user->id],
-                    ['status' => 'draft', 'proposed_action' => 'add']
-                );
-            }
-        }
-
-        // 8. Langues
-        foreach ($aiResponse['languages'] ?? [] as $langData) {
-            $language = \App\Models\Language::where('label', 'like', $langData['label'])->first();
-            if ($language) {
-                $user->languages()->syncWithoutDetaching([$language->id => ['level' => $langData['level']]]);
-            }
-        }
-
-        // 9. Mises à jour utilisateur
-        if (isset($aiResponse['user_updates'])) {
-            $updates = array_filter($aiResponse['user_updates']);
-            
-            $currentLinks = $user->links ?? [];
-            $newLinksFound = false;
-            $mapped = ['github_url' => 'GitHub', 'linkedin_url' => 'LinkedIn', 'portfolio_url' => 'Portfolio'];
-
-            foreach ($mapped as $field => $label) {
-                if (isset($updates[$field]) && !empty($updates[$field])) {
-                    $currentLinks[] = ['label' => $label, 'url' => $updates[$field]];
-                    $newLinksFound = true;
-                }
-            }
-
-            if (isset($updates['links']) && is_array($updates['links'])) {
-                foreach($updates['links'] as $link) {
-                    if (isset($link['url'])) {
-                        $currentLinks[] = $link;
-                        $newLinksFound = true;
-                    }
-                }
-            }
-
-            if ($newLinksFound) {
-                $uniqueLinks = [];
-                foreach($currentLinks as $link) {
-                    if (isset($link['url'])) $uniqueLinks[$link['url']] = $link;
-                }
-                $updates['links'] = array_values($uniqueLinks);
-            }
-
-            if (isset($updates['birth_date'])) $updates['birth_date'] = $this->sanitizeDate($updates['birth_date']);
-            
-            $user->update($updates);
         }
     }
 }

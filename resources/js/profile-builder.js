@@ -112,6 +112,60 @@ export default (initialData) => ({
         }
     },
 
+    async uploadDocument(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        this.isTyping = true;
+        this.messages.push({ id: Date.now(), role: 'user', content: `Envoi du document : ${file.name}...` });
+        this.scrollToBottom();
+
+        const formData = new FormData();
+        formData.append('document', file);
+
+        try {
+            const response = await fetch(this.routes.upload, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: formData
+            });
+
+            const data = await response.json();
+            if (data.error) {
+                this.messages.push({ id: Date.now(), role: 'assistant', content: `Erreur : ${data.error}` });
+            } else {
+                this.messages.push({ id: Date.now(), role: 'assistant', content: data.reply });
+
+                // Update all data arrays
+                this.facts = data.facts;
+                this.projects = data.projects;
+                this.certifications = data.certifications;
+                this.interests = data.interests;
+                this.volunteer_experiences = data.volunteer_experiences;
+                this.all_experiences = data.all_experiences;
+                this.all_educations = data.all_educations;
+                this.languages = data.languages || [];
+                this.skills = data.skills;
+                this.user = data.user;
+                this.activeSessions = data.activeSessions;
+                this.archivedSessions = data.archivedSessions;
+            }
+            
+            this.scrollToBottom();
+            if (this.pendingChangesCount > 0) {
+                this.scrollToFirstSuggestion();
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            this.messages.push({ id: Date.now(), role: 'assistant', content: "Désolé, une erreur est survenue lors de l'envoi du document." });
+        } finally {
+            this.isTyping = false;
+            event.target.value = ''; // Reset input
+        }
+    },
+
     formatDate(dateStr) {
         if (!dateStr) return '';
         const date = new Date(dateStr);

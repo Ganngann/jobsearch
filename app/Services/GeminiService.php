@@ -8,11 +8,14 @@ use Illuminate\Support\Facades\Log;
 class GeminiService
 {
     protected ?string $apiKey;
-    protected string $model = 'gemini-2.0-flash-lite';
+    protected string $model;
+    protected array $configModels;
 
     public function __construct()
     {
         $this->apiKey = config('services.gemini.key', env('GEMINI_API_KEY')) ?? '';
+        $this->configModels = config('services.gemini.models', []);
+        $this->model = $this->configModels['chat'] ?? 'gemini-3.1-flash-lite-preview';
     }
 
     /**
@@ -24,6 +27,12 @@ class GeminiService
         return $this;
     }
 
+    public function withConfigModel(string $type): self
+    {
+        $this->model = $this->configModels[$type] ?? 'gemini-2.5-flash-lite';
+        return $this;
+    }
+
     protected function getUrl(): string
     {
         return "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent";
@@ -31,7 +40,7 @@ class GeminiService
 
     public function analyzeMatch(string $prompt): ?array
     {
-        return $this->withModel('gemini-2.0-flash-lite')->generateJson($prompt);
+        return $this->withConfigModel('match')->generateJson($prompt);
     }
 
     /**
@@ -85,7 +94,7 @@ class GeminiService
         1. Génère un 'headline' (titre pro percutant).
         2. Rédige un 'profile_text' (récit narratif de la dimension humaine, environ 150-200 mots).
         3. Identifie les 'aspirations' (valeurs et ce que le candidat recherche).
-        4. Liste les compétences techniques et soft skills principales identifiées.
+        4. Liste les compétences techniques et soft skills principales identifiées. Utilise des termes standards du marché de l'emploi (référentiel ROME/Forem) pour faciliter le matching.
         
         Réponds UNIQUEMENT en JSON avec la structure suivante :
         {
@@ -96,7 +105,7 @@ class GeminiService
         }
         ";
 
-        return $this->withModel('gemini-3.1-flash-lite-preview')->generateJson($prompt);
+        return $this->withConfigModel('chat')->generateJson($prompt);
     }
 
     /**
@@ -125,7 +134,7 @@ class GeminiService
         }
         ";
 
-        return $this->withModel('gemini-3.1-flash-lite-preview')->generateJson($prompt);
+        return $this->withConfigModel('chat')->generateJson($prompt);
     }
 
     public function chat(array $messages, ?string $systemInstruction = null, ?array $responseSchema = null): ?array
@@ -188,16 +197,67 @@ class GeminiService
             ];
         }
 
+        // Si l'IA a emballé la réponse dans une clé 'data' ou 'result', on la remonte
+        if (isset($decoded['data']) && is_array($decoded['data'])) {
+            $decoded = $decoded['data'];
+        } elseif (isset($decoded['result']) && is_array($decoded['result'])) {
+            $decoded = $decoded['result'];
+        }
+
         return $decoded;
     }
 
     /**
-     * Méthode générique pour appeler Gemini et obtenir du JSON.
+     * Effectue un OCR sur un fichier (image ou PDF scanné) via Gemini.
      */
-    protected function generateJson(string $prompt): ?array
+    public function ocr(string $filePath, string $mimeType): ?string
     {
-        return $this->chat([
-            ['role' => 'user', 'parts' => [['text' => $prompt]]]
-        ]);
+        $payload = [
+            'contents' => [
+                [
+                    'parts' => [
+                        ['text' => "Extrais tout le texte de ce document (CV) de manière brute et fidèle. Si c'est une image, fais un OCR précis. Ne réponds que par le texte extrait du document, sans ajouter de commentaires de ta part."],
+                        [
+                            'inline_data' => [
+                                'mime_type' => $mimeType,
+                                'data' => base64_encode(file_get_contents($filePath))
+                            ]
+                        ]
+                    ]
+                ]
+            ],
+            'generationConfig' => [
+                'temperature' => 0.1,
+            ]
+        ];
+
+        $this->withConfigModel('ocr');
+        $originalModel = $this->model;
+
+        Log::info('Gemini OCR Request:', ['mime' => $mimeType, 'path' => $filePath, 'model' => $originalModel]);
+
+        $response = Http::withoutVerifying()
+            ->withHeaders(['Content-Type' => 'application/json'])
+            ->retry(2, 500, function ($exception, $request) {
+                return $exception instanceof \Illuminate\Http\Client\ConnectionException ||
+                       ($exception->response && $exception->response->status() === 503);
+            })
+            ->post("{$this->getUrl()}?key={$this->apiKey}", $payload);
+
+        if ($response->status() === 503) {
+            throw new \Exception("Les serveurs AI sont actuellement surchargés (Erreur 503). Veuillez réessayer dans quelques instants.");
+        }
+
+        if ($response->failed()) {
+            Log::error('Gemini OCR API error', ['status' => $response->status(), 'body' => $response->body()]);
+            return null;
+        }
+
+        $result = $response->json();
+        $text = $result['candidates'][0]['content']['parts'][0]['text'] ?? null;
+
+        Log::info('Gemini OCR Result:', ['char_count' => strlen($text ?? '')]);
+
+        return $text;
     }
 }

@@ -8,16 +8,123 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
+use App\Models\Skill;
+use App\Models\Metier;
+use App\Jobs\RecalculateMatchesJob;
+use Illuminate\Support\Str;
 
 class ProfileController extends Controller
 {
     protected $gemini;
     protected $matchingService;
+    protected $resumeParser;
+    protected $aiService;
 
-    public function __construct(\App\Services\GeminiService $gemini, \App\Services\MatchingService $matchingService)
-    {
+    public function __construct(
+        \App\Services\GeminiService $gemini, 
+        \App\Services\MatchingService $matchingService,
+        \App\Services\ResumeParserService $resumeParser,
+        \App\Services\AIProfileService $aiService
+    ) {
         $this->gemini = $gemini;
         $this->matchingService = $matchingService;
+        $this->resumeParser = $resumeParser;
+        $this->aiService = $aiService;
+    }
+
+    /**
+     * Gère l'upload et le parsing d'un CV.
+     */
+    public function uploadResume(Request $request)
+    {
+        // Détection spécifique si PHP a rejeté le fichier à cause de sa taille
+        if ($request->isMethod('post') && !$request->hasFile('resume') && $request->server('CONTENT_LENGTH') > 0) {
+            $maxPhp = ini_get('upload_max_filesize');
+            $msg = "Ce fichier est trop lourd (Maximum {$maxPhp}).";
+            if ($request->wantsJson()) {
+                return response()->json(['message' => $msg], 422);
+            }
+            return back()->withErrors(['resume' => $msg]);
+        }
+
+        $request->validate([
+            'resume' => 'required|file|max:20480',
+        ]);
+
+        $user = Auth::user();
+        $file = $request->file('resume');
+
+        // 1. Extraire le texte
+        try {
+            $text = $this->resumeParser->extractText($file);
+        } catch (\Exception $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => $e->getMessage()], 422);
+            }
+            return back()->withErrors(['resume' => $e->getMessage()]);
+        }
+
+        \Illuminate\Support\Facades\Log::info('CV Upload: Texte extrait (' . strlen($text ?? '') . ' caractères)');
+
+        if (!$text) {
+            $msg = 'Impossible d\'extraire le texte de ce fichier.';
+            if ($request->wantsJson()) {
+                return response()->json(['message' => $msg], 422);
+            }
+            return back()->withErrors(['resume' => $msg]);
+        }
+
+        // 2. Créer une nouvelle session de chat dédiée au CV
+        $sessionId = uniqid('cv_');
+        \App\Models\ProfileSession::create([
+            'id' => $sessionId,
+            'user_id' => $user->id,
+            'title' => 'Import CV - ' . now()->format('d/m H:i')
+        ]);
+        
+        session(['profile_builder_session' => $sessionId]);
+
+        // 3. Injecter le texte du CV comme premier message utilisateur
+        $user->profileMessages()->create([
+            'user_id' => $user->id,
+            'session_id' => $sessionId,
+            'role' => 'user',
+            'content' => "Voici le contenu de mon CV pour analyse :\n\n" . $text
+        ]);
+
+        // 4. Lancer l'analyse via le service AI (le même que pour le chat)
+        $history = [['role' => 'user', 'content' => $text]];
+        $aiResponse = $this->aiService->chat($user, $history);
+
+        \Illuminate\Support\Facades\Log::info('CV Upload: Réponse IA reçue', [
+            'has_reply' => isset($aiResponse['reply']),
+            'facts_count' => count($aiResponse['facts'] ?? []),
+            'exp_count' => count($aiResponse['experiences'] ?? []),
+            'raw_keys' => array_keys($aiResponse ?? [])
+        ]);
+
+        if ($aiResponse && isset($aiResponse['reply'])) {
+            // Sauvegarder la réponse du Coach
+            $user->profileMessages()->create([
+                'user_id' => $user->id,
+                'session_id' => $sessionId,
+                'role' => 'assistant',
+                'content' => $aiResponse['reply']
+            ]);
+
+            // Appliquer les changements (crée les suggestions d'expériences, faits, etc.)
+            $this->aiService->processAIChanges($user, $aiResponse, $sessionId);
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'redirect' => route('profile.builder', ['session' => $sessionId])
+            ]);
+        }
+
+        // 5. Redirection directe vers le Coach IA pour validation (fallback)
+        return redirect()->route('profile.builder', ['session' => $sessionId]);
     }
 
     /**

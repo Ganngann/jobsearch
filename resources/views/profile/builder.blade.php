@@ -116,6 +116,7 @@
             skills: {{ Js::from(Auth::user()->skills) }},
             routes: {
                 message: '{{ route('profile.builder.message') }}',
+                upload: '{{ route('profile.builder.upload') }}',
                 syncSkills: '{{ route('profile.builder.sync-skills') }}'
             }
          })" x-cloak>
@@ -191,6 +192,17 @@
                     <!-- Input Area -->
                     <div class="p-4 border-t border-gray-100 bg-white absolute bottom-0 left-0 right-0 z-10">
                         <div class="relative flex items-end gap-2 bg-gray-50 rounded-2xl p-2 border border-gray-100 focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                            <input type="file" x-ref="documentInput" @change="uploadDocument($event)" class="hidden" accept=".pdf,.doc,.docx,.txt">
+                            <button 
+                                @click="$refs.documentInput.click()"
+                                :disabled="isTyping"
+                                class="p-2 text-gray-400 hover:text-indigo-600 transition-colors rounded-xl hover:bg-white"
+                                title="Ajouter un document (PDF, Word, TXT)"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                </svg>
+                            </button>
                             <textarea 
                                 x-model="newMessage" 
                                 x-ref="messageInput"

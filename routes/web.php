@@ -16,7 +16,7 @@ Route::get('/', function () {
 Route::post('/feedback', [\App\Http\Controllers\FeedbackController::class, 'store'])->name('feedback.store');
 
 Route::get('/welcome', function () {
-    return view('onboarding');
+    return view('onboarding', ['max_size' => ini_get('upload_max_filesize')]);
 })->middleware(['auth'])->name('onboarding');
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -47,6 +47,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile/mobility', [ProfileController::class, 'updateMobility'])->name('profile.mobility.update');
     Route::post('/profile/magic-fill', [ProfileController::class, 'magicFill'])->name('profile.magic-fill');
     Route::post('/profile/analyze', [ProfileController::class, 'analyze'])->name('profile.analyze');
+    Route::post('/profile/upload-resume', [ProfileController::class, 'uploadResume'])->name('profile.upload-resume');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // AI Profile Builder
@@ -54,6 +55,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/profile/builder/message', [\App\Http\Controllers\ProfileChatController::class, 'sendMessage'])->name('profile.builder.message');
     Route::post('/profile/builder/sessions/{session}/archive', [\App\Http\Controllers\ProfileChatController::class, 'toggleArchive'])->name('profile.builder.sessions.archive');
     Route::post('/profile/builder/sync-skills', [\App\Http\Controllers\ProfileChatController::class, 'syncSkills'])->name('profile.builder.sync-skills');
+    Route::post('/profile/builder/upload', [\App\Http\Controllers\ProfileChatController::class, 'uploadDocument'])->name('profile.builder.upload');
     Route::get('/profile/builder/reset', [\App\Http\Controllers\ProfileChatController::class, 'resetSession'])->name('profile.builder.reset');
     Route::patch('/profile/builder/facts/{fact}', [\App\Http\Controllers\ProfileChatController::class, 'updateFact'])->name('profile.builder.facts.update');
     Route::post('/profile/builder/facts/{fact}/validate', [\App\Http\Controllers\ProfileChatController::class, 'validateFact'])->name('profile.builder.facts.validate');

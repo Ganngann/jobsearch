@@ -37,6 +37,11 @@ return [
 
     'gemini' => [
         'key' => env('GEMINI_API_KEY'),
+        'models' => [
+            'match' => env('GEMINI_MATCH_MODEL', 'gemini-2.5-flash-lite'),
+            'chat' => env('GEMINI_CHAT_MODEL', 'gemini-3.1-flash-lite-preview'),
+            'ocr' => env('GEMINI_OCR_MODEL', 'gemini-2.5-flash-lite'),
+        ],
     ],
 
 ];
