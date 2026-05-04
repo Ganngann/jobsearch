@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Forem Matcher AI - Trouvez votre job idéal</title>
+    <meta name="description" content="Découvrez les meilleures opportunités d'emploi au Forem grâce à l'intelligence artificielle. Analyse de profil narrative et matching sémantique pour une carrière qui vous ressemble.">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -121,9 +122,7 @@
                 </div>
 
                 <div class="hidden md:flex items-center space-x-8">
-                    <a href="#" class="text-sm font-medium text-slate-300 hover:text-white transition-colors nav-link">Offres</a>
-                    <a href="#" class="text-sm font-medium text-slate-300 hover:text-white transition-colors nav-link">Comment ça marche</a>
-                    <a href="#" class="text-sm font-medium text-slate-300 hover:text-white transition-colors nav-link">Tarifs</a>
+                    {{-- Liens masqués pour les invités car ils nécessitent un profil --}}
                 </div>
 
                 <div class="flex items-center space-x-4">
@@ -133,7 +132,7 @@
                         @else
                             <a href="{{ route('login') }}" class="text-sm font-medium text-slate-300 hover:text-white transition-colors">Connexion</a>
                             @if (Route::has('register'))
-                                <a href="{{ route('register') }}" class="px-5 py-2.5 rounded-full text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-500/25">S'inscrire</a>
+                                <a href="{{ route('register') }}" class="px-5 py-2.5 rounded-full text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-500/25">Rejoindre</a>
                             @endif
                         @endauth
                     @endif
@@ -144,137 +143,151 @@
 
     <main>
         <!-- Hero Section -->
-        <section class="relative pt-40 pb-20 lg:pt-56 lg:pb-32 px-4">
-            <div class="max-w-5xl mx-auto text-center">
-                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-bold mb-6 tracking-wider uppercase">
-                    <span class="relative flex h-2 w-2">
-                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                        <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
-                    </span>
-                    Propulsé par l'IA générative
+        <section class="relative pt-32 pb-20 px-4 overflow-hidden">
+            <div class="max-w-4xl mx-auto text-center relative z-10">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-bold mb-8 uppercase tracking-widest">
+                    <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+                    Outil en Beta • Partage entre amis
                 </div>
-                <h1 class="text-5xl lg:text-7xl font-extrabold tracking-tight mb-8">
-                    Trouvez le job qui vous <br>
-                    <span class="gradient-text italic">correspond vraiment</span>
+                
+                <h1 class="text-5xl lg:text-7xl font-black mb-8 leading-[1.1] tracking-tight">
+                    Le Forem, mais en <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-violet-400 italic">beaucoup plus malin.</span>
                 </h1>
-                <p class="text-lg lg:text-xl text-slate-400 max-w-2xl mx-auto mb-12 leading-relaxed">
-                    Forem Matcher utilise l'intelligence artificielle pour analyser vos compétences et vous proposer les meilleures offres du Forem, avec un score de compatibilité personnalisé.
+                
+                <p class="text-xl text-slate-400 mb-12 max-w-2xl mx-auto leading-relaxed">
+                    J'ai bricolé cet outil pour nous éviter de perdre 2h par jour sur le site du Forem. L'idée est simple : l'IA lit les offres pour toi et te dit si ça vaut le coup de postuler.
                 </p>
 
-                <!-- Glass Search Bar -->
-                <div class="max-w-2xl mx-auto p-2 glass rounded-2xl border border-white/10 shadow-2xl flex flex-col md:flex-row gap-2">
-                    <div class="flex-1 relative">
-                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <svg class="h-5 w-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
-                        </div>
-                        <input type="text" placeholder="Développeur, Menuisier, Infirmier..." class="block w-full pl-11 pr-3 py-4 bg-transparent border-none focus:ring-0 text-white placeholder-slate-500 text-sm">
-                    </div>
-                    <div class="md:w-1/3 relative border-t md:border-t-0 md:border-l border-white/10">
-                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <svg class="h-5 w-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                        </div>
-                        <input type="text" placeholder="Namur, Bruxelles..." class="block w-full pl-11 pr-3 py-4 bg-transparent border-none focus:ring-0 text-white placeholder-slate-500 text-sm">
-                    </div>
-                    <button class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 px-8 rounded-xl transition-all shadow-lg shadow-indigo-500/25">
-                        Chercher
-                    </button>
+                <div class="flex justify-center">
+                    <a href="{{ route('register') }}" class="px-12 py-6 bg-indigo-600 text-white font-bold rounded-2xl hover:bg-indigo-500 transition-all shadow-2xl shadow-indigo-500/40 transform hover:scale-105">
+                        Rejoindre l'outil
+                    </a>
                 </div>
+            </div>
+        </section>
 
-                <!-- Stats -->
-                <div class="mt-20 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
+        <!-- Stats -->
+        <section class="pb-24 px-4">
+            <div class="max-w-4xl mx-auto py-12 px-8 glass rounded-[2.5rem] border border-white/5">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
                     <div>
-                        <div class="text-3xl font-bold text-white mb-1">12k+</div>
-                        <div class="text-sm text-slate-500 uppercase tracking-widest font-semibold">Offres actives</div>
+                        <div class="text-3xl font-black text-white mb-1">{{ $stats['jobs'] ?? '3k+' }}</div>
+                        <div class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Offres Scannées</div>
                     </div>
                     <div>
-                        <div class="text-3xl font-bold text-white mb-1">98%</div>
-                        <div class="text-sm text-slate-500 uppercase tracking-widest font-semibold">Match score</div>
+                        <div class="text-3xl font-black text-white mb-1">98%</div>
+                        <div class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Précision IA</div>
                     </div>
                     <div>
-                        <div class="text-3xl font-bold text-white mb-1">500+</div>
-                        <div class="text-sm text-slate-500 uppercase tracking-widest font-semibold">Métiers</div>
+                        <div class="text-3xl font-black text-white mb-1">{{ $stats['metiers'] ?? '200+' }}</div>
+                        <div class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Métiers</div>
                     </div>
                     <div>
-                        <div class="text-3xl font-bold text-white mb-1">24/7</div>
-                        <div class="text-sm text-slate-500 uppercase tracking-widest font-semibold">Sync Forem</div>
+                        <div class="text-3xl font-black text-white mb-1">24/7</div>
+                        <div class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Sync Forem</div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Features Section -->
-        <section class="py-24 px-4 bg-slate-900/50">
-            <div class="max-w-7xl mx-auto">
-                <div class="text-center mb-16">
-                    <h2 class="text-3xl lg:text-4xl font-bold mb-4">Pourquoi choisir Forem Matcher ?</h2>
-                    <p class="text-slate-400 max-w-2xl mx-auto">Notre technologie vous fait gagner du temps en filtrant le bruit et en se concentrant sur ce qui compte : votre potentiel.</p>
+        <!-- Steps Section -->
+        <section class="py-24 px-4 border-t border-white/5">
+            <div class="max-w-5xl mx-auto">
+                <div class="text-center mb-20">
+                    <h2 class="text-3xl lg:text-4xl font-bold mb-4">Comment on l'utilise ?</h2>
+                    <p class="text-slate-400 max-w-xl mx-auto">C'est pas un site de recherche classique, c'est un assistant personnel. Voici les 4 étapes pour s'en servir :</p>
                 </div>
 
-                <div class="grid md:grid-cols-3 gap-8">
-                    <!-- Feature 1 -->
-                    <div class="p-8 glass rounded-3xl border border-white/5 transition-all duration-300 card-hover">
-                        <div class="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-400 mb-6">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                            </svg>
-                        </div>
-                        <h3 class="text-xl font-bold mb-4 text-white">Analyse Sémantique</h3>
-                        <p class="text-slate-400 leading-relaxed">
-                            Nous ne nous contentons pas de mots-clés. Notre IA comprend le contexte de votre expérience et les exigences réelles du recruteur.
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Step 1 -->
+                    <div class="p-8 glass rounded-3xl border border-white/5 relative overflow-hidden group">
+                        <div class="text-6xl font-black text-white/5 absolute -top-2 -right-2 transition-all group-hover:text-indigo-500/10">01</div>
+                        <h3 class="text-lg font-bold mb-4 text-indigo-400">Accès Privé</h3>
+                        <p class="text-slate-400 text-sm leading-relaxed">
+                            On commence par créer un compte. C'est nécessaire pour que tes données (CV, préférences) restent privées et sécurisées.
                         </p>
                     </div>
 
-                    <!-- Feature 2 -->
-                    <div class="p-8 glass rounded-3xl border border-white/5 transition-all duration-300 card-hover">
-                        <div class="w-12 h-12 bg-purple-500/10 rounded-2xl flex items-center justify-center text-purple-400 mb-6">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                            </svg>
-                        </div>
-                        <h3 class="text-xl font-bold mb-4 text-white">Sync en Temps Réel</h3>
-                        <p class="text-slate-400 leading-relaxed">
-                            Connecté directement aux API du Forem, notre système vous informe dès qu'une opportunité pertinente est publiée.
+                    <!-- Step 2 -->
+                    <div class="p-8 glass rounded-3xl border border-white/5 relative overflow-hidden group">
+                        <div class="text-6xl font-black text-white/5 absolute -top-2 -right-2 transition-all group-hover:text-indigo-500/10">02</div>
+                        <h3 class="text-lg font-bold mb-4 text-indigo-400">Ton Récit</h3>
+                        <p class="text-slate-400 text-sm leading-relaxed">
+                            Tu discutes avec le Coach IA ou tu importes ton CV. L'IA va créer ton "Profil Augmenté" (ce que tu sais faire ET ce que tu aimes).
                         </p>
                     </div>
 
-                    <!-- Feature 3 -->
-                    <div class="p-8 glass rounded-3xl border border-white/5 transition-all duration-300 card-hover">
-                        <div class="w-12 h-12 bg-rose-500/10 rounded-2xl flex items-center justify-center text-rose-400 mb-6">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                            </svg>
-                        </div>
-                        <h3 class="text-xl font-bold mb-4 text-white">Dimension Humaine</h3>
-                        <p class="text-slate-400 leading-relaxed">
-                            Parce que vous êtes plus qu'un CV, nous évaluons aussi vos soft-skills et vos valeurs pour garantir un match durable.
+                    <!-- Step 3 -->
+                    <div class="p-8 glass rounded-3xl border border-white/5 relative overflow-hidden group">
+                        <div class="text-6xl font-black text-white/5 absolute -top-2 -right-2 transition-all group-hover:text-indigo-500/10">03</div>
+                        <h3 class="text-lg font-bold mb-4 text-indigo-400">Scan Forem</h3>
+                        <p class="text-slate-400 text-sm leading-relaxed">
+                            L'outil scanne en permanence le site du Forem. Il récupère toutes les nouvelles offres et les compare instantanément à ton profil.
+                        </p>
+                    </div>
+
+                    <!-- Step 4 -->
+                    <div class="p-8 glass rounded-3xl border border-white/5 relative overflow-hidden group">
+                        <div class="text-6xl font-black text-white/5 absolute -top-2 -right-2 transition-all group-hover:text-indigo-500/10">04</div>
+                        <h3 class="text-lg font-bold mb-4 text-indigo-400">Le Verdict</h3>
+                        <p class="text-slate-400 text-sm leading-relaxed">
+                            Tu consultes ton tableau de bord. Pour chaque offre, l'IA te donne un score et t'explique en 3 points pourquoi ça te correspond (ou pas).
                         </p>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- CTA Section -->
-        <section class="py-20 px-4">
-            <div class="max-w-4xl mx-auto glass p-12 lg:p-20 rounded-[3rem] border border-white/10 text-center relative overflow-hidden">
-                <div class="absolute -top-24 -left-24 w-64 h-64 bg-indigo-600/20 blur-[80px]"></div>
-                <div class="absolute -bottom-24 -right-24 w-64 h-64 bg-rose-600/20 blur-[80px]"></div>
-
-                <h2 class="text-3xl lg:text-5xl font-bold mb-8 relative z-10">Prêt à booster votre carrière ?</h2>
-                <p class="text-slate-400 mb-12 text-lg relative z-10">Rejoignez des milliers de candidats qui utilisent déjà Forem Matcher pour trouver leur voie.</p>
-                <div class="flex flex-col sm:flex-row justify-center gap-4 relative z-10">
-                    <a href="{{ route('register') }}" class="px-10 py-5 bg-white text-slate-900 font-bold rounded-2xl hover:bg-slate-100 transition-all transform hover:scale-105">
-                        Commencer gratuitement
-                    </a>
-                    <a href="#" class="px-10 py-5 glass border border-white/20 text-white font-bold rounded-2xl hover:bg-white/10 transition-all">
-                        Voir la démo
-                    </a>
+        <!-- Concept Detail -->
+        <section class="py-24 px-4 bg-slate-950/30">
+            <div class="max-w-4xl mx-auto">
+                <div class="grid md:grid-cols-2 gap-16 items-center">
+                    <div class="relative">
+                        <div class="aspect-square glass rounded-[40px] border border-white/10 flex items-center justify-center p-12 overflow-hidden shadow-inner">
+                            <div class="absolute inset-0 bg-gradient-to-br from-indigo-600/10 to-violet-600/10"></div>
+                            <div class="relative z-10 space-y-6">
+                                <div class="p-4 bg-white/5 rounded-2xl border border-white/10 blur-[1px] opacity-40">
+                                    <div class="h-2 w-20 bg-white/20 rounded mb-2"></div>
+                                    <div class="h-2 w-32 bg-white/10 rounded"></div>
+                                </div>
+                                <div class="p-6 bg-indigo-600/20 rounded-2xl border border-indigo-500/30 scale-110 shadow-2xl">
+                                    <div class="flex items-center gap-3 mb-3">
+                                        <div class="w-3 h-3 rounded-full bg-indigo-400"></div>
+                                        <div class="h-3 w-24 bg-white/40 rounded"></div>
+                                    </div>
+                                    <div class="space-y-2">
+                                        <div class="h-2 w-full bg-white/20 rounded"></div>
+                                        <div class="h-2 w-5/6 bg-white/20 rounded"></div>
+                                    </div>
+                                </div>
+                                <div class="p-4 bg-white/5 rounded-2xl border border-white/10 blur-[1px] opacity-40">
+                                    <div class="h-2 w-24 bg-white/20 rounded mb-2"></div>
+                                    <div class="h-2 w-16 bg-white/10 rounded"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-bold mb-6 text-white leading-tight">Pourquoi s'embêter avec un "récit" ?</h2>
+                        <p class="text-slate-400 mb-6 leading-relaxed">
+                            Un CV classique ne dit pas tout. Tu peux être un excellent comptable mais vouloir travailler dans une petite équipe créative, ou détester les déplacements longs.
+                        </p>
+                        <p class="text-slate-400 leading-relaxed">
+                            En discutant avec l'IA (étape 2), tu lui donnes ces nuances. Résultat : elle élimine les offres qui semblent bonnes sur le papier mais qui te rendraient malheureux.
+                        </p>
+                    </div>
                 </div>
             </div>
+        </section>
+
+        <!-- Final CTA -->
+        <section class="py-24 px-4 text-center">
+            <h2 class="text-3xl font-bold mb-8 italic">On essaie ?</h2>
+            <p class="text-slate-400 mb-10 max-w-lg mx-auto">C'est gratuit, c'est fait maison, et ça peut te sauver quelques heures de scroll intensif.</p>
+            <a href="{{ route('register') }}" class="inline-flex items-center gap-3 px-12 py-6 bg-white text-slate-900 font-bold rounded-2xl hover:bg-slate-100 transition-all transform hover:scale-105">
+                Créer mon accès
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+            </a>
         </section>
     </main>
 
@@ -286,5 +299,6 @@
             <p>&copy; 2026 Forem Matcher AI. Développé avec passion pour l'emploi en Belgique.</p>
         </div>
     </footer>
+    <x-feedback-button />
 </body>
 </html>

@@ -34,5 +34,6 @@
                 {{ $slot }}
             </main>
         </div>
+        <x-feedback-button />
     </body>
 </html>

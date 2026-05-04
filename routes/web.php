@@ -6,8 +6,14 @@ use App\Http\Controllers\ForemSearchController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    $stats = [
+        'jobs' => \App\Models\JobOffer::where('status', 'active')->count(),
+        'metiers' => \App\Models\Metier::whereHas('jobOffers')->count(),
+    ];
+    return view('welcome', compact('stats'));
 });
+
+Route::post('/feedback', [\App\Http\Controllers\FeedbackController::class, 'store'])->name('feedback.store');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [JobOfferController::class, 'dashboard'])->name('dashboard');
