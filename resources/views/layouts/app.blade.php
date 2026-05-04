@@ -22,8 +22,8 @@
 
             <!-- GLOBAL PROFILE PROGRESS RIBBON -->
             @auth
-                <div class="bg-white border-b border-gray-200 py-2 shadow-sm sticky top-0 z-[40]">
-                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-center">
+                <div class="bg-white border-b border-gray-200 h-12 shadow-sm sticky top-0 z-[40]">
+                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-center">
                         <x-profile-status-bar />
                     </div>
                 </div>

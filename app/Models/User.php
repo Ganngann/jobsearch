@@ -189,8 +189,11 @@ class User extends Authenticatable
     {
         $missing = [];
 
-        if ($this->preferredMetiers()->count() < 1) {
-            $missing[] = 'un métier préféré';
+        $metiersCount = $this->preferredMetiers()->count();
+        $familiesCount = $this->preferredReferentielMetiers()->count();
+
+        if (($metiersCount + $familiesCount) < 1) {
+            $missing[] = 'un métier préféré ou une famille ROME';
         }
 
         if ($this->skills()->count() < 5) {

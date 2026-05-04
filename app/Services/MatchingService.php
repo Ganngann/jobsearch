@@ -22,8 +22,14 @@ class MatchingService
     /**
      * Calcule le score de correspondance complet (Pre-score + IA si nécessaire).
      */
-    public function match(User $user, JobOffer $jobOffer, bool $forceAi = false, bool $triggerAi = true, array $context = null): UserMatch
+    public function match(User $user, JobOffer $jobOffer, bool $forceAi = false, bool $triggerAi = true, array $context = null): ?UserMatch
     {
+        // On ne calcule pas de match pour une offre dont le détail n'a pas encore été récupéré.
+        // Le matching sans skills/description complète n'est pas pertinent.
+        if (!$jobOffer->is_detailed) {
+            return null;
+        }
+
         // 1. Layer 1 — Pré-score (Statique)
         $preMatchData = $this->calculatePreScore($user, $jobOffer, $context);
         $preScore = $preMatchData['score'];
@@ -350,6 +356,7 @@ class MatchingService
     public function triggerMassMatch(User $user): void
     {
         JobOffer::where('status', 'active')
+            ->where('is_detailed', true)
             ->where(function($q) {
                 $q->whereNull('expires_at')
                   ->orWhere('expires_at', '>=', now());
@@ -371,6 +378,7 @@ class MatchingService
                 $q->where('code', 'LIKE', $romeCode . '%');
             })
             ->where('status', 'active')
+            ->where('is_detailed', true)
             ->chunk(100, function($offers) use ($user) {
                 foreach ($offers as $offer) {
                     $this->match($user, $offer, false, false);
@@ -385,6 +393,7 @@ class MatchingService
     {
         JobOffer::where('metier_id', $metierId)
             ->where('status', 'active')
+            ->where('is_detailed', true)
             ->chunk(100, function($offers) use ($user) {
                 foreach ($offers as $offer) {
                     $this->match($user, $offer, false, false);
@@ -462,6 +471,7 @@ class MatchingService
                 $q->where('skills.id', $skill->id);
             })
             ->where('status', 'active')
+            ->where('is_detailed', true)
             ->chunk(100, function($offers) use ($user) {
                 foreach ($offers as $offer) {
                     $this->match($user, $offer, false, false);

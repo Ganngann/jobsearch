@@ -21,6 +21,7 @@
     $romeProgress = min(100, round(($romeCount / 3) * 100));
 
     // 4. Mobility Logic
+    $permitsCount = $user->permits()->count();
     $mobilityProgress = $user->zip_code ? 100 : 0;
 
     // Categories for Tooltip (Narrative)
@@ -56,6 +57,7 @@
         return Math.min(100, Math.round((this.romeCount / 3) * 100));
     },
     mobilityProgress: {{ $mobilityProgress }},
+    permitsCount: {{ $permitsCount }},
     hasSeenReadyBubble: localStorage.getItem('has_seen_ready_bubble') === 'true',
     dismissBubble() {
         this.hasSeenReadyBubble = true;
@@ -298,6 +300,10 @@
                         <div class="flex items-center justify-between text-[10px]">
                             <span class="text-gray-400 font-medium">Lieu de vie configuré</span>
                             <span class="font-black text-blue-600" x-text="mobilityProgress >= 100 ? 'OUI' : 'NON'"></span>
+                        </div>
+                        <div class="flex items-center justify-between text-[10px]">
+                            <span class="text-gray-400 font-medium">Permis de conduire</span>
+                            <span class="font-black text-blue-600" x-text="permitsCount > 0 ? permitsCount + ' CONFIGURÉ(S)' : 'AUCUN'"></span>
                         </div>
                     </div>
                     <div class="pt-3 border-t border-gray-50 text-[9px] text-gray-400 italic text-center">

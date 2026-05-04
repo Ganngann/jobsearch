@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div x-data="dashboardApp()" class="h-[calc(100vh-64px)] flex overflow-hidden bg-slate-50">
+    <div x-data="dashboardApp()" class="h-[calc(100vh-112px)] flex overflow-hidden bg-slate-50">
         
         <!-- SIDEBAR: Filtres & Exploration -->
         <aside class="w-80 border-r border-slate-200 bg-white flex flex-col shrink-0 overflow-y-auto custom-scrollbar">
@@ -74,7 +74,7 @@
                         @php $preferredIds = $user->preferredMetiers->pluck('id')->toArray(); @endphp
                         @foreach($topMetiers as $metier)
                             @php 
-                                $isDiscovery = !in_array($metier->id, $preferredIds) && $metier->max_score >= 70;
+                                $isDiscovery = !in_array($metier->id, $preferredIds);
                             @endphp
                             <button 
                                 x-show="metierSearch === '' || '{{ strtolower(addslashes($metier->label)) }}'.includes(metierSearch.toLowerCase())"
@@ -83,23 +83,16 @@
                                 class="w-full text-left px-4 py-3 rounded-xl transition-all group relative"
                             >
                                 <div class="flex items-center justify-between">
-                                    <div class="flex flex-col min-w-0 pr-8">
+                                    <div class="flex flex-col min-w-0">
                                         <span class="text-xs font-bold truncate">{{ $metier->label }}</span>
                                         <div class="flex items-center gap-2 mt-0.5">
                                             <span class="text-[9px] opacity-40 font-black uppercase tracking-tighter">{{ $metier->job_offers_count }} offres</span>
                                             @if($isDiscovery)
                                                 <span class="text-[9px] text-amber-500 font-black uppercase tracking-tighter flex items-center gap-1">
-                                                    ✨ Découverte
+                                                    ✨ Explorer
                                                 </span>
                                             @endif
                                         </div>
-                                    </div>
-                                    
-                                    <!-- Score Bubble -->
-                                    <div class="shrink-0 flex flex-col items-end">
-                                        <span class="text-[11px] font-black {{ $metier->max_score >= 70 ? 'text-emerald-500' : ($metier->max_score >= 40 ? 'text-amber-500' : 'text-slate-300') }}">
-                                            {{ round($metier->max_score) }}%
-                                        </span>
                                     </div>
                                 </div>
                             </button>
@@ -137,15 +130,9 @@
                                 class="w-full text-left px-4 py-3 rounded-xl transition-all group relative"
                             >
                                 <div class="flex items-center justify-between">
-                                    <div class="flex flex-col min-w-0 pr-8">
+                                    <div class="flex flex-col min-w-0">
                                         <span class="text-xs font-bold truncate">{{ $employer->label }}</span>
                                         <span class="text-[9px] opacity-40 font-black uppercase tracking-tighter mt-0.5">{{ $employer->job_offers_count }} offres</span>
-                                    </div>
-                                    
-                                    <div class="shrink-0 flex flex-col items-end">
-                                        <span class="text-[11px] font-black {{ $employer->max_score >= 70 ? 'text-emerald-500' : ($employer->max_score >= 40 ? 'text-amber-500' : 'text-slate-300') }}">
-                                            {{ round($employer->max_score) }}%
-                                        </span>
                                     </div>
                                 </div>
                             </button>

@@ -74,13 +74,14 @@ class JobOfferController extends Controller
                 break;
             case 'score_desc':
             default:
-                // Pour trier par score, on doit faire une jointure
+                // Jointure simple sur les scores pré-calculés
                 $query->leftJoin('user_matches', function($join) use ($user) {
                     $join->on('job_offers.id', '=', 'user_matches.job_offer_id')
                          ->where('user_matches.user_id', '=', $user->id);
                 })
-                ->select('job_offers.*')
-                ->orderByRaw('COALESCE(user_matches.final_score, user_matches.pre_score) DESC NULLS LAST');
+                ->select('job_offers.*', 'user_matches.pre_score', 'user_matches.final_score')
+                ->orderByRaw('user_matches.final_score DESC NULLS LAST')
+                ->orderByRaw('user_matches.pre_score DESC NULLS LAST');
                 break;
         }
 
@@ -95,31 +96,13 @@ class JobOfferController extends Controller
         // Données pour les filtres de la sidebar
         // Données pour les filtres de la sidebar : Triés par potentiel de match personnel
         $topMetiers = \App\Models\Metier::whereHas('jobOffers')
-            ->leftJoin('job_offers', 'job_offers.metier_id', '=', 'metiers.id')
-            ->leftJoin('user_matches', function($join) use ($user) {
-                $join->on('user_matches.job_offer_id', '=', 'job_offers.id')
-                     ->where('user_matches.user_id', '=', $user->id);
-            })
-            ->select('metiers.*')
-            ->selectRaw('COUNT(DISTINCT job_offers.id) as job_offers_count')
-            ->selectRaw('MAX(COALESCE(user_matches.final_score, user_matches.pre_score, 0)) as max_score')
-            ->groupBy('metiers.id')
-            ->orderBy('max_score', 'desc')
+            ->withCount('jobOffers')
             ->orderBy('job_offers_count', 'desc')
             ->limit(30)
             ->get();
 
         $topEmployers = \App\Models\Employer::whereHas('jobOffers')
-            ->leftJoin('job_offers', 'job_offers.employer_id', '=', 'employers.id')
-            ->leftJoin('user_matches', function($join) use ($user) {
-                $join->on('user_matches.job_offer_id', '=', 'job_offers.id')
-                     ->where('user_matches.user_id', '=', $user->id);
-            })
-            ->select('employers.*')
-            ->selectRaw('COUNT(DISTINCT job_offers.id) as job_offers_count')
-            ->selectRaw('MAX(COALESCE(user_matches.final_score, user_matches.pre_score, 0)) as max_score')
-            ->groupBy('employers.id')
-            ->orderBy('max_score', 'desc')
+            ->withCount('jobOffers')
             ->orderBy('job_offers_count', 'desc')
             ->limit(20)
             ->get();

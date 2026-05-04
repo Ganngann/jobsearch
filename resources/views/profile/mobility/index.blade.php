@@ -46,40 +46,7 @@
             </div>
 
             <!-- Main Content Grid -->
-            <div x-data="{
-                zip_code: '{{ $user->zip_code }}',
-                radius: {{ $user->radius ?? 20 }},
-                isSaving: false,
-                showSuccess: false,
-
-                async save() {
-                    this.isSaving = true;
-                    try {
-                        const response = await fetch('{{ route('profile.mobility.update') }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                'Accept': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                _method: 'PATCH',
-                                zip_code: this.zip_code,
-                                radius: this.radius
-                            })
-                        });
-                        if (!response.ok) throw new Error('Erreur');
-                        
-                        window.dispatchEvent(new CustomEvent('mobility-updated'));
-                        this.showSuccess = true;
-                        setTimeout(() => { this.showSuccess = false; }, 3000);
-                    } catch (e) {
-                        console.error(e);
-                    } finally {
-                        setTimeout(() => { this.isSaving = false; }, 600);
-                    }
-                }
-            }">
+            <div x-data="mobilityApp()">
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
                     <!-- Left Column: Form -->
                     <div class="lg:col-span-5 space-y-6">
@@ -133,6 +100,32 @@
                                             <span>200km</span>
                                         </div>
                                     </div>
+                                </div>
+
+                                <!-- Driving Licenses -->
+                                <div>
+                                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">
+                                        🪪 Permis de Conduire
+                                    </label>
+                                    <div class="flex flex-wrap gap-2">
+                                        @foreach($allPermits as $permit)
+                                            <button 
+                                                type="button"
+                                                @click="togglePermit({{ $permit->id }})"
+                                                :class="{
+                                                    'bg-blue-600 text-white shadow-lg shadow-blue-100 border-blue-600': permits.includes({{ $permit->id }}),
+                                                    'bg-white text-slate-600 border-slate-100 hover:border-blue-200': !permits.includes({{ $permit->id }})
+                                                }"
+                                                class="px-4 py-2.5 rounded-xl border-2 text-xs font-black transition-all flex items-center gap-2"
+                                            >
+                                                <span class="opacity-50">#</span>
+                                                {{ $permit->label }}
+                                            </button>
+                                        @endforeach
+                                    </div>
+                                    <p class="mt-3 text-[10px] text-slate-400 font-bold italic uppercase tracking-tighter">
+                                        Certaines offres sont inaccessibles sans permis spécifique.
+                                    </p>
                                 </div>
                             </div>
 
@@ -260,4 +253,59 @@
             </div>
         </div>
     </div>
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('mobilityApp', () => ({
+                zip_code: '{{ $user->zip_code }}',
+                radius: {{ $user->radius ?? 20 }},
+                permits: @json($userPermitIds),
+                nonePermitId: {{ \App\Models\Permit::where('code', 'NONE')->first()?->id ?? 0 }},
+                isSaving: false,
+                showSuccess: false,
+
+                togglePermit(id) {
+                    if (id === this.nonePermitId) {
+                        this.permits = this.permits.includes(id) ? [] : [id];
+                    } else {
+                        if (this.permits.includes(id)) {
+                            this.permits = this.permits.filter(p => p !== id);
+                        } else {
+                            this.permits = this.permits.filter(p => p !== this.nonePermitId);
+                            this.permits.push(id);
+                        }
+                    }
+                    this.save();
+                },
+
+                async save() {
+                    this.isSaving = true;
+                    try {
+                        const response = await fetch('{{ route('profile.mobility.update') }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                _method: 'PATCH',
+                                zip_code: this.zip_code,
+                                radius: this.radius,
+                                permits: this.permits
+                            })
+                        });
+                        if (!response.ok) throw new Error('Erreur');
+                        
+                        window.dispatchEvent(new CustomEvent('mobility-updated'));
+                        this.showSuccess = true;
+                        setTimeout(() => { this.showSuccess = false; }, 3000);
+                    } catch (e) {
+                        console.error(e);
+                    } finally {
+                        setTimeout(() => { this.isSaving = false; }, 600);
+                    }
+                }
+            }));
+        });
+    </script>
 </x-app-layout>
