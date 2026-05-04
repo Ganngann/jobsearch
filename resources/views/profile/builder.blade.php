@@ -114,6 +114,7 @@
             currentSessionId: {{ Js::from($sessionId) }},
             user: {{ Js::from(Auth::user()) }},
             skills: {{ Js::from(Auth::user()->skills) }},
+            stats: {{ Js::from($stats) }},
             routes: {
                 message: '{{ route('profile.builder.message') }}',
                 upload: '{{ route('profile.builder.upload') }}',
@@ -231,11 +232,73 @@
                     <div class="flex items-center gap-3">
                         <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Aperçu du CV</span>
                         <div class="h-4 w-px bg-gray-200"></div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 group relative">
                             <div class="w-24 h-1.5 bg-gray-200 rounded-full overflow-hidden">
                                 <div class="bg-indigo-600 h-full transition-all duration-1000" style="width: {{ $stats['depth_percentage'] }}%"></div>
                             </div>
                             <span class="text-[10px] font-black text-indigo-600">{{ $stats['depth_percentage'] }}%</span>
+                            
+                            <!-- Info Bubble -->
+                            <div class="cursor-help text-gray-300 hover:text-indigo-400 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+
+                            <!-- Tooltip Content -->
+                            <div class="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-72 bg-white border border-gray-100 rounded-2xl shadow-2xl p-5 z-[100] invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all transform translate-y-1 group-hover:translate-y-0">
+                                <!-- Petit triangle (arrow) -->
+                                <div class="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-l border-t border-gray-100 rotate-45"></div>
+                                
+                                <div class="relative space-y-4">
+                                    <h4 class="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Checklist de ton Profil</h4>
+                                    
+                                    <div class="space-y-3">
+                                        <!-- Récit Breakdown -->
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1">
+                                                <span class="text-[10px] font-bold text-gray-500 uppercase">Récit Narratif (70%)</span>
+                                            </div>
+                                            <div class="space-y-1.5 pl-2 border-l-2 border-indigo-50">
+                                                <template x-for="(data, cat) in stats.categories">
+                                                    <div class="flex items-center justify-between text-[10px]">
+                                                        <span class="text-gray-400 capitalize" x-text="cat.toLowerCase().replace('_', ' ')"></span>
+                                                        <span class="font-black" :class="data.current >= data.target ? 'text-emerald-500' : 'text-indigo-600'" x-text="data.current + '/' + data.target"></span>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </div>
+
+                                        <!-- Parcours Breakdown -->
+                                        <div class="pt-2 border-t border-gray-50">
+                                            <div class="flex items-center justify-between mb-1">
+                                                <span class="text-[10px] font-bold text-gray-500 uppercase">Parcours Pro (30%)</span>
+                                                <span class="text-[10px] font-black" :class="stats.journey.current >= stats.journey.target ? 'text-emerald-500' : 'text-indigo-600'" x-text="stats.journey.current + '/' + stats.journey.target"></span>
+                                            </div>
+                                            <p class="text-[9px] text-gray-400 italic">Expériences et diplômes validés.</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="pt-3 border-t border-gray-50">
+                                        <template x-if="stats.depth_percentage < 80">
+                                            <p class="text-[10px] text-amber-600 flex items-start gap-2 bg-amber-50 p-2 rounded-xl">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                                </svg>
+                                                Continue la discussion pour compléter les sections en bleu. Objectif : 80%+.
+                                            </p>
+                                        </template>
+                                        <template x-if="stats.depth_percentage >= 80">
+                                            <p class="text-[10px] text-emerald-600 flex items-start gap-2 bg-emerald-50 p-2 rounded-xl font-bold">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                Ton profil est prêt ! Le matching sera très précis.
+                                            </p>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 

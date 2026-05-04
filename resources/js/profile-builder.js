@@ -12,6 +12,7 @@ export default (initialData) => ({
     archivedSessions: initialData.archivedSessions || [],
     currentSessionId: initialData.currentSessionId,
     user: initialData.user,
+    stats: initialData.stats || {},
     skills: initialData.skills || [],
     allAvailableLanguages: initialData.allAvailableLanguages || [],
     routes: initialData.routes || {},
@@ -86,19 +87,7 @@ export default (initialData) => ({
             const data = await response.json();
             this.messages.push({ id: Date.now(), role: 'assistant', content: data.reply });
 
-            // Update all data arrays
-            this.facts = data.facts;
-            this.projects = data.projects;
-            this.certifications = data.certifications;
-            this.interests = data.interests;
-            this.volunteer_experiences = data.volunteer_experiences;
-            this.all_experiences = data.all_experiences;
-            this.all_educations = data.all_educations;
-            this.languages = data.languages || [];
-            this.skills = data.skills;
-            this.user = data.user;
-            this.activeSessions = data.activeSessions;
-            this.archivedSessions = data.archivedSessions;
+            this.updateAllData(data);
             
             this.scrollToBottom();
             if (this.pendingChangesCount > 0) {
@@ -138,19 +127,7 @@ export default (initialData) => ({
             } else {
                 this.messages.push({ id: Date.now(), role: 'assistant', content: data.reply });
 
-                // Update all data arrays
-                this.facts = data.facts;
-                this.projects = data.projects;
-                this.certifications = data.certifications;
-                this.interests = data.interests;
-                this.volunteer_experiences = data.volunteer_experiences;
-                this.all_experiences = data.all_experiences;
-                this.all_educations = data.all_educations;
-                this.languages = data.languages || [];
-                this.skills = data.skills;
-                this.user = data.user;
-                this.activeSessions = data.activeSessions;
-                this.archivedSessions = data.archivedSessions;
+                this.updateAllData(data);
             }
             
             this.scrollToBottom();
@@ -227,19 +204,7 @@ export default (initialData) => ({
             });
             const data = await response.json();
             if (data.success) {
-                const fact = this.facts.find(f => f.id === id);
-                if (fact) {
-                    if (fact.proposed_action === 'update') {
-                        fact.content = fact.proposed_content;
-                    }
-                    if (fact.proposed_action === 'delete') {
-                        this.facts = this.facts.filter(f => f.id !== id);
-                    } else {
-                        fact.proposed_action = null;
-                        fact.proposed_content = null;
-                        fact.status = 'validated';
-                    }
-                }
+                this.updateAllData(data);
             }
         } catch (error) { console.error(error); }
     },
@@ -252,13 +217,7 @@ export default (initialData) => ({
             });
             const data = await response.json();
             if (data.success) {
-                 const fact = this.facts.find(f => f.id === id);
-                 if (fact && fact.proposed_action === 'add') {
-                     this.facts = this.facts.filter(f => f.id !== id);
-                 } else if (fact) {
-                     fact.proposed_action = null;
-                     fact.proposed_content = null;
-                 }
+                 this.updateAllData(data);
             }
         } catch (error) { console.error(error); }
     },
@@ -290,20 +249,9 @@ export default (initialData) => ({
                 method: 'POST',
                 headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') }
             });
-            if ((await response.json()).success) {
-                let list = this.getItemList(type);
-                const item = list.find(i => i.id === id);
-                if (item) {
-                    if (item.proposed_action === 'update' && item.proposed_data) {
-                        Object.assign(item, item.proposed_data);
-                    } else if (item.proposed_action === 'delete') {
-                        this.setItemList(type, list.filter(i => i.id !== id));
-                        return;
-                    }
-                    item.status = 'validated';
-                    item.proposed_action = null;
-                    item.proposed_data = null;
-                }
+            const data = await response.json();
+            if (data.success) {
+                this.updateAllData(data);
             }
         } catch (error) { console.error(error); }
     },
@@ -546,5 +494,23 @@ export default (initialData) => ({
 
     async rejectProposal(fact) {
         this.rejectFact(fact.id);
+    },
+
+    updateAllData(data) {
+        if (!data) return;
+        console.log("Updating profile data...", data.stats);
+        this.facts = data.facts || this.facts;
+        this.projects = data.projects || this.projects;
+        this.certifications = data.certifications || this.certifications;
+        this.interests = data.interests || this.interests;
+        this.volunteer_experiences = data.volunteer_experiences || this.volunteer_experiences;
+        this.all_experiences = data.all_experiences || this.all_experiences;
+        this.all_educations = data.all_educations || this.all_educations;
+        this.languages = data.languages || this.languages;
+        this.skills = data.skills || this.skills;
+        this.user = data.user || this.user;
+        this.stats = data.stats || this.stats;
+        this.activeSessions = data.activeSessions || this.activeSessions;
+        this.archivedSessions = data.archivedSessions || this.archivedSessions;
     }
 });

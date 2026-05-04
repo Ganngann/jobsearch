@@ -58,10 +58,11 @@ class GeminiService
             ]
         ];
 
-        Log::debug('GEMINI ASK REQUEST:', $payload);
+        Log::debug('GEMINI ASK REQUEST:', ['model' => $this->model, 'payload' => $payload]);
 
         $response = Http::withoutVerifying()
             ->withHeaders(['Content-Type' => 'application/json'])
+            ->timeout(25)
             ->retry(3, 1000, function ($exception, $request) {
                 return $exception instanceof \Illuminate\Http\Client\ConnectionException ||
                        ($exception->response && $exception->response->status() === 503);
@@ -69,12 +70,12 @@ class GeminiService
             ->post("{$this->getUrl()}?key={$this->apiKey}", $payload);
 
         if ($response->failed()) {
-            Log::error('Gemini API request failed (ask) after retries', ['error' => $response->body()]);
+            Log::error('Gemini API request failed (ask) after retries', ['model' => $this->model, 'error' => $response->body()]);
             return null;
         }
 
         $result = $response->json();
-        Log::debug('GEMINI ASK RESPONSE:', $result);
+        Log::debug('GEMINI ASK RESPONSE:', ['model' => $this->model, 'result' => $result]);
         
         return $result['candidates'][0]['content']['parts'][0]['text'] ?? null;
     }
@@ -164,10 +165,11 @@ class GeminiService
         }
 
         // DEBUG: On log la requête pour voir ce qui est envoyé à l'IA
-        Log::debug('GEMINI REQUEST PAYLOAD:', $payload);
+        Log::debug('GEMINI REQUEST PAYLOAD:', ['model' => $this->model, 'payload' => $payload]);
 
         $response = Http::withoutVerifying()
             ->withHeaders(['Content-Type' => 'application/json'])
+            ->timeout(25) // Timeout de 25s pour laisser 5s à PHP de finir proprement
             ->retry(3, 1000, function ($exception, $request) {
                 return $exception instanceof \Illuminate\Http\Client\ConnectionException ||
                        ($exception->response && $exception->response->status() === 503);
@@ -175,14 +177,14 @@ class GeminiService
             ->post("{$this->getUrl()}?key={$this->apiKey}", $payload);
 
         if ($response->failed()) {
-            Log::error('Gemini API request failed', ['error' => $response->body()]);
+            Log::error('Gemini API request failed', ['model' => $this->model, 'error' => $response->body()]);
             return null;
         }
 
         $result = $response->json();
         
         // Log de la réponse reçue de Gemini
-        Log::debug('GEMINI RESPONSE:', $result);
+        Log::debug('GEMINI RESPONSE:', ['model' => $this->model, 'result' => $result]);
 
         $text = $result['candidates'][0]['content']['parts'][0]['text'] ?? null;
 
@@ -190,7 +192,7 @@ class GeminiService
 
         $decoded = json_decode($text, true);
         if (json_last_error() !== JSON_ERROR_NONE) {
-            Log::error('Gemini JSON Decode Error: ' . json_last_error_msg());
+            Log::error('Gemini JSON Decode Error', ['model' => $this->model, 'error' => json_last_error_msg()]);
             return [
                 'reply' => "Oups, ma réponse était tellement détaillée qu'elle a été coupée en plein milieu ! Pouvons-nous reprendre en traitant les points un par un ?",
                 'facts' => []
@@ -238,10 +240,7 @@ class GeminiService
 
         $response = Http::withoutVerifying()
             ->withHeaders(['Content-Type' => 'application/json'])
-            ->retry(2, 500, function ($exception, $request) {
-                return $exception instanceof \Illuminate\Http\Client\ConnectionException ||
-                       ($exception->response && $exception->response->status() === 503);
-            })
+            ->timeout(45) // L'OCR est plus long (upload fichier), on laisse 45s
             ->post("{$this->getUrl()}?key={$this->apiKey}", $payload);
 
         if ($response->status() === 503) {
@@ -249,14 +248,14 @@ class GeminiService
         }
 
         if ($response->failed()) {
-            Log::error('Gemini OCR API error', ['status' => $response->status(), 'body' => $response->body()]);
+            Log::error('Gemini OCR API error', ['model' => $this->model, 'status' => $response->status(), 'body' => $response->body()]);
             return null;
         }
 
         $result = $response->json();
         $text = $result['candidates'][0]['content']['parts'][0]['text'] ?? null;
 
-        Log::info('Gemini OCR Result:', ['char_count' => strlen($text ?? '')]);
+        Log::info('Gemini OCR Result:', ['model' => $this->model, 'char_count' => strlen($text ?? '')]);
 
         return $text;
     }

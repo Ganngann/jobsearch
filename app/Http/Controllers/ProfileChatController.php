@@ -98,8 +98,15 @@ class ProfileChatController extends Controller
         $stats = [
             'total_facts' => $facts->count(),
             'depth_percentage' => $totalDepth,
-            'categories' => $categoryCounts,
+            'categories' => [
+                'VALEURS' => ['current' => $categoryCounts['VALEURS'], 'target' => 5],
+                'OBJECTIFS' => ['current' => $categoryCounts['OBJECTIFS'], 'target' => 5],
+                'SOFT_SKILLS' => ['current' => $categoryCounts['SOFT_SKILLS'], 'target' => 5],
+                'PREFERENCES' => ['current' => $categoryCounts['PREFERENCES'], 'target' => 5],
+            ],
             'journey' => [
+                'current' => $journeyCount,
+                'target' => 3,
                 'experiences' => $user->experiences()->count(),
                 'educations' => $user->educations()->count(),
             ]
@@ -169,7 +176,13 @@ class ProfileChatController extends Controller
         // Analyse complète (on passe tout le texte à l'IA même si on tronque le message affiché)
         $history[count($history) - 1]['content'] = "Voici un nouveau document à analyser :\n\n" . $text;
 
-        $aiResponse = $this->aiService->chat($user, $history);
+        try {
+            $aiResponse = $this->aiService->chat($user, $history);
+        } catch (\Exception $e) {
+            Log::error('AI Chat Upload Error: ' . $e->getMessage());
+            $errorMsg = "L'analyse du document a pris trop de temps. Le document est bien reçu, mais l'IA n'a pas pu finir sa lecture. Peux-tu essayer de relancer la discussion ?";
+            return $this->getUpdatedDataResponse($user, $sessionId, $errorMsg);
+        }
 
         if ($aiResponse && isset($aiResponse['reply'])) {
             $user->profileMessages()->create([
@@ -187,9 +200,51 @@ class ProfileChatController extends Controller
 
     private function getUpdatedDataResponse($user, $sessionId, $reply)
     {
+        $user = $user->fresh();
+        $facts = $user->facts;
+        $categoryCounts = [
+            'VALEURS' => 0,
+            'OBJECTIFS' => 0,
+            'SOFT_SKILLS' => 0,
+            'PREFERENCES' => 0,
+        ];
+        foreach ($facts as $fact) {
+            $categoryCounts[$fact->category] = ($categoryCounts[$fact->category] ?? 0) + 1;
+        }
+
+        $narrativeScore = 0;
+        foreach ($categoryCounts as $count) {
+            $narrativeScore += min(5, $count);
+        }
+        $narrativePercentage = ($narrativeScore / 20) * 70;
+
+        $journeyCount = $user->experiences()->count() + $user->educations()->count();
+        $journeyPercentage = min(3, $journeyCount) / 3 * 30;
+
+        $totalDepth = round($narrativePercentage + $journeyPercentage);
+
+        $stats = [
+            'total_facts' => $facts->count(),
+            'depth_percentage' => $totalDepth,
+            'categories' => [
+                'VALEURS' => ['current' => $categoryCounts['VALEURS'], 'target' => 5],
+                'OBJECTIFS' => ['current' => $categoryCounts['OBJECTIFS'], 'target' => 5],
+                'SOFT_SKILLS' => ['current' => $categoryCounts['SOFT_SKILLS'], 'target' => 5],
+                'PREFERENCES' => ['current' => $categoryCounts['PREFERENCES'], 'target' => 5],
+            ],
+            'journey' => [
+                'current' => $journeyCount,
+                'target' => 3,
+                'experiences' => $user->experiences()->count(),
+                'educations' => $user->educations()->count(),
+            ]
+        ];
+
         return response()->json([
+            'success' => true,
             'reply' => $reply,
             'user' => $user->fresh(),
+            'stats' => $stats,
             'facts' => $user->facts()
                 ->with('skills')
                 ->orderByRaw('CASE WHEN proposed_action IS NOT NULL THEN 0 ELSE 1 END')
@@ -251,7 +306,22 @@ class ProfileChatController extends Controller
             ->map(fn($m) => ['role' => $m->role, 'content' => $m->content])
             ->toArray();
 
-        $aiResponse = $this->aiService->chat($user, $history);
+        try {
+            $aiResponse = $this->aiService->chat($user, $history);
+        } catch (\Exception $e) {
+            Log::error('AI Chat Error: ' . $e->getMessage());
+            $errorMsg = "L'IA met trop de temps à répondre (Timeout). Cela arrive parfois lors de pics de charge. Peux-tu réessayer d'envoyer ton message ?";
+            
+            // On sauvegarde l'erreur dans la conversation pour la transparence
+            $user->profileMessages()->create([
+                'user_id' => $user->id,
+                'session_id' => $sessionId,
+                'role' => 'assistant',
+                'content' => "⚠️ [Erreur Système] $errorMsg"
+            ]);
+
+            return $this->getUpdatedDataResponse($user, $sessionId, $errorMsg);
+        }
         
         Log::debug('--- AI OUTPUT (RAW RESPONSE) ---', ['data' => $aiResponse]);
 
@@ -316,14 +386,14 @@ class ProfileChatController extends Controller
     {
         if ($fact->user_id !== Auth::id()) abort(403);
         $fact->update(['content' => $request->content, 'status' => 'validated']);
-        return response()->json(['success' => true]);
+        return $this->getUpdatedDataResponse(Auth::user(), session('profile_builder_session'), "Fait mis à jour.");
     }
 
     public function validateFact(UserFact $fact)
     {
         if ($fact->user_id !== Auth::id()) abort(403);
         $fact->update(['status' => 'validated', 'proposed_action' => null]);
-        return response()->json(['success' => true]);
+        return $this->getUpdatedDataResponse(Auth::user(), session('profile_builder_session'), "Fait validé.");
     }
 
     public function acceptProposal(\App\Models\UserFact $fact)
@@ -345,8 +415,8 @@ class ProfileChatController extends Controller
         } elseif ($fact->proposed_action === 'delete') {
             $fact->delete();
         }
-
-        return response()->json(['success' => true]);
+        
+        return $this->getUpdatedDataResponse(Auth::user(), session('profile_builder_session'), "Suggestion acceptée.");
     }
 
     public function rejectProposal(\App\Models\UserFact $fact)
@@ -362,7 +432,7 @@ class ProfileChatController extends Controller
             ]);
         }
 
-        return response()->json(['success' => true]);
+        return $this->getUpdatedDataResponse(Auth::user(), session('profile_builder_session'), "Suggestion rejetée.");
     }
 
     public function storeItem(Request $request, $type)
@@ -470,7 +540,7 @@ class ProfileChatController extends Controller
     {
         if ($fact->user_id !== Auth::id()) abort(403);
         $fact->delete();
-        return response()->json(['success' => true]);
+        return $this->getUpdatedDataResponse(Auth::user(), session('profile_builder_session'), "Fait supprimé.");
     }
 
     public function acceptExperience($id)
@@ -516,7 +586,7 @@ class ProfileChatController extends Controller
             ]);
         }
         
-        return response()->json(['success' => true]);
+        return $this->getUpdatedDataResponse($user, session('profile_builder_session'), "Élément validé.");
     }
 
     public function rejectItem($type, $id)

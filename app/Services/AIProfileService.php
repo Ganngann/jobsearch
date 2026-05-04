@@ -26,10 +26,6 @@ class AIProfileService
         $schema = [
             'type' => 'object',
             'properties' => [
-                'reply' => [
-                    'type' => 'string',
-                    'description' => 'La question directe ou remarque courte (Max 20 mots).'
-                ],
                 'facts' => [
                     'type' => 'array',
                     'items' => [
@@ -171,7 +167,11 @@ class AIProfileService
                             ]
                         ]
                     ]
-                ]
+                ],
+                'reply' => [
+                    'type' => 'string',
+                    'description' => 'On change de sujet et on parle d\'autre chose.'
+                ],
             ],
             'required' => ['reply']
         ];
@@ -210,7 +210,7 @@ class AIProfileService
         $factCount = $user->facts()->count();
         $consolidationInstruction = "";
         
-        if ($factCount > 20) {
+        if ($factCount > 22) {
             $consolidationInstruction = "\n⚠️ MODE RÉDACTEUR EN CHEF : ALERTE SATURATION ({$factCount} faits).
             1. INTERDICTION FORMELLE d'écraser un fait par un sujet différent via 'update'.
             2. Pour chaque nouvelle info, tu DOIS obligatoirement LIBÉRER de la place : identifie deux faits similaires, FUSIONNE-LES en envoyant une action 'update' (le texte combiné) et une action 'delete'.
@@ -231,7 +231,36 @@ class AIProfileService
             - Sois extrêmement méticuleux. Ne laisse rien de côté.\n";
         }
 
+        // Bilan de progression pour le Coach
+        $catCounts = $user->facts()->selectRaw('category, count(*) as count')->groupBy('category')->pluck('count', 'category')->toArray();
+        $missingCategories = [];
+        foreach(['VALEURS', 'OBJECTIFS', 'SOFT_SKILLS', 'PREFERENCES'] as $cat) {
+            if(($catCounts[$cat] ?? 0) < 5) $missingCategories[] = str_replace('_', ' ', $cat);
+        }
+        $expCount = $user->experiences()->count();
+        $eduCount = $user->educations()->count();
+        $journeyCount = $expCount + $eduCount;
+        $priorityCat = !empty($missingCategories) ? $missingCategories[0] : null;
+        
+        $statusReport = "\n📊 BILAN DE TON PROFIL (Score actuel : " . round($user->facts()->count() / 20 * 100) . "%) :
+        - Récit Narratif : " . $user->facts()->count() . "/20 faits.
+        - Parcours Pro : " . $journeyCount . " éléments. " . ($journeyCount < 3 ? "⚠️ Besoin de plus de détails sur ton parcours." : "✅ Parcours solide.") . "\n";
+
+        if ($priorityCat) {
+            $currentInCat = $catCounts[str_replace(' ', '_', $priorityCat)] ?? 0;
+            $statusReport .= "🎯 OBJECTIF IMMÉDIAT : Creuser la section '" . $priorityCat . "' (on en a " . $currentInCat . "/5). C'est là que tu peux gagner le plus de points de richesse !\n";
+        } else {
+            $statusReport .= "✨ OBJECTIF : Ton profil est déjà très riche. Cherche maintenant la petite bête, les anecdotes insolites ou les tournants de vie inattendus.\n";
+        }
+
+        if ($user->profileMessages()->where('session_id', session('profile_builder_session'))->count() <= 1) {
+            $statusReport .= "\n👉 INSTRUCTION DÉBUT DE SESSION : 
+            Salue l'utilisateur et annonce-lui directement cet 'OBJECTIF IMMÉDIAT' pour lancer la discussion.\n";
+        }
+
         return <<<EOT
+
+
 PROFIL ACTUEL : 
 {$context}
 
@@ -246,16 +275,17 @@ RÈGLES CRUCIALES POUR LES ACTIONS (JSON) :
 {$consolidationInstruction}
 RÈGLES D'INTERVIEW (Ton âme) :
 1. PRIORITÉ ABSOLUE : Si une expérience ou une formation affiche `[DESCRIPTION MANQUANTE]`, ta mission PRIORITAIRE est de poser une question pour obtenir des détails sur les missions et réalisations de ce poste.
-2. DYNAMISME : Une fois les descriptions de base complétées, change de sujet pour explorer un "trou" ou une autre facette du profil.
+2. DYNAMISME & COHÉRENCE : Change de sujet pour explorer un "trou". Si tu extrais une info dans cette réponse (JSON), ta question ('reply') NE DOIT PAS porter sur ce sujet. Tu viens de l'apprendre, passe à la suite !
 3. Cherche l'humain, le "pourquoi", les tournants de vie et les anecdotes.
 4. Pose une seule question à la fois, percutante et courte (Max 20 mots).
-5. Identifie les "vides" (trous chronologiques, sections non abordées, descriptions incomplètes, etc) et tire le fil du récit.
+5. Identifie les "vides" (trous chronologiques, sections non abordées, descriptions incomplètes, etc) et tire le fil du récit. Ne pose jamais de question sur ce qui est déjà dans le PROFIL ACTUEL.
 
 RÈGLES D'ARCHIVAGE (Ta rigueur) :
 1. CONSOLIDATION : Si une info renforce ou nuance un fait déjà présent, utilise `update` sur l'ID existant au lieu de `add`.
 2. PAS DE DOUBLONS : Un fait = Une idée unique.
 
-Queles infos pourraient manquer pour un recruteur?
+Queles infos pourraient manquer pour un recruteur? concnentre toi sur les trouss dans la biographie. pose des questions sur les choses que tu ne sais pas!
+{$statusReport}
 
 EOT;
     }
