@@ -48,6 +48,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/profile/magic-fill', [ProfileController::class, 'magicFill'])->name('profile.magic-fill');
     Route::post('/profile/analyze', [ProfileController::class, 'analyze'])->name('profile.analyze');
     Route::post('/profile/upload-resume', [ProfileController::class, 'uploadResume'])->name('profile.upload-resume');
+    Route::get('/profile/skills', [\App\Http\Controllers\ProfileSkillController::class, 'index'])->name('profile.skills.index');
+    Route::post('/profile/skills/suggest', [\App\Http\Controllers\ProfileSkillController::class, 'suggest'])->name('profile.skills.suggest');
+    Route::post('/profile/skills/{skill}/status', [\App\Http\Controllers\ProfileSkillController::class, 'updateStatus'])->name('profile.skills.status');
+
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // AI Profile Builder

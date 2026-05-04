@@ -99,12 +99,17 @@ class MatchingService
             }
         }
 
-        // 3. Veto : Compétences Proscrites
-        $blacklistedSkillIds = $user->blacklistedSkills()->pluck('skills.id')->toArray();
-        $requiredSkills = $jobOffer->skills()->wherePivot('is_required', true)->get();
-        foreach ($requiredSkills as $skill) {
-            if (in_array($skill->id, $blacklistedSkillIds)) {
-                $vetoPenalty += 50; // Pénalité pour compétence proscrite
+        // 3. Veto : Compétences Refusées (Handicap)
+        $refusedSkillIds = DB::table('user_skill')
+            ->where('user_id', $user->id)
+            ->where('status', 'refused')
+            ->pluck('skill_id')
+            ->toArray();
+            
+        $allJobSkills = $jobOffer->skills;
+        foreach ($allJobSkills as $skill) {
+            if (in_array($skill->id, $refusedSkillIds)) {
+                $vetoPenalty += 5; // -5 points par compétence refusée présente dans l'offre
             }
         }
 

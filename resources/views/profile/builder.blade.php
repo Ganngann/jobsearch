@@ -146,6 +146,13 @@
                         </div>
                     </template>
                 </div>
+
+                <div class="p-3 border-t border-gray-100">
+                    <a href="{{ route('profile.skills.index') }}" class="flex items-center justify-center gap-2 w-full py-3 bg-indigo-600 text-white rounded-xl font-bold text-[11px] shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a2 2 0 00-1.96 1.414l-.703 2.108a2 2 0 01-.736.951l-1.918 1.279a2 2 0 01-1.108.343H11a2 2 0 01-2-2v-1a2 2 0 00-2-2H6a2 2 0 01-2-2v-.5a2 2 0 01.5-.5H5a2 2 0 002-2V8a2 2 0 012-2h.5a2 2 0 01.5.5V7a2 2 0 002 2h1a2 2 0 012 2v1.5a2 2 0 01.5.5H19a2 2 0 012 2v.5a2 2 0 01-.5.5z"/></svg>
+                        Trier mes talents
+                    </a>
+                </div>
             </aside>
 
             <!-- 2. CENTER: CHAT FLOW (35%) -->
@@ -233,10 +240,19 @@
                         <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Aperçu du CV</span>
                         <div class="h-4 w-px bg-gray-200"></div>
                         <div class="flex items-center gap-2 group relative">
+                            @php
+                                $factsCount = Auth::user()->facts()->count();
+                                $journeyCount = Auth::user()->experiences()->count() + Auth::user()->educations()->count();
+                                
+                                $narrativeScore = min(70, ($factsCount / 20) * 70);
+                                $journeyScore = min(30, ($journeyCount / 3) * 30);
+                                
+                                $displayProgress = round($narrativeScore + $journeyScore);
+                            @endphp
                             <div class="w-24 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                                <div class="bg-indigo-600 h-full transition-all duration-1000" style="width: {{ $stats['depth_percentage'] }}%"></div>
+                                <div class="bg-indigo-600 h-full transition-all duration-1000" style="width: {{ $displayProgress }}%"></div>
                             </div>
-                            <span class="text-[10px] font-black text-indigo-600">{{ $stats['depth_percentage'] }}%</span>
+                            <span class="text-[10px] font-black text-indigo-600">{{ $displayProgress }}%</span>
                             
                             <!-- Info Bubble -->
                             <div class="cursor-help text-gray-300 hover:text-indigo-400 transition-colors">
@@ -273,29 +289,55 @@
                                         <div class="pt-2 border-t border-gray-50">
                                             <div class="flex items-center justify-between mb-1">
                                                 <span class="text-[10px] font-bold text-gray-500 uppercase">Parcours Pro (30%)</span>
-                                                <span class="text-[10px] font-black" :class="stats.journey.current >= stats.journey.target ? 'text-emerald-500' : 'text-indigo-600'" x-text="stats.journey.current + '/' + stats.journey.target"></span>
+                                                <span class="text-[10px] font-black" :class="stats.journey.current >= stats.journey.target ? 'text-emerald-500' : 'text-indigo-600'" x-text="Math.min(stats.journey.target, stats.journey.current) + '/' + stats.journey.target"></span>
                                             </div>
-                                            <p class="text-[9px] text-gray-400 italic">Expériences et diplômes validés.</p>
                                         </div>
                                     </div>
 
-                                    <div class="pt-3 border-t border-gray-50">
-                                        <template x-if="stats.depth_percentage < 80">
-                                            <p class="text-[10px] text-amber-600 flex items-start gap-2 bg-amber-50 p-2 rounded-xl">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                                </svg>
-                                                Continue la discussion pour compléter les sections en bleu. Objectif : 80%+.
-                                            </p>
-                                        </template>
-                                        <template x-if="stats.depth_percentage >= 80">
-                                            <p class="text-[10px] text-emerald-600 flex items-start gap-2 bg-emerald-50 p-2 rounded-xl font-bold">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                </svg>
-                                                Ton profil est prêt ! Le matching sera très précis.
-                                            </p>
-                                        </template>
+                                    <div class="pt-3 border-t border-gray-50 text-[10px] text-gray-500 font-medium">
+                                        L'IA analyse vos réponses pour extraire ces faits. Un score de 80%+ est recommandé.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="h-4 w-px bg-gray-200 mx-2"></div>
+
+                        <!-- COMPÉTENCES PROGRESS -->
+                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Compétences</span>
+                        <div class="h-4 w-px bg-gray-200 mx-2"></div>
+                        <div class="flex items-center gap-2 group relative">
+                            @php
+                                $skillsCount = Auth::user()->skills()->count();
+                                $skillsProgress = min(100, round(($skillsCount / 50) * 100));
+                            @endphp
+                            <div class="w-24 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                <div class="bg-violet-500 h-full transition-all duration-1000" style="width: {{ $skillsProgress }}%"></div>
+                            </div>
+                            <span class="text-[10px] font-black text-violet-500">{{ $skillsProgress }}%</span>
+                            
+                            <!-- Info Bubble -->
+                            <div class="cursor-help text-gray-300 hover:text-violet-400 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+
+                            <!-- Tooltip Content -->
+                            <div class="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-72 bg-white border border-gray-100 rounded-2xl shadow-2xl p-5 z-[100] invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all transform translate-y-1 group-hover:translate-y-0">
+                                <!-- Petit triangle (arrow) -->
+                                <div class="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-l border-t border-gray-100 rotate-45"></div>
+                                
+                                <div class="relative space-y-4">
+                                    <h4 class="text-[10px] font-black text-violet-600 uppercase tracking-widest">Checklist des Compétences</h4>
+                                    <div class="space-y-3">
+                                        <div class="flex items-center justify-between text-[10px]">
+                                            <span class="text-gray-400 font-medium text-left">Compétences identifiées</span>
+                                            <span class="font-black text-violet-600">{{ $skillsCount }} / 50</span>
+                                        </div>
+                                    </div>
+                                    <div class="pt-3 border-t border-gray-50 text-[9px] text-gray-400 italic text-center">
+                                        Rendez-vous dans l'Atelier pour valider ou écarter les suggestions de l'IA.
                                     </div>
                                 </div>
                             </div>

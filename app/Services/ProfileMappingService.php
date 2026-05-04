@@ -124,15 +124,84 @@ class ProfileMappingService
             if (!empty($allSkillIds)) {
                 $uniqueSkillIds = array_unique($allSkillIds);
                 foreach ($uniqueSkillIds as $skillId) {
-                    // On utilise syncWithoutDetaching pour ne pas écraser les compétences existantes 
-                    // et on met un niveau par défaut 'intermediate'
+                    // On les ajoute en 'neutral' par défaut pour qu'elles apparaissent dans le flux de validation
+                    // si elles ne sont pas déjà présentes.
                     $user->skills()->syncWithoutDetaching([
-                        $skillId => ['level' => 'intermediate']
+                        $skillId => [
+                            'level' => 'intermediate',
+                            'status' => 'neutral' // Par défaut on les met en neutre pour validation
+                        ]
                     ]);
                 }
             }
         }
 
         return $linksCreated;
+    }
+
+    /**
+     * Suggère 20 compétences pertinentes basées sur le récit et la popularité sur le marché.
+     */
+    public function suggestSkills(User $user, int $count = 20): array
+    {
+        // 1. On récupère les compétences déjà connues (actives, neutres ou refusées)
+        $knownSkillIds = DB::table('user_skill')
+            ->where('user_id', $user->id)
+            ->pluck('skill_id')
+            ->toArray();
+
+        // 2. On récupère le contexte narratif
+        $facts = $user->facts()->pluck('content')->implode("\n");
+
+        // 3. On demande à l'IA d'extraire des concepts de compétences basés sur le récit
+        $prompt = "
+        Tu es un expert en orientation. Analyse ce récit de vie et extrais 30 concepts de compétences (hard ou soft) qui y sont suggérés.
+        
+        RÉCIT :
+        {$facts}
+        
+        Réponds uniquement en JSON : { \"concepts\": [\"Gestion de projet\", \"Négociation\", ...] }
+        ";
+
+        $aiResponse = $this->gemini->withConfigModel('gemini-2.5-flash-lite')->generateJson($prompt);
+        $concepts = $aiResponse['concepts'] ?? [];
+
+        if (empty($concepts)) return [];
+
+        // 4. On cherche ces concepts dans notre base, en privilégiant la popularité (fréquence dans les offres)
+        $suggestedSkills = Skill::query()
+            ->whereNotIn('id', $knownSkillIds)
+            ->where(function($q) use ($concepts) {
+                foreach (array_slice($concepts, 0, 15) as $c) { // On prend les 15 premiers concepts IA
+                    $q->orWhere('label', 'LIKE', '%' . $c . '%');
+                }
+            })
+            ->withCount('jobOffers') // Calcul de la popularité
+            ->orderBy('job_offers_count', 'desc')
+            ->limit($count)
+            ->get();
+
+        // Si on n'en a pas assez, on complète par des compétences transversales populaires
+        if ($suggestedSkills->count() < $count) {
+            $extraCount = $count - $suggestedSkills->count();
+            $extra = Skill::query()
+                ->whereNotIn('id', $knownSkillIds)
+                ->whereNotIn('id', $suggestedSkills->pluck('id'))
+                ->withCount('jobOffers')
+                ->orderBy('job_offers_count', 'desc')
+                ->limit($extraCount)
+                ->get();
+            
+            $suggestedSkills = $suggestedSkills->concat($extra);
+        }
+
+        return $suggestedSkills->map(function($s) {
+            return [
+                'id' => $s->id,
+                'label' => $s->label,
+                'popularity' => $s->job_offers_count,
+                'type' => $s->type
+            ];
+        })->toArray();
     }
 }
