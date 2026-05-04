@@ -226,11 +226,11 @@
 
                                             <div class="space-y-2">
                                                 <div class="flex justify-between text-[10px] font-black uppercase tracking-tighter">
-                                                    <span class="text-slate-400">Très Éloigné (100km)</span>
-                                                    <span class="text-slate-300">+8 pts</span>
+                                                    <span class="text-slate-400" x-text="'Très Éloigné (' + (radius*5) + 'km)'"></span>
+                                                    <span class="text-slate-300" x-text="Math.round(30 * (radius / (radius + ((radius*5) / 2)))) + ' pts'"></span>
                                                 </div>
                                                 <div class="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                                    <div class="h-full bg-slate-200 w-1/4"></div>
+                                                    <div class="h-full bg-slate-200" :style="`width: ${(radius / (radius + ((radius*5) / 2))) * 100}%`"></div >
                                                 </div>
                                             </div>
                                         </div>

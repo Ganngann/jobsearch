@@ -56,6 +56,11 @@
         return Math.min(100, Math.round((this.romeCount / 3) * 100));
     },
     mobilityProgress: {{ $mobilityProgress }},
+    hasSeenReadyBubble: localStorage.getItem('has_seen_ready_bubble') === 'true',
+    dismissBubble() {
+        this.hasSeenReadyBubble = true;
+        localStorage.setItem('has_seen_ready_bubble', 'true');
+    }
 }"
 @skill-added.window="skillsCount++"
 @skill-removed.window="skillsCount--"
@@ -203,7 +208,7 @@
             <span class="text-[10px] font-black text-rose-500 w-8" x-text="romeProgress + '%'"></span>
 
             <!-- 100% ROME SUCCESS BUBBLE -->
-            <template x-if="romeProgress >= 100 && mobilityProgress < 100">
+            <template x-if="romeProgress >= 100 && mobilityProgress < 100 && '{{ Route::currentRouteName() }}' !== 'profile.mobility.index'">
                 <div x-transition:enter="transition ease-out duration-500"
                      x-transition:enter-start="opacity-0 translate-y-4 scale-90"
                      x-transition:enter-end="opacity-100 translate-y-0 scale-100"
@@ -258,12 +263,14 @@
             <span class="text-[10px] font-black text-blue-500 w-8" x-text="mobilityProgress + '%'"></span>
 
             <!-- 100% MOBILITY SUCCESS BUBBLE -->
-            <template x-if="mobilityProgress >= 100 && '{{ Route::currentRouteName() }}' !== 'dashboard'">
+            <template x-if="mobilityProgress >= 100 && !hasSeenReadyBubble && '{{ Route::currentRouteName() }}' !== 'dashboard'">
                 <div x-transition:enter="transition ease-out duration-500"
                      x-transition:enter-start="opacity-0 translate-y-4 scale-90"
                      x-transition:enter-end="opacity-100 translate-y-0 scale-100"
                      class="absolute -bottom-12 left-0 z-[110] whitespace-nowrap">
-                    <div class="bg-blue-600 text-white text-[10px] font-black px-3 py-1.5 rounded-full shadow-xl shadow-blue-200 flex items-center gap-2 border border-blue-500">
+                    <a href="{{ route('dashboard') }}" 
+                       @click="dismissBubble()"
+                       class="bg-blue-600 text-white text-[10px] font-black px-3 py-1.5 rounded-full shadow-xl shadow-blue-200 flex items-center gap-2 border border-blue-500 hover:bg-blue-700 transition-colors">
                         <span class="flex h-2 w-2">
                             <span class="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-white opacity-75"></span>
                             <span class="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
@@ -272,7 +279,7 @@
                         <span class="bg-white text-blue-600 px-2 py-0.5 rounded-md">
                             Voir mes offres matchées →
                         </span>
-                    </div>
+                    </a>
                     <div class="absolute -top-1 left-6 w-2 h-2 bg-blue-600 rotate-45 border-l border-t border-blue-500"></div>
                 </div>
             </template>

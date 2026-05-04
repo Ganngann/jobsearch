@@ -22,10 +22,10 @@ class MatchingService
     /**
      * Calcule le score de correspondance complet (Pre-score + IA si nécessaire).
      */
-    public function match(User $user, JobOffer $jobOffer, bool $forceAi = false, bool $triggerAi = true): UserMatch
+    public function match(User $user, JobOffer $jobOffer, bool $forceAi = false, bool $triggerAi = true, array $context = null): UserMatch
     {
         // 1. Layer 1 — Pré-score (Statique)
-        $preMatchData = $this->calculatePreScore($user, $jobOffer);
+        $preMatchData = $this->calculatePreScore($user, $jobOffer, $context);
         $preScore = $preMatchData['score'];
 
         $match = UserMatch::updateOrCreate(
@@ -59,12 +59,12 @@ class MatchingService
      * Calcule un score rapide basé sur les compétences, langues et permis.
      * Respecte la stratégie de "Circuit Court" et les "Vetoes".
      */
-    public function calculatePreScore(User $user, JobOffer $jobOffer): array
+    public function calculatePreScore(User $user, JobOffer $jobOffer, array $context = null): array
     {
         $vetoPenalty = 0;
 
         // 1. Permis Obligatoires
-        $userPermitIds = $user->permits()->pluck('permits.id')->toArray();
+        $userPermitIds = $context['permit_ids'] ?? $user->permits()->pluck('permits.id')->toArray();
         $requiredPermits = $jobOffer->permits()->wherePivot('is_required', true)->get();
         foreach ($requiredPermits as $permit) {
             if (!in_array($permit->id, $userPermitIds)) {
@@ -73,7 +73,7 @@ class MatchingService
         }
 
         // 2. Veto : Compétences Refusées (Handicap)
-        $refusedSkillIds = DB::table('user_skill')
+        $refusedSkillIds = $context['refused_skill_ids'] ?? DB::table('user_skill')
             ->where('user_id', $user->id)
             ->where('status', 'refused')
             ->pluck('skill_id')
@@ -89,14 +89,17 @@ class MatchingService
         $score = 0;
 
         // 3. Score Métier (Rome & Détail) (20 pts max / -20 handicap)
-        $userMetiers = $user->preferredMetiers;
-        $userFamilies = $user->preferredReferentielMetiers;
+        $userMetiers = $context['preferred_metiers'] ?? $user->preferredMetiers;
+        $userFamilies = $context['preferred_families'] ?? $user->preferredReferentielMetiers;
         
         $jobMetierId = $jobOffer->metier_id;
         $jobRomeCode = $jobOffer->metier ? $jobOffer->metier->code : null;
 
         $isFavorite = false;
         $isRefused = false;
+
+        // B. On prépare aussi la liste des IDs blacklistés pour le flag final
+        $blacklistedMetierIds = $userMetiers->where('pivot.status', 'refused')->pluck('id')->toArray();
 
         // A. Priorité au Détail (Métier spécifique)
         $specific = $userMetiers->firstWhere('id', $jobMetierId);
@@ -126,7 +129,7 @@ class MatchingService
         $allJobSkills = $jobOffer->skills;
         $missingSkills = collect();
         if ($allJobSkills->count() > 0) {
-            $userSkillIds = $user->skills()->pluck('skills.id')->toArray();
+            $userSkillIds = $context['skill_ids'] ?? $user->skills()->pluck('skills.id')->toArray();
             $matchedSkills = $allJobSkills->whereIn('id', $userSkillIds);
             
             $baseSkillScore = ($matchedSkills->count() / $allJobSkills->count()) * 40;
@@ -145,7 +148,7 @@ class MatchingService
         }
 
         // 5. Langues (5%)
-        $userLangIds = $user->languages()->pluck('languages.id')->toArray();
+        $userLangIds = $context['language_ids'] ?? $user->languages()->pluck('languages.id')->toArray();
         $requiredLangs = $jobOffer->languages;
         if ($requiredLangs->count() > 0) {
             $matchedLangs = $requiredLangs->whereIn('id', $userLangIds)->count();
@@ -165,11 +168,11 @@ class MatchingService
 
         if ($user->zip_code) {
             // Coordonnées utilisateur
-            $userZip = ZipCode::where('zip_code', $user->zip_code)->first();
+            $userZip = $context['user_zip'] ?? ZipCode::where('zip_code', $user->zip_code)->first();
             
             if ($userZip) {
                 // Tentative de trouver les coordonnées de l'offre
-                $jobCoords = $this->getJobCoords($jobOffer->location);
+                $jobCoords = $this->getJobCoords($jobOffer);
                 
                 if ($jobCoords) {
                     $distance = $this->calculateDistance(
@@ -351,8 +354,11 @@ class MatchingService
                 $q->whereNull('expires_at')
                   ->orWhere('expires_at', '>=', now());
             })
-            ->chunkById(25, function($offers) use ($user) {
-                \App\Jobs\MatchChunkJob::dispatch($user, $offers->pluck('id')->toArray());
+            ->chunkById(500, function($offers, $index) use ($user) {
+                // On espace les calculs de 2 secondes par lot
+                // Lot 1 : 0s, Lot 2 : 2s, Lot 3 : 4s...
+                \App\Jobs\MatchChunkJob::dispatch($user, $offers->pluck('id')->toArray())
+                    ->delay(now()->addSeconds(($index - 1) * 2));
             });
     }
 
@@ -388,32 +394,50 @@ class MatchingService
 
     /**
      * Tente de trouver les coordonnées d'une offre à partir de son libellé location.
+     * Utilise le cache sur le modèle JobOffer pour éviter les calculs redondants.
      */
-    private function getJobCoords(?string $location): ?array
+    private function getJobCoords(JobOffer $jobOffer): ?array
     {
+        // Si déjà en cache sur l'offre, on l'utilise direct
+        if ($jobOffer->latitude && $jobOffer->longitude) {
+            return ['lat' => $jobOffer->latitude, 'lon' => $jobOffer->longitude];
+        }
+
+        $location = $jobOffer->location;
         if (!$location) return null;
+
+        $coords = null;
 
         // 1. Cherche un code postal dans le texte (4 chiffres pour la Belgique)
         if (preg_match('/(\d{4})/', $location, $matches)) {
             $zip = ZipCode::where('zip_code', $matches[1])->first();
-            if ($zip) return ['lat' => $zip->latitude, 'lon' => $zip->longitude];
+            if ($zip) $coords = ['lat' => $zip->latitude, 'lon' => $zip->longitude];
         }
 
-        // 2. Nettoyage des préfixes administratifs courants
-        $cleanLocation = trim(str_ireplace(['Arrondissement de', 'Province de', 'Région de'], '', $location));
-        
-        // 3. Cherche par nom de ville exact (insensible à la casse via le driver sqlite/mysql par défaut)
-        $zip = ZipCode::where('city', $cleanLocation)->first();
-        if ($zip) return ['lat' => $zip->latitude, 'lon' => $zip->longitude];
+        if (!$coords) {
+            // 2. Nettoyage des préfixes administratifs courants
+            $cleanLocation = trim(str_ireplace(['Arrondissement de', 'Province de', 'Région de'], '', $location));
+            
+            // 3. Cherche par nom de ville exact
+            $zip = ZipCode::where('city', $cleanLocation)->first();
+            if ($zip) $coords = ['lat' => $zip->latitude, 'lon' => $zip->longitude];
 
-        // 4. Si toujours rien, on essaie de voir si un nom de ville connu est CONTENU dans le texte
-        // Pour éviter de ramer, on ne fait ça que pour les villes de + de 4 lettres
-        if (strlen($cleanLocation) > 3) {
-            $zip = ZipCode::whereRaw('? LIKE "%" || city || "%"', [$cleanLocation])->first();
-            if ($zip) return ['lat' => $zip->latitude, 'lon' => $zip->longitude];
+            // 4. Recherche LIKE (plus lent)
+            if (!$coords && strlen($cleanLocation) > 3) {
+                $zip = ZipCode::whereRaw('? LIKE "%" || city || "%"', [$cleanLocation])->first();
+                if ($zip) $coords = ['lat' => $zip->latitude, 'lon' => $zip->longitude];
+            }
         }
 
-        return null;
+        // Si on a trouvé, on met à jour l'offre pour la prochaine fois (Silencieusement)
+        if ($coords) {
+            $jobOffer->updateQuietly([
+                'latitude' => $coords['lat'],
+                'longitude' => $coords['lon']
+            ]);
+        }
+
+        return $coords;
     }
 
     /**
