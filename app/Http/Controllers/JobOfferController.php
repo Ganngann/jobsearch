@@ -33,6 +33,12 @@ class JobOfferController extends Controller
     public function dashboard(Request $request)
     {
         $user = Auth::user();
+
+        // Si le profil n'est pas prêt, on redirige vers l'accueil onboarding
+        if (!$user->isProfileMature()) {
+            return redirect()->route('onboarding');
+        }
+
         $query = JobOffer::query();
 
         // 1. Filtrage par Métier (Favori ou Exploration)

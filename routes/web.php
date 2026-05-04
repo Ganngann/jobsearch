@@ -15,6 +15,10 @@ Route::get('/', function () {
 
 Route::post('/feedback', [\App\Http\Controllers\FeedbackController::class, 'store'])->name('feedback.store');
 
+Route::get('/welcome', function () {
+    return view('onboarding');
+})->middleware(['auth'])->name('onboarding');
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [JobOfferController::class, 'dashboard'])->name('dashboard');
     Route::get('/search', [ForemSearchController::class, 'index'])->name('forem.search');
