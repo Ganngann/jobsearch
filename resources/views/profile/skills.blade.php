@@ -2,19 +2,56 @@
     <div class="py-12 bg-slate-50" x-data="skillApp()">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             
-            <!-- Header & Progress -->
+            <!-- Header -->
             <div class="mb-12">
-                    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
-                        <div>
-                            <h1 class="text-4xl font-black text-slate-900 mb-2">L'Atelier des Compétences</h1>
-                            <p class="text-lg text-slate-500 font-medium">Triez et qualifiez les compétences extraites de votre récit.</p>
+                <h1 class="text-4xl font-black text-slate-900 mb-2">L'Atelier des Compétences</h1>
+                <p class="text-lg text-slate-500 font-medium mb-8">Triez et qualifiez les compétences extraites de votre récit.</p>
+
+                <!-- Onboarding / Guide Section -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-indigo-600 rounded-3xl p-6 text-white shadow-xl shadow-indigo-100 flex flex-col justify-between overflow-hidden relative">
+                        <div class="relative z-10">
+                            <h3 class="text-lg font-black mb-2 flex items-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                Impact sur le Score
+                            </h3>
+                            <p class="text-indigo-100 text-[11px] leading-relaxed font-medium">
+                                Vos choix alimentent notre moteur de matching. Plus vous validez de compétences, plus vos scores de compatibilité avec les offres du Forem seront précis.
+                            </p>
                         </div>
+                        <div class="absolute -bottom-4 -right-4 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
                     </div>
 
-                    <!-- NEW PROGRESS RIBBON -->
-                    <div class="bg-white px-6 py-4 rounded-3xl shadow-sm border border-slate-100 flex justify-center mb-8">
-                        <x-profile-status-bar />
+                    <div class="md:col-span-2 bg-white rounded-3xl p-6 border border-slate-100 shadow-sm grid grid-cols-1 sm:grid-cols-3 gap-6">
+                        <div class="space-y-2">
+                            <div class="flex items-center gap-2 text-slate-900 font-bold text-xs uppercase tracking-wider">
+                                <div class="w-6 h-6 rounded-lg bg-slate-900 flex items-center justify-center text-[10px] text-white font-black">1</div>
+                                Maîtrisé
+                            </div>
+                            <p class="text-[11px] text-slate-400 leading-tight">
+                                <strong class="text-indigo-600 font-black">BONUS +</strong> : Accorde un bonus important si une offre demande cette compétence.
+                            </p>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex items-center gap-2 text-slate-900 font-bold text-xs uppercase tracking-wider">
+                                <div class="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center text-[10px] text-slate-400 font-black">2</div>
+                                Ignorer
+                            </div>
+                            <p class="text-[11px] text-slate-400 leading-tight">
+                                <strong class="text-slate-600 font-black">NEUTRE</strong> : Pas d'impact. Utile pour les compétences "bonus" non stratégiques.
+                            </p>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex items-center gap-2 text-slate-900 font-bold text-xs uppercase tracking-wider">
+                                <div class="w-6 h-6 rounded-lg bg-rose-50 flex items-center justify-center text-[10px] text-rose-500 font-black">3</div>
+                                Refuser
+                            </div>
+                            <p class="text-[11px] text-slate-400 leading-tight">
+                                <strong class="text-rose-500 font-black">HANDICAP -</strong> : Applique une pénalité si l'offre exige absolument cette compétence.
+                            </p>
+                        </div>
                     </div>
+                </div>
             </div>
 
             <!-- Suggestion Engine -->
@@ -40,29 +77,33 @@
                         <div 
                             x-show="!s.hidden"
                             x-transition:enter="transition ease-out duration-300"
-                            x-transition:enter-start="opacity-0 scale-90"
+                            x-transition:enter-start="opacity-0 scale-95"
                             x-transition:leave="transition ease-in duration-300"
-                            x-transition:leave-end="opacity-0 translate-y-12"
-                            class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex flex-col justify-between group hover:shadow-xl hover:border-indigo-100 transition-all duration-300"
+                            x-transition:leave-end="opacity-0 translate-y-8"
+                            class="group relative bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-2xl hover:shadow-indigo-100 hover:border-indigo-200 transition-all duration-500 overflow-hidden"
                         >
-                            <div class="mb-4">
-                                <div class="flex items-start justify-between gap-2 mb-2">
-                                    <span class="text-[10px] font-black uppercase tracking-tighter px-2 py-0.5 rounded bg-slate-50 text-slate-400" x-text="s.type || 'skill'"></span>
-                                    <div class="flex -space-x-1">
-                                        <template x-for="i in Math.min(3, Math.ceil(s.popularity / 50))">
-                                            <div class="w-1.5 h-1.5 rounded-full bg-indigo-400"></div>
-                                        </template>
-                                    </div>
+                            <!-- Glow effect on hover -->
+                            <div class="absolute -top-24 -right-24 w-48 h-48 bg-indigo-50 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+
+                            <div class="relative mb-6">
+                                <div class="flex items-center justify-between mb-4">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-500 transition-colors" x-text="s.type || 'skill'"></span>
+                                    
+                                    <div class="text-[10px] font-bold text-slate-300" x-text="s.popularity + ' offres'"></div>
                                 </div>
-                                <h3 class="text-lg font-bold text-slate-800 leading-tight group-hover:text-indigo-600 transition-colors" x-text="s.label"></h3>
+                                
+                                <h3 class="text-xl font-bold text-slate-800 leading-tight mb-2 group-hover:text-indigo-600 transition-colors" x-text="s.label"></h3>
+                                <p class="text-xs text-slate-400 font-medium italic leading-relaxed" x-text="s.reason"></p>
                             </div>
 
-                            <div class="flex items-center gap-2">
-                                <button @click="setStatus(s, 'active')" class="flex-1 py-2 bg-indigo-50 text-indigo-600 rounded-xl font-bold text-sm hover:bg-indigo-600 hover:text-white transition-all">J'ai</button>
-                                <button @click="setStatus(s, 'neutral')" class="p-2 bg-slate-50 text-slate-400 rounded-xl hover:bg-slate-200 hover:text-slate-600 transition-all">
+                            <div class="relative flex items-center gap-2">
+                                <button @click="setStatus(s, 'active')" class="flex-[2] py-2.5 bg-slate-900 text-white rounded-xl font-bold text-xs hover:bg-indigo-600 transition-all shadow-md shadow-slate-100">
+                                    Maîtrisé
+                                </button>
+                                <button @click="setStatus(s, 'neutral')" class="flex-1 py-2.5 bg-slate-50 text-slate-400 rounded-xl hover:bg-slate-200 hover:text-slate-600 transition-all flex items-center justify-center" title="Plus tard">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"/></svg>
                                 </button>
-                                <button @click="setStatus(s, 'refused')" class="p-2 bg-rose-50 text-rose-400 rounded-xl hover:bg-rose-600 hover:text-white transition-all">
+                                <button @click="setStatus(s, 'refused')" class="flex-1 py-2.5 bg-rose-50 text-rose-300 rounded-xl hover:bg-rose-600 hover:text-white transition-all flex items-center justify-center" title="Pas pertinent">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                 </button>
                             </div>
@@ -212,19 +253,33 @@
                         });
                         const data = await res.json();
                         if (data.status === 'success') {
+                            // On détermine l'ancien statut avant de filtrer
+                            const oldStatus = this.activeSkills.find(s => s.id === skill.id) ? 'active' : 
+                                            (this.neutralSkills.find(s => s.id === skill.id) ? 'neutral' : 'refused');
+
                             // On retire de toutes les listes
                             this.activeSkills = this.activeSkills.filter(s => s.id !== skill.id);
                             this.neutralSkills = this.neutralSkills.filter(s => s.id !== skill.id);
                             this.refusedSkills = this.refusedSkills.filter(s => s.id !== skill.id);
+                            
                             // On ajoute à la nouvelle
-                            this.updateLocalLists(skill, status);
+                            this.updateLocalLists(skill, status, oldStatus);
                         }
                     } catch (e) {
                         console.error(e);
                     }
                 },
 
-                updateLocalLists(skill, status) {
+                updateLocalLists(skill, status, oldStatus = null) {
+                    // Si on était en 'active' et qu'on change, on décrémente
+                    if (oldStatus === 'active' && status !== 'active') {
+                        window.dispatchEvent(new CustomEvent('skill-removed'));
+                    }
+                    // Si on devient 'active', on incrémente
+                    if (status === 'active' && oldStatus !== 'active') {
+                        window.dispatchEvent(new CustomEvent('skill-added'));
+                    }
+
                     if (status === 'active') this.activeSkills.push(skill);
                     if (status === 'neutral') this.neutralSkills.push(skill);
                     if (status === 'refused') this.refusedSkills.push(skill);

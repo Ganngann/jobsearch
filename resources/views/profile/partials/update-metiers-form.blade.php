@@ -140,7 +140,7 @@
                         this.preferredMetiers.push(metier);
                         this.results = [];
                         this.search = '';
-                        // Optionnel : Notification ou flash message
+                        window.dispatchEvent(new CustomEvent('metier-added'));
                     });
                 },
 
@@ -153,7 +153,10 @@
                         }
                     }).then(() => {
                         const index = this.preferredMetiers.findIndex(m => m.id === id);
-                        this.preferredMetiers.splice(index, 1);
+                        if (index !== -1) {
+                            this.preferredMetiers.splice(index, 1);
+                        }
+                        window.dispatchEvent(new CustomEvent('metier-removed'));
                     });
                 },
 

@@ -80,7 +80,7 @@ class JobOfferService
             }
 
             return $jobOffer;
-        });
+        }, 5);
     }
 
     /**
@@ -270,7 +270,7 @@ class JobOfferService
             }
 
             return true;
-        });
+        }, 5);
 
         // APRÈS la transaction : Déclenchement du matching pour la cohorte d'utilisateurs concernés
         if ($jobOffer->metier_id) {

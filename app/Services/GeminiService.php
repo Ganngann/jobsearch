@@ -140,6 +140,23 @@ class GeminiService
 
     public function chat(array $messages, ?string $systemInstruction = null, ?array $responseSchema = null): ?array
     {
+        return $this->executeRequest($messages, $systemInstruction, $responseSchema);
+    }
+
+    /**
+     * Méthode générique pour générer du JSON à partir d'un simple prompt.
+     */
+    public function generateJson(string $prompt, ?string $systemInstruction = null): ?array
+    {
+        $messages = [
+            ['role' => 'user', 'parts' => [['text' => $prompt]]]
+        ];
+
+        return $this->executeRequest($messages, $systemInstruction);
+    }
+
+    protected function executeRequest(array $messages, ?string $systemInstruction = null, ?array $responseSchema = null): ?array
+    {
         if (empty($this->apiKey)) {
             Log::warning('Gemini API key is missing.');
             return null;
@@ -164,12 +181,11 @@ class GeminiService
             ];
         }
 
-        // DEBUG: On log la requête pour voir ce qui est envoyé à l'IA
-        Log::debug('GEMINI REQUEST PAYLOAD:', ['model' => $this->model, 'payload' => $payload]);
+        Log::debug('GEMINI REQUEST:', ['model' => $this->model, 'payload' => $payload]);
 
         $response = Http::withoutVerifying()
             ->withHeaders(['Content-Type' => 'application/json'])
-            ->timeout(25) // Timeout de 25s pour laisser 5s à PHP de finir proprement
+            ->timeout(35)
             ->retry(3, 1000, function ($exception, $request) {
                 return $exception instanceof \Illuminate\Http\Client\ConnectionException ||
                        ($exception->response && $exception->response->status() === 503);
@@ -177,34 +193,24 @@ class GeminiService
             ->post("{$this->getUrl()}?key={$this->apiKey}", $payload);
 
         if ($response->failed()) {
-            Log::error('Gemini API request failed', ['model' => $this->model, 'error' => $response->body()]);
+            Log::error('Gemini API failed', ['model' => $this->model, 'error' => $response->body()]);
             return null;
         }
 
         $result = $response->json();
-        
-        // Log de la réponse reçue de Gemini
         Log::debug('GEMINI RESPONSE:', ['model' => $this->model, 'result' => $result]);
 
         $text = $result['candidates'][0]['content']['parts'][0]['text'] ?? null;
-
         if (!$text) return null;
 
         $decoded = json_decode($text, true);
         if (json_last_error() !== JSON_ERROR_NONE) {
-            Log::error('Gemini JSON Decode Error', ['model' => $this->model, 'error' => json_last_error_msg()]);
-            return [
-                'reply' => "Oups, ma réponse était tellement détaillée qu'elle a été coupée en plein milieu ! Pouvons-nous reprendre en traitant les points un par un ?",
-                'facts' => []
-            ];
+            Log::error('Gemini JSON Error', ['error' => json_last_error_msg()]);
+            return null;
         }
 
-        // Si l'IA a emballé la réponse dans une clé 'data' ou 'result', on la remonte
-        if (isset($decoded['data']) && is_array($decoded['data'])) {
-            $decoded = $decoded['data'];
-        } elseif (isset($decoded['result']) && is_array($decoded['result'])) {
-            $decoded = $decoded['result'];
-        }
+        if (isset($decoded['data'])) $decoded = $decoded['data'];
+        elseif (isset($decoded['result'])) $decoded = $decoded['result'];
 
         return $decoded;
     }

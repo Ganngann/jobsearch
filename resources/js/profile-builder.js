@@ -95,6 +95,11 @@ export default (initialData) => ({
             }
         } catch (error) {
             console.error('Error:', error);
+            this.messages.push({ 
+                id: Date.now(), 
+                role: 'assistant', 
+                content: "Désolé, j'ai rencontré un petit problème technique en traitant ta demande. Peux-tu réessayer dans un instant ?" 
+            });
         } finally {
             this.isTyping = false;
             this.$nextTick(() => this.$refs.messageInput.focus());
