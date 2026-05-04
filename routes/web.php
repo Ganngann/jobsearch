@@ -77,6 +77,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/profile/journey/education/{education}/validate', [\App\Http\Controllers\UserJourneyController::class, 'validateEducation'])->name('profile.journey.education.validate');
 
     Route::get('/api/metiers/search', [ProfileController::class, 'searchMetiers'])->name('api.metiers.search');
+    Route::get('/api/skills/search', [ProfileController::class, 'searchSkills'])->name('api.skills.search');
 });
 
 require __DIR__.'/auth.php';

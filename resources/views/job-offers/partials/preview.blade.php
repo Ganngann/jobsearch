@@ -68,12 +68,75 @@
             
             <div class="flex flex-col items-end gap-4">
                 <div class="flex items-center gap-4">
-                    <!-- Score Data -->
-                    <div class="text-center p-4 bg-white rounded-2xl border border-slate-100 shadow-sm min-w-[100px]">
-                        <p class="text-3xl font-black {{ $match->pre_score >= 70 ? 'text-emerald-500' : ($match->pre_score >= 40 ? 'text-amber-500' : 'text-slate-400') }}">
-                            {{ $match->pre_score }}<span class="text-xs">%</span>
-                        </p>
-                        <p class="text-[8px] font-black uppercase tracking-widest text-slate-400 mt-1">Data Match</p>
+                    <!-- Score Data avec Tooltip -->
+                    <div class="relative group cursor-help">
+                        <div class="text-center p-4 bg-white rounded-2xl border border-slate-100 shadow-sm min-w-[100px] hover:border-indigo-200 transition-all">
+                            <p class="text-3xl font-black {{ $match->pre_score >= 70 ? 'text-emerald-500' : ($match->pre_score >= 40 ? 'text-amber-500' : 'text-slate-400') }}">
+                                {{ $match->pre_score }}<span class="text-xs">%</span>
+                            </p>
+                            <p class="text-[8px] font-black uppercase tracking-widest text-slate-400 mt-1">Data Match</p>
+                        </div>
+
+                        <!-- Tooltip Detail Riche (Positionné à GAUCHE pour ne rien couvrir) -->
+                        @if($match->pre_score_details && isset($match->pre_score_details['categories']))
+                        <div class="absolute right-full top-0 mr-4 w-80 p-5 bg-slate-900 text-white rounded-2xl shadow-2xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all z-[100] transform translate-y-0">
+                            <h4 class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 pb-2 border-b border-white/10">Détail du calcul (Pondération)</h4>
+                            
+                            <div class="space-y-4">
+                                @foreach($match->pre_score_details['categories'] as $key => $cat)
+                                    <div>
+                                        <div class="flex justify-between items-center mb-1.5">
+                                            <span class="text-[10px] font-bold text-slate-300 uppercase tracking-tight">{{ $cat['label'] }}</span>
+                                            @if($cat['is_not_required'] ?? false)
+                                                <span class="text-[9px] font-black text-slate-500 uppercase italic">Non requis</span>
+                                            @else
+                                                <span class="text-[11px] font-black {{ $cat['score'] == $cat['max'] ? 'text-emerald-400' : ($cat['score'] > 0 ? 'text-amber-400' : 'text-slate-500') }}">
+                                                    {{ $cat['score'] }} / {{ $cat['max'] }}
+                                                </span>
+                                            @endif
+                                        </div>
+                                        <div class="h-1 w-full bg-white/10 rounded-full overflow-hidden">
+                                            <div class="h-full bg-indigo-500 rounded-full transition-all duration-700 shadow-[0_0_8px_rgba(99,102,241,0.5)]" style="width: {{ ($cat['score'] / $cat['max']) * 100 }}%"></div>
+                                        </div>
+                                        
+                                        <!-- Liste des éléments manquants -->
+                                        @if(!empty($cat['missing']))
+                                            <div class="mt-2 flex flex-wrap gap-1">
+                                                @foreach($cat['missing'] as $m)
+                                                    <span class="text-[8px] bg-rose-500/20 text-rose-300 px-1.5 py-0.5 rounded border border-rose-500/30 font-black tracking-tight leading-none">
+                                                        - {{ $m }}
+                                                    </span>
+                                                @endforeach
+                                            </div>
+                                        @elseif(($cat['is_missing'] ?? false))
+                                            <div class="mt-2">
+                                                <span class="text-[8px] bg-rose-500/20 text-rose-300 px-1.5 py-0.5 rounded border border-rose-500/30 font-black tracking-tight leading-none uppercase">
+                                                    Non trouvé / Incomplet
+                                                </span>
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endforeach
+                                
+                                @if(($match->pre_score_details['vetoes'] ?? 0) > 0)
+                                    <div class="pt-3 mt-3 border-t border-white/10 flex justify-between items-center bg-rose-500/10 -mx-5 px-5 py-2">
+                                        <div class="flex flex-col">
+                                            <span class="text-[10px] font-black text-rose-400 uppercase">Pénalités (Vetos)</span>
+                                            <span class="text-[8px] text-rose-300/50 italic leading-tight">Critères obligatoires manqués</span>
+                                        </div>
+                                        <span class="text-[11px] font-black text-rose-400">-{{ $match->pre_score_details['vetoes'] }} pts</span>
+                                    </div>
+                                @endif
+                            </div>
+                            <!-- Flèche vers la droite -->
+                            <div class="absolute left-full top-8 -translate-y-1/2 border-8 border-transparent border-l-slate-900"></div>
+                        </div>
+                        @else
+                        <div class="absolute right-full top-0 mr-4 w-48 p-3 bg-slate-900 text-white rounded-xl shadow-2xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all z-[100] text-center">
+                             <span class="text-[10px] font-bold italic">Recalcul des détails...</span>
+                             <div class="absolute left-full top-8 -translate-y-1/2 border-8 border-transparent border-l-slate-900"></div>
+                        </div>
+                        @endif
                     </div>
 
                     @if($match->ai_status === 'completed')
@@ -193,15 +256,41 @@
                             @php
                                 $hasSkill = $user->skills->contains($skill->id);
                             @endphp
-                            <div class="flex items-center justify-between p-3 rounded-xl border {{ $hasSkill ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-slate-50 border-slate-100 text-slate-400' }}">
+                            <div x-data="{ 
+                                    hasSkill: {{ $hasSkill ? 'true' : 'false' }},
+                                    async toggleSkill() {
+                                        const url = this.hasSkill 
+                                            ? '{{ route('profile.skills.remove', $skill) }}?current_offer_id={{ $jobOffer->id }}' 
+                                            : '{{ route('profile.skills.add', $skill) }}?current_offer_id={{ $jobOffer->id }}';
+                                        
+                                        const res = await fetch(url, {
+                                            method: 'POST',
+                                            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }
+                                        });
+                                        if (res.ok) {
+                                            this.hasSkill = !this.hasSkill;
+                                            if(window.dashboard) {
+                                                window.dashboard.refreshList();
+                                                // On force le rechargement de la prévisualisation pour voir le nouveau score
+                                                window.dashboard.selectOffer('{{ $jobOffer->forem_id }}');
+                                            }
+                                        }
+                                    }
+                                 }" 
+                                 class="flex items-center justify-between p-3 rounded-xl border transition-all duration-300"
+                                 :class="hasSkill ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-slate-50 border-slate-100 text-slate-400'">
                                 <span class="text-xs font-bold">{{ $skill->label }}</span>
-                                @if($hasSkill)
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                                @else
-                                    <span class="text-[10px] font-black uppercase">Manquant</span>
-                                @endif
+                                <button @click="toggleSkill()" class="p-1.5 rounded-lg hover:bg-white/50 transition-all flex items-center justify-center">
+                                    <template x-if="hasSkill">
+                                        <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                    </template>
+                                    <template x-if="!hasSkill">
+                                        <svg class="w-4 h-4 text-slate-300 hover:text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
+                                    </template>
+                                </button>
                             </div>
                         @endforeach
+
                     </div>
                 </div>
 

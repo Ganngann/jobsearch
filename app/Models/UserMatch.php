@@ -11,6 +11,7 @@ class UserMatch extends Model
         'user_id',
         'job_offer_id',
         'pre_score',
+        'pre_score_details',
         'ai_score',
         'final_score',
         'strengths',
@@ -23,6 +24,7 @@ class UserMatch extends Model
     ];
 
     protected $casts = [
+        'pre_score_details' => 'array',
         'strengths' => 'array',
         'weaknesses' => 'array',
         'ai_raw_response' => 'array',

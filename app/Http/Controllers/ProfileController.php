@@ -93,8 +93,8 @@ class ProfileController extends Controller
         $user = $request->user();
         $user->preferredMetiers()->sync($request->metiers ?? []);
 
-        // Démarrage à froid
-        $this->matchingService->triggerMassMatch($user);
+        // Démarrage à froid (Asynchrone)
+        \App\Jobs\RecalculateMatchesJob::dispatch($user);
 
         return Redirect::route('profile.edit')->with('status', 'metiers-updated');
     }
@@ -135,8 +135,8 @@ class ProfileController extends Controller
 
         $request->user()->skills()->sync($syncData);
 
-        // Démarrage à froid
-        $this->matchingService->triggerMassMatch($request->user());
+        // Démarrage à froid (Asynchrone)
+        \App\Jobs\RecalculateMatchesJob::dispatch($request->user());
 
         if ($request->wantsJson()) {
             return response()->json(['status' => 'success', 'message' => 'Compétences mises à jour']);
@@ -165,6 +165,9 @@ class ProfileController extends Controller
 
         $request->user()->languages()->sync($syncData);
 
+        // Recalcul (Asynchrone)
+        \App\Jobs\RecalculateMatchesJob::dispatch($request->user());
+
         if ($request->wantsJson()) {
             return response()->json(['status' => 'success', 'message' => 'Langues mises à jour']);
         }
@@ -183,6 +186,9 @@ class ProfileController extends Controller
         ]);
 
         $request->user()->permits()->sync($request->permits ?? []);
+
+        // Recalcul (Asynchrone)
+        \App\Jobs\RecalculateMatchesJob::dispatch($request->user());
 
         if ($request->wantsJson()) {
             return response()->json(['status' => 'success', 'message' => 'Permis mis à jour']);
@@ -203,8 +209,8 @@ class ProfileController extends Controller
 
         $request->user()->update($validated);
 
-        // Démarrage à froid
-        $this->matchingService->triggerMassMatch($request->user());
+        // Démarrage à froid (Asynchrone)
+        \App\Jobs\RecalculateMatchesJob::dispatch($request->user());
 
         if ($request->wantsJson()) {
             return response()->json(['status' => 'success', 'message' => 'Mobilité mise à jour']);
@@ -288,6 +294,17 @@ class ProfileController extends Controller
             $skill->id => ['level' => 'intermediate']
         ]);
 
+        // 1. On traite l'offre actuelle en synchrone pour le feedback immédiat
+        if ($request->query('current_offer_id')) {
+            $job = \App\Models\JobOffer::find($request->query('current_offer_id'));
+            if ($job) {
+                $this->matchingService->match(Auth::user(), $job, false, false);
+            }
+        }
+
+        // 2. On lance le recalcul global en arrière-plan (Debounced/Unique)
+        \App\Jobs\RecalculateMatchesJob::dispatch(Auth::user());
+
         session()->flash('status', "Compétence '{$skill->label}' ajoutée à votre profil");
 
         return response()->json(['success' => true, 'message' => 'Compétence ajoutée']);
@@ -299,6 +316,17 @@ class ProfileController extends Controller
     public function removeSkill(Request $request, \App\Models\Skill $skill)
     {
         Auth::user()->skills()->detach($skill->id);
+
+        // 1. On traite l'offre actuelle en synchrone
+        if ($request->query('current_offer_id')) {
+            $job = \App\Models\JobOffer::find($request->query('current_offer_id'));
+            if ($job) {
+                $this->matchingService->match(Auth::user(), $job, false, false);
+            }
+        }
+
+        // 2. Le reste en arrière-plan
+        \App\Jobs\RecalculateMatchesJob::dispatch(Auth::user());
 
         session()->flash('status', "Compétence '{$skill->label}' retirée de votre profil");
 
@@ -373,6 +401,9 @@ class ProfileController extends Controller
     /**
      * Recherche de métiers par mot-clé (API).
      */
+    /**
+     * Recherche de métiers par mot-clé (API).
+     */
     public function searchMetiers(Request $request)
     {
         $q = $request->query('q');
@@ -385,5 +416,21 @@ class ProfileController extends Controller
             ->get(['id', 'label', 'code']);
 
         return response()->json($metiers);
+    }
+
+    /**
+     * Recherche de compétences par mot-clé (API).
+     */
+    public function searchSkills(Request $request)
+    {
+        $q = $request->query('q');
+        if (!$q || strlen($q) < 2) return response()->json([]);
+
+        $skills = \App\Models\Skill::where('label', 'like', "%{$q}%")
+            ->limit(20)
+            ->orderBy('label')
+            ->get(['id', 'label']);
+
+        return response()->json($skills);
     }
 }

@@ -29,6 +29,20 @@ export default (initialData) => ({
         return this.facts.filter(f => f.status === 'validated' || f.proposed_action || f.session_id === this.currentSessionId);
     },
 
+    get pendingChangesCount() {
+        let count = 0;
+        const collections = [
+            this.facts, this.all_experiences, this.all_educations, 
+            this.projects, this.certifications, this.volunteer_experiences,
+            this.interests, this.languages
+        ];
+        collections.forEach(col => {
+            if (!col) return;
+            count += col.filter(item => item.proposed_action || item.status === 'proposed' || item.status === 'draft').length;
+        });
+        return count;
+    },
+
     init() {
         this.scrollToBottom();
         this.$nextTick(() => this.$refs.messageInput.focus());
@@ -39,6 +53,15 @@ export default (initialData) => ({
             const el = document.getElementById('chat-messages');
             if (el) el.scrollTop = el.scrollHeight;
         }, 100);
+    },
+
+    scrollToFirstSuggestion() {
+        setTimeout(() => {
+            const firstSuggestion = document.querySelector('.cv-item-draft, .animate-pulse-update');
+            if (firstSuggestion) {
+                firstSuggestion.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }, 300);
     },
 
     async sendMessage() {
@@ -78,6 +101,9 @@ export default (initialData) => ({
             this.archivedSessions = data.archivedSessions;
             
             this.scrollToBottom();
+            if (this.pendingChangesCount > 0) {
+                this.scrollToFirstSuggestion();
+            }
         } catch (error) {
             console.error('Error:', error);
         } finally {

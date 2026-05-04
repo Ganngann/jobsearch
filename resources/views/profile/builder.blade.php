@@ -226,6 +226,24 @@
                             <span class="text-[10px] font-black text-indigo-600">{{ $stats['depth_percentage'] }}%</span>
                         </div>
                     </div>
+
+                    <!-- Notification de suggestions en attente -->
+                    <div x-show="pendingChangesCount > 0" 
+                         x-transition:enter="transition ease-out duration-300"
+                         x-transition:enter-start="opacity-0 transform -translate-y-2"
+                         x-transition:enter-end="opacity-100 transform translate-y-0"
+                         class="flex items-center gap-2 bg-amber-50 border border-amber-100 px-3 py-1 rounded-full shadow-sm">
+                        <span class="flex h-2 w-2">
+                            <span class="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-amber-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                        </span>
+                        <span class="text-[10px] font-bold text-amber-700">
+                            <span x-text="pendingChangesCount"></span> suggestion(s) à réviser
+                        </span>
+                        <button @click="scrollToFirstSuggestion()" class="text-[9px] font-black uppercase text-amber-600 hover:text-amber-800 ml-1 underline decoration-2 underline-offset-2">
+                            Voir
+                        </button>
+                    </div>
                 </div>
 
                 <div class="flex-1 overflow-y-auto p-8 lg:p-12 custom-scrollbar">

@@ -22,11 +22,15 @@ class MatchingService
     public function match(User $user, JobOffer $jobOffer, bool $forceAi = false, bool $triggerAi = true): UserMatch
     {
         // 1. Layer 1 — Pré-score (Statique)
-        $preScore = $this->calculatePreScore($user, $jobOffer);
+        $preMatchData = $this->calculatePreScore($user, $jobOffer);
+        $preScore = $preMatchData['score'];
 
         $match = UserMatch::updateOrCreate(
             ['user_id' => $user->id, 'job_offer_id' => $jobOffer->id],
-            ['pre_score' => $preScore]
+            [
+                'pre_score' => $preScore,
+                'pre_score_details' => $preMatchData['details']
+            ]
         );
 
         // 2. Layer 2 — Analyse IA
@@ -44,7 +48,7 @@ class MatchingService
      * Calcule un score rapide basé sur les compétences, langues et permis.
      * Respecte la stratégie de "Circuit Court" et les "Vetoes".
      */
-    public function calculatePreScore(User $user, JobOffer $jobOffer): int
+    public function calculatePreScore(User $user, JobOffer $jobOffer): array
     {
         // 1. Circuit-Court : Métier (ROME)
         $blacklistedMetierIds = $user->blacklistedMetiers()->pluck('metiers.id')->toArray();
@@ -151,7 +155,60 @@ class MatchingService
         }
 
         $finalScore = max(0, $score - $vetoPenalty);
-        return (int) min(100, $finalScore);
+        
+        // Calcul des scores par catégorie avec gestion des "non-requis"
+        $catScores = [
+            'metier' => $isFavorite ? 20 : 0,
+            'skills' => isset($baseSkillScore) ? round($baseSkillScore) : 0,
+            'languages' => ($requiredLangs->count() > 0) ? round(($matchedLangs / $requiredLangs->count()) * 5) : 5,
+            'permits' => ($allJobPermits->count() > 0) ? round(($matchedPermits / $allJobPermits->count()) * 5) : 5,
+            'location' => $user->zip_code ? (str_contains($jobOffer->location ?? '', $user->zip_code) ? 30 : 15) : 0,
+        ];
+
+        // On recalcule le score final basé sur ces ajustements
+        $adjustedScore = array_sum($catScores) - $vetoPenalty;
+
+        return [
+            'score' => (int) max(0, min(100, $adjustedScore)),
+            'details' => [
+                'categories' => [
+                    'metier' => [
+                        'score' => $catScores['metier'],
+                        'max' => 20,
+                        'label' => 'Métier (ROME)',
+                        'is_missing' => !$isFavorite
+                    ],
+                    'skills' => [
+                        'score' => $catScores['skills'],
+                        'max' => 40,
+                        'label' => 'Compétences',
+                        'missing' => isset($missingRequired) ? $missingRequired->pluck('label')->toArray() : []
+                    ],
+                    'languages' => [
+                        'score' => $catScores['languages'],
+                        'max' => 5,
+                        'label' => 'Langues',
+                        'is_not_required' => $requiredLangs->count() === 0,
+                        'missing' => $requiredLangs->whereNotIn('id', $userLangIds)->pluck('label')->toArray()
+                    ],
+                    'permits' => [
+                        'score' => $catScores['permits'],
+                        'max' => 5,
+                        'label' => 'Permis',
+                        'is_not_required' => $allJobPermits->count() === 0,
+                        'missing' => $allJobPermits->whereNotIn('id', $userPermitIds)->pluck('label')->toArray()
+                    ],
+                    'location' => [
+                        'score' => $catScores['location'],
+                        'max' => 30,
+                        'label' => 'Localisation',
+                        'is_missing' => $user->zip_code && !str_contains($jobOffer->location ?? '', $user->zip_code)
+                    ],
+                ],
+                'vetoes' => $vetoPenalty,
+                'is_blacklisted' => ($jobOffer->metier_id && in_array($jobOffer->metier_id, $blacklistedMetierIds)),
+            ]
+        ];
     }
 
     /**
@@ -246,8 +303,6 @@ class MatchingService
      */
     public function triggerMassMatch(User $user): void
     {
-        if (!$user->isProfileMature()) return;
-
         JobOffer::where('status', 'active')
             ->where(function($q) {
                 $q->whereNull('expires_at')
@@ -283,6 +338,22 @@ class MatchingService
     public function triggerMetierMatch(User $user, int $metierId): void
     {
         JobOffer::where('metier_id', $metierId)
+            ->where('status', 'active')
+            ->chunk(100, function($offers) use ($user) {
+                foreach ($offers as $offer) {
+                    $this->match($user, $offer, false, false);
+                }
+            });
+    }
+
+    /**
+     * Recalcule les scores uniquement pour les offres contenant une compétence spécifique.
+     */
+    public function triggerSkillMatch(User $user, \App\Models\Skill $skill): void
+    {
+        JobOffer::whereHas('skills', function($q) use ($skill) {
+                $q->where('skills.id', $skill->id);
+            })
             ->where('status', 'active')
             ->chunk(100, function($offers) use ($user) {
                 foreach ($offers as $offer) {

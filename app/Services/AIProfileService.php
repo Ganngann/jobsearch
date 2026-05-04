@@ -215,25 +215,29 @@ class AIProfileService
             1. INTERDICTION FORMELLE d'écraser un fait par un sujet différent via 'update'.
             2. Pour chaque nouvelle info, tu DOIS obligatoirement LIBÉRER de la place : identifie deux faits similaires, FUSIONNE-LES en envoyant une action 'update' (le texte combiné) et une action 'delete'.
             3. Une fois la place libérée dans la même réponse, tu peux faire ton 'add'.
-            4. Si tu ne trouves rien à fusionner, ne sauvegarde pas la nouvelle info, mais mentionne que le profil est saturé.\n";
+            4. Si tu ne trouves rien à fusionner, ne sauvegarde pas la nouvelle info, mais mentionne que le profil est saturé.
+            5. Si le profil est saturé (> 20 faits), ton but prioritaire est de FUSIONNER les thématiques existantes pour descendre sous les 15 faits.\n";
         }
 
         return <<<EOT
+PROFIL ACTUEL : 
+{$context}
+
 Tu es un biographe narratif. Ton but est de reconstruire TOUTE la vie du candidat à travers une conversation profonde et fluide.
 {$consolidationInstruction}
 RÈGLES D'INTERVIEW (Ton âme) :
-1. DYNAMISME : Ne t'attarde pas trop sur un seul sujet. Dès que tu as l'essentiel d'une expérience ou d'un fait, change radicalement de sujet pour explorer un "trou" ou une autre facette du profil (formation, passions, bénévolat, vie associative).
-2. Cherche l'humain, le "pourquoi", les tournants de vie et les anecdotes.
-3. Identifie les "vides" (trous chronologiques, sections non abordées) et tire le fil du récit.
-4. Pose une seule question à la fois, percutante et courte (Max 20 mots).
+1. PRIORITÉ ABSOLUE : Si une expérience ou une formation affiche `[DESCRIPTION MANQUANTE]`, ta mission PRIORITAIRE est de poser une question pour obtenir des détails sur les missions et réalisations de ce poste. Tu ne dois PAS aborder d'autres sujets tant que les descriptions des postes récents sont vides.
+2. DYNAMISME : Une fois les descriptions de base complétées, ne t'attarde pas trop. Change de sujet pour explorer un "trou" ou une autre facette du profil.
+3. Cherche l'humain, le "pourquoi", les tournants de vie et les anecdotes.
+4. Identifie les "vides" (trous chronologiques, sections non abordées, descriptions incomplètes, etc) et tire le fil du récit.
+5. Pose une seule question à la fois, percutante et courte (Max 20 mots).
 
 RÈGLES D'ARCHIVAGE (Ta rigueur) :
 1. CONSOLIDATION : Si une info renforce ou nuance un fait déjà présent, utilise `update` sur l'ID existant au lieu de `add`.
 2. PAS DE DOUBLONS : Un fait = Une idée unique.
-3. Si le profil est saturé (> 20 faits), ton but prioritaire est de FUSIONNER les thématiques existantes pour descendre sous les 15 faits.
 
-PROFIL ACTUEL : 
-{$context}
+Queles infos pourraient manquer pour un recruteur?
+
 EOT;
     }
 
@@ -247,22 +251,22 @@ EOT;
             'skills' => $user->skills->pluck('name')->toArray(),
             'experiences' => $user->experiences->map(fn($e) => array_filter([
                 'id' => $e->id,
-                'status' => $e->status,
+                'status' => $e->status !== 'validated' ? $e->status : null,
                 'proposed_action' => $e->proposed_action,
                 'title' => $e->title,
                 'company' => $e->company,
                 'location' => $e->location,
                 'dates' => ($e->start_date?->format('Y') ?? '?') . " - " . ($e->is_current ? 'Present' : ($e->end_date?->format('Y') ?? '?')),
-                'description' => $e->description,
-            ])),
+                'description' => $e->description ?: '[DESCRIPTION MANQUANTE]',
+            ], fn($v) => !is_null($v))),
             'educations' => $user->educations->map(fn($e) => array_filter([
                 'id' => $e->id,
-                'status' => $e->status,
+                'status' => $e->status !== 'validated' ? $e->status : null,
                 'school' => $e->school,
                 'degree' => $e->degree,
                 'graduation_year' => $e->graduation_year,
-                'description' => $e->description,
-            ])),
+                'description' => $e->description ?: '[DESCRIPTION MANQUANTE]',
+            ], fn($v) => !is_null($v))),
             'projects' => $user->projects->map(fn($p) => array_filter([
                 'id' => $p->id,
                 'name' => $p->name,
@@ -284,11 +288,12 @@ EOT;
             'languages' => $user->languages->map(fn($l) => ['label' => $l->label, 'level' => $l->pivot->level]),
             'narrative_facts' => $user->facts()->orderBy('local_id')->get()->map(fn($f) => array_filter([
                 'id' => $f->local_id,
+                'status' => $f->status !== 'validated' ? $f->status : null,
                 'category' => $f->category,
                 'content' => $f->content,
                 'proposed_action' => $f->proposed_action,
                 'proposed_content' => $f->proposed_content,
-            ])),
+            ], fn($v) => !is_null($v))),
             'stats' => [
                 'facts_count' => $user->facts->count(),
                 'density' => $user->facts()->selectRaw('category, count(*) as count')->groupBy('category')->pluck('count', 'category')->toArray()
