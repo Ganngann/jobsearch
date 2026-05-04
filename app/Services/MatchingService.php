@@ -50,12 +50,12 @@ class MatchingService
         if ($forceAi) {
             // Manuel : On déduit un point si possible
             if ($user->useAiPoint()) {
-                $this->performAiAnalysis($user, $jobOffer, $match);
+                $this->performAiAnalysis($user, $jobOffer, $match, $preMatchData['details']['categories']['location']['distance'] ?? null);
             }
         } elseif ($triggerAi && $preScore >= 70 && !$match->analyzed_at && $user->isOnline()) {
             // Auto : On ne le fait que si l'utilisateur est en ligne et a du quota
             if ($user->useAiPoint()) {
-                $this->performAiAnalysis($user, $jobOffer, $match);
+                $this->performAiAnalysis($user, $jobOffer, $match, $preMatchData['details']['categories']['location']['distance'] ?? null);
             }
         }
 
@@ -273,9 +273,9 @@ class MatchingService
     /**
      * Effectue l'analyse sémantique avec Gemini.
      */
-    public function performAiAnalysis(User $user, JobOffer $jobOffer, UserMatch $match): bool
+    public function performAiAnalysis(User $user, JobOffer $jobOffer, UserMatch $match, float $distance = null): bool
     {
-        $prompt = $this->buildPrompt($user, $jobOffer);
+        $prompt = $this->buildPrompt($user, $jobOffer, $distance);
         $result = $this->gemini->analyzeMatch($prompt);
 
         if ($result) {
@@ -298,7 +298,7 @@ class MatchingService
     /**
      * Construit le prompt pour l'IA.
      */
-    protected function buildPrompt(User $user, JobOffer $jobOffer): string
+    protected function buildPrompt(User $user, JobOffer $jobOffer, float $distance = null): string
     {
         $userSkills = $user->skills()->pluck('label')->implode(', ');
         $userLangs = $user->languages()->withPivot('level')->get()->map(fn($l) => "{$l->label} ({$l->pivot->level})")->implode(', ');
@@ -323,6 +323,7 @@ class MatchingService
         - Aspirations : {$user->aspirations}
         - Compétences déclarées : {$userSkills}
         - Langues : {$userLangs}
+        - Mobilité : Rayon maximum de " . ($user->radius ?? 30) . " km autour de son domicile.
 
         ## 2. RÉCITS & EXPÉRIENCES CONCRÈTES (La preuve par le fait)
         Voici les éléments narratifs validés par le candidat qui prouvent ses compétences et sa résilience :
@@ -334,6 +335,7 @@ class MatchingService
         - Compétences requises : {$jobSkills}
         - Compétences souhaitées : {$jobOptionalSkills}
         - Langues requises : {$jobLangs}
+        - Localisation de l'offre : {$jobOffer->location}" . ($distance ? " (Distance réelle : {$distance} km du domicile)" : "") . "
 
         ## 4. DESCRIPTION COMPLÈTE DE L'OFFRE
         " . strip_tags($jobOffer->description) . "
@@ -342,7 +344,8 @@ class MatchingService
         1. Analyse comment les récits concrets du candidat répondent aux besoins du poste.
         2. Identifie les \"soft skills\" invisibles mais présents dans les récits (résilience, adaptabilité, etc.).
         3. Évalue si les aspirations du candidat sont en phase avec le poste.
-        4. Calcule un score global (0-100).
+        4. Analyse la faisabilité géographique : si la distance réelle dépasse le rayon souhaité, mentionne-le comme un point d'attention ou de vigilance, mais pondère-le en fonction de la distance.
+        5. Calcule un score global (0-100).
 
         CONSIGNE DE STYLE : Sois EXTRÊMEMENT CONCIS. L'analyse narrative doit faire 3 lignes maximum, en allant droit au but. 
 
