@@ -431,11 +431,8 @@ class ProfileController extends Controller
         // Supprimer des métiers préférés
         $user->preferredMetiers()->detach($metier->id);
         
-        // Optionnel : Supprimer les matches existants pour ce métier
-        \App\Models\UserMatch::where('user_id', $user->id)
-            ->whereHas('jobOffer', function($q) use ($metier) {
-                $q->where('metier_id', $metier->id);
-            })->delete();
+        // Déclencher un recalcul pour ce métier (les scores passeront à 0 et le flag is_blacklisted à true)
+        $this->matchingService->triggerMetierMatch($user, $metier->id);
 
         session()->flash('status', "Métier '{$metier->label}' ajouté à la liste noire");
 

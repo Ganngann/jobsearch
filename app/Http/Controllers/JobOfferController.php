@@ -66,11 +66,6 @@ class JobOfferController extends Controller
             });
         }
 
-        // 3b. Exclusion des métiers blacklistés (Refused)
-        $query->whereDoesntHave('matches', function($q) use ($user) {
-            $q->where('user_id', $user->id)
-              ->where('is_blacklisted', true);
-        });
 
         // 4. Tri
         $sort = $request->get('sort', 'score_desc');
@@ -86,7 +81,6 @@ class JobOfferController extends Controller
                          ->where('user_matches.user_id', '=', $user->id);
                 })
                 ->select('job_offers.*', 'user_matches.pre_score', 'user_matches.final_score', 'user_matches.is_blacklisted')
-                ->orderByRaw('COALESCE(user_matches.is_blacklisted, 0) ASC') // Les blacklistés (si on change le filtre plus tard) en dernier
                 ->orderByRaw('user_matches.final_score DESC NULLS LAST')
                 ->orderByRaw('user_matches.pre_score DESC NULLS LAST');
                 break;

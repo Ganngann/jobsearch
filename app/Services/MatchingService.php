@@ -152,6 +152,10 @@ class MatchingService
             }
             
             $score += $baseSkillScore;
+        } else {
+            // Si aucune compétence n'est mentionnée, on considère que c'est acquis
+            $baseSkillScore = 40;
+            $score += $baseSkillScore;
         }
 
         // 5. Langues (5%)
@@ -240,6 +244,7 @@ class MatchingService
                         'score' => $catScores['skills'],
                         'max' => 40,
                         'label' => 'Compétences',
+                        'is_not_required' => $allJobSkills->count() === 0,
                         'missing' => $missingSkills->pluck('label')->toArray()
                     ],
                     'languages' => [
@@ -389,10 +394,9 @@ class MatchingService
             })
             ->where('status', 'active')
             ->where('is_detailed', true)
-            ->chunk(100, function($offers) use ($user) {
-                foreach ($offers as $offer) {
-                    $this->match($user, $offer, false, false);
-                }
+            ->chunkById(100, function($offers, $index) use ($user) {
+                \App\Jobs\MatchChunkJob::dispatch($user, $offers->pluck('id')->toArray())
+                    ->delay(now()->addSeconds($index * 1));
             });
     }
 
@@ -404,10 +408,9 @@ class MatchingService
         JobOffer::where('metier_id', $metierId)
             ->where('status', 'active')
             ->where('is_detailed', true)
-            ->chunk(100, function($offers) use ($user) {
-                foreach ($offers as $offer) {
-                    $this->match($user, $offer, false, false);
-                }
+            ->chunkById(100, function($offers, $index) use ($user) {
+                \App\Jobs\MatchChunkJob::dispatch($user, $offers->pluck('id')->toArray())
+                    ->delay(now()->addSeconds($index * 1));
             });
     }
 
@@ -482,10 +485,9 @@ class MatchingService
             })
             ->where('status', 'active')
             ->where('is_detailed', true)
-            ->chunk(100, function($offers) use ($user) {
-                foreach ($offers as $offer) {
-                    $this->match($user, $offer, false, false);
-                }
+            ->chunkById(100, function($offers, $index) use ($user) {
+                \App\Jobs\MatchChunkJob::dispatch($user, $offers->pluck('id')->toArray())
+                    ->delay(now()->addSeconds($index * 1));
             });
     }
 }
