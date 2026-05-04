@@ -97,7 +97,7 @@
         }
     </style>
 
-    <div class="h-[calc(100vh-64px)] bg-gray-50/30 overflow-hidden" 
+    <div class="h-[calc(100vh-112px)] bg-white overflow-hidden flex justify-center" 
          x-data="profileBuilder({
             messages: {{ Js::from($messages) }},
             facts: {{ Js::from($facts) }},
@@ -121,111 +121,110 @@
                 syncSkills: '{{ route('profile.builder.sync-skills') }}'
             }
          })" x-cloak>
-        <div class="h-full flex flex-row">
+        <div class="h-full flex flex-row w-full max-w-[1600px] border-x border-slate-100 shadow-2xl">
             
             <!-- 1. LEFT SIDEBAR: CONVERSATIONS (15%) -->
-            <aside class="w-56 border-r border-gray-200 bg-white flex flex-col hidden lg:flex">
-                <div class="p-4 border-b border-gray-100 flex items-center justify-between">
-                    <h2 class="text-[11px] font-extrabold text-gray-400 uppercase tracking-widest">Discussions</h2>
-                    <a href="{{ route('profile.builder.reset') }}" class="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition" title="Nouvelle discussion">
+            <aside class="w-64 border-r border-slate-100 bg-white flex flex-col hidden lg:flex">
+                <div class="p-6 border-b border-slate-50 flex items-center justify-between">
+                    <h2 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Historique</h2>
+                    <a href="{{ route('profile.builder.reset') }}" class="p-2 text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all shadow-sm shadow-indigo-50/50" title="Nouvelle discussion">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" />
                         </svg>
                     </a>
                 </div>
                 
-                <div class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2">
+                <div class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3">
                     <template x-for="session in activeSessions" :key="session.id">
                         <div class="group relative">
                             <a :href="'?session=' + session.id" 
-                               class="block p-3 rounded-xl transition-all border"
-                               :class="session.id === currentSessionId ? 'bg-indigo-50 border-indigo-100 text-indigo-700' : 'bg-transparent border-transparent hover:bg-gray-50 text-gray-500'">
-                                <div class="text-[11px] font-semibold leading-tight line-clamp-2" x-text="session.title || 'Nouvelle discussion'"></div>
-                                <div class="text-[9px] mt-1 opacity-50" x-text="new Date(session.created_at).toLocaleDateString()"></div>
+                               class="block p-4 rounded-2xl transition-all border duration-200"
+                               :class="session.id === currentSessionId ? 'bg-indigo-50/50 border-indigo-100 shadow-sm' : 'bg-transparent border-transparent hover:bg-slate-50'">
+                                <div class="flex items-start gap-3">
+                                    <div :class="session.id === currentSessionId ? 'bg-indigo-600' : 'bg-slate-100 group-hover:bg-white transition-colors'" 
+                                         class="mt-1 w-2 h-2 rounded-full shrink-0 shadow-sm"></div>
+                                    <div class="flex-1 min-w-0">
+                                        <p :class="session.id === currentSessionId ? 'text-indigo-900 font-black' : 'text-slate-600 font-bold'"
+                                           class="text-[11px] leading-tight line-clamp-2" x-text="session.title || 'Nouvelle discussion'"></p>
+                                        <p class="text-[9px] text-slate-400 font-medium mt-1 uppercase tracking-tighter" x-text="new Date(session.created_at).toLocaleDateString()"></p>
+                                    </div>
+                                </div>
                             </a>
                         </div>
                     </template>
                 </div>
 
-                <div class="p-3 border-t border-gray-100">
-                    <a href="{{ route('profile.skills.index') }}" class="flex items-center justify-center gap-2 w-full py-3 bg-indigo-600 text-white rounded-xl font-bold text-[11px] shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a2 2 0 00-1.96 1.414l-.703 2.108a2 2 0 01-.736.951l-1.918 1.279a2 2 0 01-1.108.343H11a2 2 0 01-2-2v-1a2 2 0 00-2-2H6a2 2 0 01-2-2v-.5a2 2 0 01.5-.5H5a2 2 0 002-2V8a2 2 0 012-2h.5a2 2 0 01.5.5V7a2 2 0 002 2h1a2 2 0 012 2v1.5a2 2 0 01.5.5H19a2 2 0 012 2v.5a2 2 0 01-.5.5z"/></svg>
-                        Trier mes talents
-                    </a>
-                </div>
             </aside>
 
-            <!-- 2. CENTER: CHAT FLOW (35%) -->
-            <main class="w-[450px] border-r border-gray-100 flex flex-col bg-white relative shrink-0">
-                <div class="flex-1 flex flex-col w-full overflow-hidden">
-                    
-                    <!-- Chat Header -->
-                    <div class="flex items-center justify-between mb-4 px-2">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white shadow-lg">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                </svg>
-                            </div>
-                            <div>
-                                <h1 class="text-sm font-bold text-gray-800">Coach Narratif</h1>
-                                <p class="text-[10px] text-green-500 font-bold flex items-center gap-1">
-                                    <span class="w-1 h-1 bg-green-500 rounded-full animate-ping"></span> En ligne
-                                </p>
-                            </div>
+            <!-- 2. CENTER: CHAT FLOW (OPTIMIZED) -->
+            <main class="flex-1 border-r border-slate-100 flex flex-col bg-white relative overflow-hidden">
+                <!-- Inner header for Chat -->
+                <div class="px-6 py-4 bg-white border-b border-slate-100 flex items-center justify-between z-20">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h1 class="text-sm font-black text-slate-900 uppercase tracking-tight">Coach Narratif</h1>
                         </div>
                     </div>
+                </div>
 
+                <div class="flex-1 flex flex-col w-full overflow-hidden relative">
                     <!-- Messages -->
-                    <div class="flex-1 overflow-y-auto custom-scrollbar space-y-4 pb-28 px-4" id="chat-messages">
-                        <template x-for="(msg, index) in messages" :key="msg.id">
-                            <div :class="msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'">
-                                <div :class="msg.role === 'user' ? 'bg-indigo-600 text-white shadow-indigo-100' : 'bg-gray-50 text-gray-800 border border-gray-100'" 
-                                     class="max-w-[90%] rounded-2xl px-4 py-3 text-[12px] leading-relaxed relative">
-                                    <p class="whitespace-pre-wrap" x-text="msg.content"></p>
+                    <div class="flex-1 overflow-y-auto custom-scrollbar pt-8 pb-32" id="chat-messages">
+                        <div class="max-w-3xl mx-auto px-6 space-y-6">
+                            <template x-for="(msg, index) in messages" :key="msg.id">
+                                <div :class="msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'">
+                                    <div :class="msg.role === 'user' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-50 text-slate-700 border border-slate-100 shadow-sm'" 
+                                         class="max-w-[90%] px-5 py-3.5 rounded-2xl text-[13px] leading-relaxed relative">
+                                        <p class="whitespace-pre-wrap" x-text="msg.content"></p>
+                                    </div>
                                 </div>
-                            </div>
-                        </template>
+                            </template>
 
-                        <!-- Typing Indicator -->
-                        <div x-show="isTyping" class="flex justify-start pl-4">
-                            <div class="flex gap-1.5 p-3 bg-gray-100 rounded-2xl">
-                                <div class="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style="animation-delay: 0s"></div>
-                                <div class="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
-                                <div class="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
+                            <!-- Typing Indicator -->
+                            <div x-show="isTyping" class="flex justify-start">
+                                <div class="flex gap-1 p-3 bg-slate-50 border border-slate-100 rounded-2xl shadow-sm">
+                                    <div class="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style="animation-delay: 0s"></div>
+                                    <div class="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                                    <div class="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Input Area -->
-                    <div class="p-4 border-t border-gray-100 bg-white absolute bottom-0 left-0 right-0 z-10">
-                        <div class="relative flex items-end gap-2 bg-gray-50 rounded-2xl p-2 border border-gray-100 focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                    <div class="absolute bottom-6 left-0 right-0 px-6 z-30">
+                        <div class="max-w-2xl mx-auto bg-white border border-slate-200 rounded-2xl p-2 shadow-xl flex items-end gap-2 focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-50 transition-all duration-300">
                             <input type="file" x-ref="documentInput" @change="uploadDocument($event)" class="hidden" accept=".pdf,.doc,.docx,.txt">
                             <button 
                                 @click="$refs.documentInput.click()"
                                 :disabled="isTyping"
-                                class="p-2 text-gray-400 hover:text-indigo-600 transition-colors rounded-xl hover:bg-white"
-                                title="Ajouter un document (PDF, Word, TXT)"
+                                class="p-2.5 text-slate-400 hover:text-indigo-600 transition-colors rounded-xl hover:bg-slate-50"
+                                title="Importer"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                                 </svg>
                             </button>
                             <textarea 
                                 x-model="newMessage" 
                                 x-ref="messageInput"
                                 @keydown.enter="if (!$event.shiftKey) { $event.preventDefault(); sendMessage(); }"
-                                placeholder="Tapez votre message ici..." 
-                                class="flex-1 bg-transparent border-none focus:ring-0 text-sm py-2 px-3 custom-scrollbar resize-none max-h-32"
+                                placeholder="Écrivez ici..." 
+                                class="flex-1 bg-transparent border-none focus:ring-0 text-sm py-2.5 px-3 custom-scrollbar resize-none max-h-32"
                                 rows="1"
                             ></textarea>
                             <button 
                                 @click="sendMessage()"
                                 :disabled="!newMessage.trim() || isTyping"
-                                class="p-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-lg shadow-indigo-100"
+                                class="p-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
                                 </svg>
                             </button>
                         </div>
@@ -233,115 +232,11 @@
                 </div>
             </main>
 
-            <!-- 3. RIGHT SIDEBAR: LIVE CV PREVIEW (50%) -->
-            <aside class="flex-1 bg-gray-100/50 flex flex-col overflow-hidden">
-                <div class="p-3 border-b border-gray-200 bg-white flex items-center justify-between sticky top-0 z-20">
+            <!-- 3. RIGHT SIDEBAR: LIVE CV PREVIEW -->
+            <aside class="flex-[2] bg-slate-50 flex flex-col overflow-hidden relative border-l border-slate-100">
+                <div class="p-4 bg-white border-b border-slate-100 flex items-center justify-between sticky top-0 z-20">
                     <div class="flex items-center gap-3">
-                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Aperçu du CV</span>
-                        <div class="h-4 w-px bg-gray-200"></div>
-                        <div class="flex items-center gap-2 group relative">
-                            @php
-                                $factsCount = Auth::user()->facts()->count();
-                                $journeyCount = Auth::user()->experiences()->count() + Auth::user()->educations()->count();
-                                
-                                $narrativeScore = min(70, ($factsCount / 20) * 70);
-                                $journeyScore = min(30, ($journeyCount / 3) * 30);
-                                
-                                $displayProgress = round($narrativeScore + $journeyScore);
-                            @endphp
-                            <div class="w-24 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                                <div class="bg-indigo-600 h-full transition-all duration-1000" style="width: {{ $displayProgress }}%"></div>
-                            </div>
-                            <span class="text-[10px] font-black text-indigo-600">{{ $displayProgress }}%</span>
-                            
-                            <!-- Info Bubble -->
-                            <div class="cursor-help text-gray-300 hover:text-indigo-400 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
-
-                            <!-- Tooltip Content -->
-                            <div class="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-72 bg-white border border-gray-100 rounded-2xl shadow-2xl p-5 z-[100] invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all transform translate-y-1 group-hover:translate-y-0">
-                                <!-- Petit triangle (arrow) -->
-                                <div class="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-l border-t border-gray-100 rotate-45"></div>
-                                
-                                <div class="relative space-y-4">
-                                    <h4 class="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Checklist de ton Profil</h4>
-                                    
-                                    <div class="space-y-3">
-                                        <!-- Récit Breakdown -->
-                                        <div>
-                                            <div class="flex items-center justify-between mb-1">
-                                                <span class="text-[10px] font-bold text-gray-500 uppercase">Récit Narratif (70%)</span>
-                                            </div>
-                                            <div class="space-y-1.5 pl-2 border-l-2 border-indigo-50">
-                                                <template x-for="(data, cat) in stats.categories">
-                                                    <div class="flex items-center justify-between text-[10px]">
-                                                        <span class="text-gray-400 capitalize" x-text="cat.toLowerCase().replace('_', ' ')"></span>
-                                                        <span class="font-black" :class="data.current >= data.target ? 'text-emerald-500' : 'text-indigo-600'" x-text="data.current + '/' + data.target"></span>
-                                                    </div>
-                                                </template>
-                                            </div>
-                                        </div>
-
-                                        <!-- Parcours Breakdown -->
-                                        <div class="pt-2 border-t border-gray-50">
-                                            <div class="flex items-center justify-between mb-1">
-                                                <span class="text-[10px] font-bold text-gray-500 uppercase">Parcours Pro (30%)</span>
-                                                <span class="text-[10px] font-black" :class="stats.journey.current >= stats.journey.target ? 'text-emerald-500' : 'text-indigo-600'" x-text="Math.min(stats.journey.target, stats.journey.current) + '/' + stats.journey.target"></span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="pt-3 border-t border-gray-50 text-[10px] text-gray-500 font-medium">
-                                        L'IA analyse vos réponses pour extraire ces faits. Un score de 80%+ est recommandé.
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="h-4 w-px bg-gray-200 mx-2"></div>
-
-                        <!-- COMPÉTENCES PROGRESS -->
-                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Compétences</span>
-                        <div class="h-4 w-px bg-gray-200 mx-2"></div>
-                        <div class="flex items-center gap-2 group relative">
-                            @php
-                                $skillsCount = Auth::user()->skills()->count();
-                                $skillsProgress = min(100, round(($skillsCount / 50) * 100));
-                            @endphp
-                            <div class="w-24 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                                <div class="bg-violet-500 h-full transition-all duration-1000" style="width: {{ $skillsProgress }}%"></div>
-                            </div>
-                            <span class="text-[10px] font-black text-violet-500">{{ $skillsProgress }}%</span>
-                            
-                            <!-- Info Bubble -->
-                            <div class="cursor-help text-gray-300 hover:text-violet-400 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
-
-                            <!-- Tooltip Content -->
-                            <div class="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-72 bg-white border border-gray-100 rounded-2xl shadow-2xl p-5 z-[100] invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all transform translate-y-1 group-hover:translate-y-0">
-                                <!-- Petit triangle (arrow) -->
-                                <div class="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-l border-t border-gray-100 rotate-45"></div>
-                                
-                                <div class="relative space-y-4">
-                                    <h4 class="text-[10px] font-black text-violet-600 uppercase tracking-widest">Checklist des Compétences</h4>
-                                    <div class="space-y-3">
-                                        <div class="flex items-center justify-between text-[10px]">
-                                            <span class="text-gray-400 font-medium text-left">Compétences identifiées</span>
-                                            <span class="font-black text-violet-600">{{ $skillsCount }} / 50</span>
-                                        </div>
-                                    </div>
-                                    <div class="pt-3 border-t border-gray-50 text-[9px] text-gray-400 italic text-center">
-                                        Rendez-vous dans l'Atelier pour valider ou écarter les suggestions de l'IA.
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Document</span>
                     </div>
 
                     <!-- Notification de suggestions en attente -->
@@ -354,8 +249,8 @@
                             <span class="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-amber-400 opacity-75"></span>
                             <span class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
                         </span>
-                        <span class="text-[10px] font-bold text-amber-700">
-                            <span x-text="pendingChangesCount"></span> suggestion(s) à réviser
+                        <span class="text-[10px] font-black text-amber-700 uppercase">
+                            <span x-text="pendingChangesCount"></span> Suggestions
                         </span>
                         <button @click="scrollToFirstSuggestion()" class="text-[9px] font-black uppercase text-amber-600 hover:text-amber-800 ml-1 underline decoration-2 underline-offset-2">
                             Voir
@@ -363,7 +258,9 @@
                     </div>
                 </div>
 
-                <div class="flex-1 overflow-y-auto p-8 lg:p-12 custom-scrollbar">
+                <!-- NEW PROGRESS RIBBON MOVED TO GLOBAL LAYOUT -->
+
+                <div class="flex-1 overflow-y-auto p-4 custom-scrollbar">
                     <div class="cv-paper">
                             <!-- CV HEADER -->
                             <x-cv.header />

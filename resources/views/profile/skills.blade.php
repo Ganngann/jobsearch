@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="py-12 bg-slate-50 min-h-screen" x-data="skillApp()">
+    <div class="py-12 bg-slate-50" x-data="skillApp()">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             
             <!-- Header & Progress -->
@@ -9,22 +9,11 @@
                             <h1 class="text-4xl font-black text-slate-900 mb-2">L'Atelier des Compétences</h1>
                             <p class="text-lg text-slate-500 font-medium">Triez et qualifiez les compétences extraites de votre récit.</p>
                         </div>
-                        <div class="bg-white px-6 py-4 rounded-3xl shadow-sm border border-slate-100 flex items-center gap-6">
-                            <div class="text-right">
-                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Validation des Compétences</p>
-                                <div class="flex items-center gap-3">
-                                    <div class="w-48 h-2 bg-slate-100 rounded-full overflow-hidden">
-                                        <div class="h-full bg-indigo-600 transition-all duration-1000" :style="`width: ${progress}%`"></div>
-                                    </div>
-                                    <span class="text-xl font-black text-indigo-600"><span x-text="Math.min(100, Math.round(progress))"></span>%</span>
-                                </div>
-                            </div>
-                            <div class="h-10 w-px bg-slate-100 hidden md:block"></div>
-                            <div class="text-center px-4">
-                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Objectif</p>
-                                <p class="text-lg font-black text-slate-900"><span x-text="totalQualified"></span> <span class="text-slate-300">/ 50</span></p>
-                            </div>
-                        </div>
+                    </div>
+
+                    <!-- NEW PROGRESS RIBBON -->
+                    <div class="bg-white px-6 py-4 rounded-3xl shadow-sm border border-slate-100 flex justify-center mb-8">
+                        <x-profile-status-bar />
                     </div>
             </div>
 
