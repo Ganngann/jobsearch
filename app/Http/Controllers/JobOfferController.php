@@ -66,6 +66,12 @@ class JobOfferController extends Controller
             });
         }
 
+        // 3b. Exclusion des métiers blacklistés (Refused)
+        $query->whereDoesntHave('matches', function($q) use ($user) {
+            $q->where('user_id', $user->id)
+              ->where('is_blacklisted', true);
+        });
+
         // 4. Tri
         $sort = $request->get('sort', 'score_desc');
         switch ($sort) {
@@ -79,7 +85,8 @@ class JobOfferController extends Controller
                     $join->on('job_offers.id', '=', 'user_matches.job_offer_id')
                          ->where('user_matches.user_id', '=', $user->id);
                 })
-                ->select('job_offers.*', 'user_matches.pre_score', 'user_matches.final_score')
+                ->select('job_offers.*', 'user_matches.pre_score', 'user_matches.final_score', 'user_matches.is_blacklisted')
+                ->orderByRaw('COALESCE(user_matches.is_blacklisted, 0) ASC') // Les blacklistés (si on change le filtre plus tard) en dernier
                 ->orderByRaw('user_matches.final_score DESC NULLS LAST')
                 ->orderByRaw('user_matches.pre_score DESC NULLS LAST');
                 break;
@@ -118,11 +125,17 @@ class JobOfferController extends Controller
     public function preview(JobOffer $jobOffer)
     {
         $user = Auth::user();
+        // On s'assure d'avoir les détails pour pouvoir matcher
+        if (!$jobOffer->is_detailed) {
+            $this->jobOfferService->syncFullDetails($jobOffer);
+            $jobOffer->load(['employer', 'metier', 'skills', 'languages', 'permits', 'sectors']);
+        }
+
         $match = $jobOffer->matches()->where('user_id', $user->id)->first();
         
         // Si pas de match, on le crée à la volée (Data Match)
         if (!$match) {
-            $match = app(\App\Services\MatchingService::class)->match($user, $jobOffer, false, false);
+            $match = $this->matchingService->match($user, $jobOffer, false, false);
         }
 
         $isParentFavorite = false;

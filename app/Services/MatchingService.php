@@ -38,7 +38,8 @@ class MatchingService
             ['user_id' => $user->id, 'job_offer_id' => $jobOffer->id],
             [
                 'pre_score' => $preScore,
-                'pre_score_details' => $preMatchData['details']
+                'pre_score_details' => $preMatchData['details'],
+                'is_blacklisted' => $preMatchData['details']['is_blacklisted'] ?? false
             ]
         );
 
@@ -128,7 +129,7 @@ class MatchingService
         if ($isFavorite) {
             $score += 20;
         } elseif ($isRefused) {
-            $score -= 20;
+            $score -= 40; // Handicap lourd pour les métiers blacklistés
         }
 
         // 4. Compétences (40% max)
@@ -208,8 +209,12 @@ class MatchingService
         $finalScore = max(0, $score + $locationScore - $vetoPenalty);
         
         // Calcul des scores par catégorie avec gestion des "non-requis"
+        $metierCategoryScore = 0;
+        if ($isFavorite) $metierCategoryScore = 20;
+        elseif ($isRefused) $metierCategoryScore = -40;
+
         $catScores = [
-            'metier' => $isFavorite ? 20 : 0,
+            'metier' => $metierCategoryScore,
             'skills' => isset($baseSkillScore) ? round($baseSkillScore) : 0,
             'languages' => ($requiredLangs->count() > 0) ? round(($matchedLangs / $requiredLangs->count()) * 5) : 5,
             'permits' => ($allJobPermits->count() > 0) ? round(($matchedPermits / $allJobPermits->count()) * 5) : 5,
@@ -227,7 +232,9 @@ class MatchingService
                         'score' => $catScores['metier'],
                         'max' => 20,
                         'label' => 'Métier (ROME)',
-                        'is_missing' => !$isFavorite
+                        'is_missing' => !$isFavorite,
+                        'is_refused' => $isRefused,
+                        'status_label' => $isRefused ? 'MÉTIER EXCLU' : ($isFavorite ? 'FAVORI' : 'HORS FAVORIS')
                     ],
                     'skills' => [
                         'score' => $catScores['skills'],
@@ -258,7 +265,7 @@ class MatchingService
                     ],
                 ],
                 'vetoes' => $vetoPenalty,
-                'is_blacklisted' => ($jobOffer->metier_id && in_array($jobOffer->metier_id, $blacklistedMetierIds)),
+                'is_blacklisted' => $isRefused,
             ]
         ];
     }

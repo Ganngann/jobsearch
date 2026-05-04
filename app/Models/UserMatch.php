@@ -21,6 +21,7 @@ class UserMatch extends Model
         'ai_raw_response',
         'ai_status',
         'analyzed_at',
+        'is_blacklisted',
     ];
 
     protected $casts = [
@@ -29,6 +30,7 @@ class UserMatch extends Model
         'weaknesses' => 'array',
         'ai_raw_response' => 'array',
         'analyzed_at' => 'datetime',
+        'is_blacklisted' => 'boolean',
     ];
 
     public function user(): BelongsTo

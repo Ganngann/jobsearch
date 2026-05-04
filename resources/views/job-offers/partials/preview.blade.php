@@ -31,8 +31,8 @@
                     }
                 }">
                     @if($jobOffer->metier_id)
-                    <div class="flex items-center bg-indigo-50 rounded-full p-1 border border-indigo-100">
-                        <span class="px-3 py-1 text-indigo-700 text-[10px] font-black uppercase tracking-widest">
+                    <div class="flex items-center rounded-full p-1 border transition-all duration-300" :class="isBlacklisted ? 'bg-rose-50 border-rose-200' : 'bg-indigo-50 border-indigo-100'">
+                        <span class="px-3 py-1 text-[10px] font-black uppercase tracking-widest transition-colors duration-300" :class="isBlacklisted ? 'text-rose-700' : 'text-indigo-700'">
                             {{ $jobOffer->metier->label ?? 'Métier non spécifié' }}
                         </span>
                         @if($isParentFavorite)
@@ -79,14 +79,14 @@
                     <!-- Score Data avec Tooltip -->
                     <div class="relative group cursor-help">
                         <div class="text-center p-4 bg-white rounded-2xl border border-slate-100 shadow-sm min-w-[100px] hover:border-indigo-200 transition-all">
-                            <p class="text-3xl font-black {{ $match->pre_score >= 70 ? 'text-emerald-500' : ($match->pre_score >= 40 ? 'text-amber-500' : 'text-slate-400') }}">
-                                {{ $match->pre_score }}<span class="text-xs">%</span>
+                            <p class="text-3xl font-black {{ ($match->pre_score ?? 0) >= 70 ? 'text-emerald-500' : (($match->pre_score ?? 0) >= 40 ? 'text-amber-500' : 'text-slate-400') }}">
+                                {{ $match->pre_score ?? '--' }}<span class="text-xs">%</span>
                             </p>
                             <p class="text-[8px] font-black uppercase tracking-widest text-slate-400 mt-1">Data Match</p>
                         </div>
 
                         <!-- Tooltip Detail Riche (Positionné à GAUCHE pour ne rien couvrir) -->
-                        @if($match->pre_score_details && isset($match->pre_score_details['categories']))
+                        @if($match && $match->pre_score_details && isset($match->pre_score_details['categories']))
                         <div class="absolute right-full top-0 mr-4 w-80 p-5 bg-slate-900 text-white rounded-2xl shadow-2xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all z-[100] transform translate-y-0">
                             <h4 class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 pb-2 border-b border-white/10">Détail du calcul (Pondération)</h4>
                             
@@ -103,13 +103,13 @@
                                             @if($cat['is_not_required'] ?? false)
                                                 <span class="text-[9px] font-black text-slate-500 uppercase italic">Non requis</span>
                                             @else
-                                                <span class="text-[11px] font-black {{ $cat['score'] == $cat['max'] ? 'text-emerald-400' : ($cat['score'] > 0 ? 'text-amber-400' : 'text-slate-500') }}">
+                                                <span class="text-[11px] font-black {{ ($cat['is_refused'] ?? false) || $cat['score'] < 0 ? 'text-rose-400' : ($cat['score'] == $cat['max'] ? 'text-emerald-400' : ($cat['score'] > 0 ? 'text-amber-400' : 'text-slate-500')) }}">
                                                     {{ $cat['score'] }} / {{ $cat['max'] }}
                                                 </span>
                                             @endif
                                         </div>
                                         <div class="h-1 w-full bg-white/10 rounded-full overflow-hidden">
-                                            <div class="h-full bg-indigo-500 rounded-full transition-all duration-700 shadow-[0_0_8px_rgba(99,102,241,0.5)]" style="width: {{ ($cat['score'] / $cat['max']) * 100 }}%"></div>
+                                            <div class="h-full {{ ($cat['is_refused'] ?? false) || $cat['score'] < 0 ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]' : 'bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]' }} rounded-full transition-all duration-700" style="width: {{ $cat['max'] > 0 ? max(0, ($cat['score'] / $cat['max']) * 100) : 0 }}%"></div>
                                         </div>
                                         
                                         <!-- Liste des éléments manquants -->
@@ -121,10 +121,12 @@
                                                     </span>
                                                 @endforeach
                                             </div>
-                                        @elseif(($cat['is_missing'] ?? false))
+                                        @elseif(($cat['is_missing'] ?? false) || ($cat['is_refused'] ?? false))
                                             <div class="mt-2">
-                                                <span class="text-[8px] bg-rose-500/20 text-rose-300 px-1.5 py-0.5 rounded border border-rose-500/30 font-black tracking-tight leading-none uppercase">
-                                                    @if($key === 'location')
+                                                <span class="text-[8px] {{ ($cat['is_refused'] ?? false) ? 'bg-rose-600 text-white' : 'bg-rose-500/20 text-rose-300' }} px-1.5 py-0.5 rounded border border-rose-500/30 font-black tracking-tight leading-none uppercase">
+                                                    @if(isset($cat['status_label']))
+                                                        {{ $cat['status_label'] }}
+                                                    @elseif($key === 'location')
                                                         {{ isset($cat['distance']) ? 'Hors Rayon' : 'Localisation Inconnue' }}
                                                     @elseif($key === 'metier')
                                                         Hors Favoris
@@ -158,7 +160,7 @@
                         @endif
                     </div>
 
-                    @if($match->ai_status === 'completed')
+                    @if($match && $match->ai_status === 'completed')
                         <div id="ai-result-ready" data-score="{{ $match->final_score }}" class="hidden"></div>
                         <!-- Score IA -->
                         <div class="text-center p-4 bg-indigo-600 rounded-2xl shadow-lg shadow-indigo-100 min-w-[100px]">
@@ -167,7 +169,7 @@
                             </p>
                             <p class="text-[8px] font-black uppercase tracking-widest text-indigo-200 mt-1">IA Match</p>
                         </div>
-                    @elseif($match->ai_status === 'processing')
+                    @elseif($match && $match->ai_status === 'processing')
                         <!-- État en cours -->
                         <div class="text-center p-4 bg-indigo-50 rounded-2xl border border-indigo-100 min-w-[100px] animate-pulse">
                             <div class="flex justify-center mb-1">
@@ -175,7 +177,7 @@
                             </div>
                             <p class="text-[8px] font-black uppercase tracking-widest text-indigo-400">Analyse IA...</p>
                         </div>
-                    @elseif($match->ai_status === 'failed')
+                    @elseif($match && $match->ai_status === 'failed')
                         <div id="ai-result-failed" class="hidden"></div>
                         <!-- État Erreur -->
                         <div class="text-center p-4 bg-rose-50 rounded-2xl border border-rose-100 min-w-[100px]">
@@ -187,7 +189,7 @@
                     @endif
                 </div>
 
-                @if($match->ai_status === 'idle' || $match->ai_status === 'failed')
+                @if($match && ($match->ai_status === 'idle' || $match->ai_status === 'failed'))
                     <button @click="startAiAnalysis('{{ $jobOffer->forem_id }}')" class="w-full py-3 px-6 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">
                         {{ $match->ai_status === 'failed' ? 'Réessayer l\'analyse' : 'Lancer Analyse IA' }}
                     </button>
@@ -198,7 +200,7 @@
 
     <!-- Content -->
     <div class="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar">
-        @if($match->ai_status === 'completed')
+        @if($match && $match->ai_status === 'completed')
             <div id="ai-result-ready" class="hidden"></div>
             <!-- IA Narrative -->
             <div class="p-6 bg-indigo-50 border border-indigo-100 rounded-3xl relative overflow-hidden">
