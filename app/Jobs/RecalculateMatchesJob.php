@@ -22,10 +22,15 @@ class RecalculateMatchesJob implements ShouldQueue
      */
     public function handle(MatchingService $matchingService): void
     {
+        ini_set('memory_limit', '512M');
+        
         \Log::info("Démarrage du recalcul global pour l'utilisateur: {$this->user->email}");
         
         $matchingService->triggerMassMatch($this->user);
         
         \Log::info("Fin du recalcul global pour l'utilisateur: {$this->user->email}");
+        
+        // Nettoyage manuel de la mémoire
+        gc_collect_cycles();
     }
 }

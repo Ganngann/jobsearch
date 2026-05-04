@@ -4,9 +4,10 @@
         <div class="flex items-start justify-between gap-6">
             <div class="flex-1">
                 <div class="flex items-center gap-3 mb-3" x-data="{ 
-                    isPreferred: {{ auth()->user()->preferredMetiers->contains($jobOffer->metier_id) ? 'true' : 'false' }},
-                    isBlacklisted: {{ auth()->user()->blacklistedMetiers->contains($jobOffer->metier_id) ? 'true' : 'false' }},
+                    isPreferred: {{ $jobOffer->metier_id ? (auth()->user()->preferredMetiers->contains($jobOffer->metier_id) ? 'true' : 'false') : 'false' }},
+                    isBlacklisted: {{ $jobOffer->metier_id ? (auth()->user()->blacklistedMetiers->contains($jobOffer->metier_id) ? 'true' : 'false') : 'false' }},
                     async toggleFavorite() {
+                        @if($jobOffer->metier_id)
                         const action = this.isPreferred ? 'remove' : 'add';
                         await fetch(`/profile/metiers/{{ $jobOffer->metier_id }}/${action}`, {
                             method: 'POST',
@@ -14,20 +15,22 @@
                         });
                         this.isPreferred = !this.isPreferred;
                         if(this.isPreferred) this.isBlacklisted = false;
-                        // On rafraîchit la sidebar pour voir le changement
                         if(window.dashboard) window.dashboard.refreshList();
+                        @endif
                     },
                     async blacklist() {
+                        @if($jobOffer->metier_id)
                         await fetch(`/profile/metiers/{{ $jobOffer->metier_id }}/blacklist`, {
                             method: 'POST',
                             headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }
                         });
                         this.isBlacklisted = true;
                         this.isPreferred = false;
-                        // Refresh dashboard to hide this metier
                         window.location.reload(); 
+                        @endif
                     }
                 }">
+                    @if($jobOffer->metier_id)
                     <div class="flex items-center bg-indigo-50 rounded-full p-1 border border-indigo-100">
                         <span class="px-3 py-1 text-indigo-700 text-[10px] font-black uppercase tracking-widest">
                             {{ $jobOffer->metier->label ?? 'Métier non spécifié' }}
@@ -47,6 +50,11 @@
                             </button>
                         </div>
                     </div>
+                    @else
+                        <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-400 text-[10px] font-black uppercase tracking-widest">
+                            Métier non spécifié
+                        </span>
+                    @endif
                     <span class="px-3 py-1 rounded-full bg-slate-200 text-slate-600 text-[10px] font-black uppercase tracking-widest">
                         {{ $jobOffer->forem_ref }}
                     </span>
@@ -86,7 +94,12 @@
                                 @foreach($match->pre_score_details['categories'] as $key => $cat)
                                     <div>
                                         <div class="flex justify-between items-center mb-1.5">
-                                            <span class="text-[10px] font-bold text-slate-300 uppercase tracking-tight">{{ $cat['label'] }}</span>
+                                            <span class="text-[10px] font-bold text-slate-300 uppercase tracking-tight">
+                                                {{ $cat['label'] }}
+                                                @if(isset($cat['distance']))
+                                                    <span class="ml-1 text-[9px] text-slate-500 normal-case font-medium">({{ $cat['distance'] }} km)</span>
+                                                @endif
+                                            </span>
                                             @if($cat['is_not_required'] ?? false)
                                                 <span class="text-[9px] font-black text-slate-500 uppercase italic">Non requis</span>
                                             @else
@@ -111,7 +124,13 @@
                                         @elseif(($cat['is_missing'] ?? false))
                                             <div class="mt-2">
                                                 <span class="text-[8px] bg-rose-500/20 text-rose-300 px-1.5 py-0.5 rounded border border-rose-500/30 font-black tracking-tight leading-none uppercase">
-                                                    Non trouvé / Incomplet
+                                                    @if($key === 'location')
+                                                        {{ isset($cat['distance']) ? 'Hors Rayon' : 'Localisation Inconnue' }}
+                                                    @elseif($key === 'metier')
+                                                        Hors Favoris
+                                                    @else
+                                                        Non trouvé / Incomplet
+                                                    @endif
                                                 </span>
                                             </div>
                                         @endif

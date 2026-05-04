@@ -11,7 +11,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->web(append: [
+            \App\Http\Middleware\UpdateLastSeenMiddleware::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
@@ -25,4 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Pull Worker tourne en continu pour les détails (limité pour éviter les chevauchements infinis)
         $schedule->command('forem:pull-worker --sleep=5 --limit=10')->everyMinute()->withoutOverlapping();
+
+        // Chasseur de Pépites IA (Analyse auto du meilleur match pour les utilisateurs actifs)
+        $schedule->command('forem:auto-ai')->everyFifteenMinutes();
     })->create();

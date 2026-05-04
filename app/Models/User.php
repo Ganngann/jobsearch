@@ -36,6 +36,10 @@ class User extends Authenticatable
         'birth_date',
         'availability_status',
         'links',
+        'daily_ai_limit',
+        'daily_ai_usage',
+        'last_seen_at',
+        'last_ai_usage_at',
     ];
 
     /**
@@ -60,6 +64,8 @@ class User extends Authenticatable
             'password' => 'hashed',
             'links' => 'array',
             'birth_date' => 'date',
+            'last_seen_at' => 'datetime',
+            'last_ai_usage_at' => 'datetime',
         ];
     }
 
@@ -192,5 +198,33 @@ class User extends Authenticatable
         }
 
         return $missing;
+    }
+
+    /**
+     * Vérifie si l'utilisateur est actuellement considéré comme en ligne (activité < 15 min).
+     */
+    public function isOnline(): bool
+    {
+        return $this->last_seen_at && $this->last_seen_at->diffInMinutes(now()) < 15;
+    }
+
+    /**
+     * Tente de consommer un point de quota IA. Retourne true si réussi.
+     */
+    public function useAiPoint(): bool
+    {
+        // Reset du compteur si on a changé de jour
+        if ($this->last_ai_usage_at && !$this->last_ai_usage_at->isToday()) {
+            $this->daily_ai_usage = 0;
+        }
+
+        if ($this->daily_ai_usage >= $this->daily_ai_limit) {
+            return false;
+        }
+
+        $this->increment('daily_ai_usage');
+        $this->update(['last_ai_usage_at' => now()]);
+
+        return true;
     }
 }

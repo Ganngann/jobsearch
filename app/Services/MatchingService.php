@@ -5,7 +5,9 @@ namespace App\Services;
 use App\Models\JobOffer;
 use App\Models\User;
 use App\Models\UserMatch;
+use App\Models\ZipCode;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Collection;
 
 class MatchingService
 {
@@ -36,9 +38,17 @@ class MatchingService
         // 2. Layer 2 — Analyse IA
         // On lance l'IA si :
         // - On force l'analyse (demande manuelle)
-        // - OU (Le pre-score est élevé >= 70 ET pas encore d'analyse faite ET trigger autorisé)
-        if ($forceAi || ($triggerAi && $preScore >= 70 && !$match->analyzed_at)) {
-            $this->performAiAnalysis($user, $jobOffer, $match);
+        // - OU (Le pre-score est élevé >= 70 ET pas encore d'analyse faite ET trigger autorisé ET utilisateur en ligne ET quota dispo)
+        if ($forceAi) {
+            // Manuel : On déduit un point si possible
+            if ($user->useAiPoint()) {
+                $this->performAiAnalysis($user, $jobOffer, $match);
+            }
+        } elseif ($triggerAi && $preScore >= 70 && !$match->analyzed_at && $user->isOnline()) {
+            // Auto : On ne le fait que si l'utilisateur est en ligne et a du quota
+            if ($user->useAiPoint()) {
+                $this->performAiAnalysis($user, $jobOffer, $match);
+            }
         }
 
         return $match;
@@ -53,7 +63,14 @@ class MatchingService
         // 1. Circuit-Court : Métier (ROME)
         $blacklistedMetierIds = $user->blacklistedMetiers()->pluck('metiers.id')->toArray();
         if ($jobOffer->metier_id && in_array($jobOffer->metier_id, $blacklistedMetierIds)) {
-            return 0; // Blacklisté explicitement au niveau Forem
+            return [
+                'score' => 0,
+                'details' => [
+                    'categories' => [],
+                    'vetoes' => 100,
+                    'is_blacklisted' => true
+                ]
+            ];
         }
 
         $vetoPenalty = 0;
@@ -115,13 +132,17 @@ class MatchingService
 
         // 4. Compétences (40% max)
         $allJobSkills = $jobOffer->skills;
+        $missingSkills = collect();
         if ($allJobSkills->count() > 0) {
             $userSkillIds = $user->skills()->pluck('skills.id')->toArray();
             $matchedSkills = $allJobSkills->whereIn('id', $userSkillIds);
             
             $baseSkillScore = ($matchedSkills->count() / $allJobSkills->count()) * 40;
             
-            // Pénalité si des compétences REQUISES manquent (non proscrites, juste absentes)
+            // On collecte TOUTES les compétences manquantes pour l'affichage
+            $missingSkills = $allJobSkills->whereNotIn('id', $userSkillIds);
+
+            // Pénalité si des compétences REQUISES manquent
             $missingRequired = $requiredSkills->whereNotIn('id', $userSkillIds);
             if ($missingRequired->count() > 0) {
                 $baseSkillScore *= 0.7; // Réduction de 30%
@@ -145,16 +166,44 @@ class MatchingService
             $score += ($matchedPermits / $allJobPermits->count()) * 5;
         }
 
-        // 7. Localisation (30%) - Simulation simple pour l'instant
+        // 5. Localisation (30 pts)
+        $locationScore = 0;
+        $distance = null;
+
         if ($user->zip_code) {
-            if (str_contains($jobOffer->location ?? '', $user->zip_code)) {
-                $score += 30;
-            } else {
-                $score += 15; // À proximité ou à vérifier
+            // Coordonnées utilisateur
+            $userZip = ZipCode::where('zip_code', $user->zip_code)->first();
+            
+            if ($userZip) {
+                // Tentative de trouver les coordonnées de l'offre
+                $jobCoords = $this->getJobCoords($jobOffer->location);
+                
+                if ($jobCoords) {
+                    $distance = $this->calculateDistance(
+                        $userZip->latitude, $userZip->longitude,
+                        $jobCoords['lat'], $jobCoords['lon']
+                    );
+
+                    $radius = $user->radius ?? 30;
+
+                    // Formule "Rayon Pivot" : 
+                    // - 30 pts à 0km
+                    // - 20 pts à Distance = Rayon
+                    // - Décroissance fluide au-delà sans élimination
+                    $locationScore = round(30 * ($radius / ($radius + ($distance / 2))));
+                    
+                    // On s'assure de rester dans les clous (0-30)
+                    $locationScore = max(0, min(30, $locationScore));
+                } else {
+                    // Fallback sur correspondance de texte si pas de coordonnées
+                    if (str_contains($jobOffer->location ?? '', $user->zip_code)) {
+                        $locationScore = 30;
+                    }
+                }
             }
         }
 
-        $finalScore = max(0, $score - $vetoPenalty);
+        $finalScore = max(0, $score + $locationScore - $vetoPenalty);
         
         // Calcul des scores par catégorie avec gestion des "non-requis"
         $catScores = [
@@ -162,7 +211,7 @@ class MatchingService
             'skills' => isset($baseSkillScore) ? round($baseSkillScore) : 0,
             'languages' => ($requiredLangs->count() > 0) ? round(($matchedLangs / $requiredLangs->count()) * 5) : 5,
             'permits' => ($allJobPermits->count() > 0) ? round(($matchedPermits / $allJobPermits->count()) * 5) : 5,
-            'location' => $user->zip_code ? (str_contains($jobOffer->location ?? '', $user->zip_code) ? 30 : 15) : 0,
+            'location' => $locationScore,
         ];
 
         // On recalcule le score final basé sur ces ajustements
@@ -182,7 +231,7 @@ class MatchingService
                         'score' => $catScores['skills'],
                         'max' => 40,
                         'label' => 'Compétences',
-                        'missing' => isset($missingRequired) ? $missingRequired->pluck('label')->toArray() : []
+                        'missing' => $missingSkills->pluck('label')->toArray()
                     ],
                     'languages' => [
                         'score' => $catScores['languages'],
@@ -202,7 +251,8 @@ class MatchingService
                         'score' => $catScores['location'],
                         'max' => 30,
                         'label' => 'Localisation',
-                        'is_missing' => $user->zip_code && !str_contains($jobOffer->location ?? '', $user->zip_code)
+                        'distance' => $distance ? round($distance, 1) : null,
+                        'is_missing' => $distance > ($user->radius ?? 30)
                     ],
                 ],
                 'vetoes' => $vetoPenalty,
@@ -308,11 +358,8 @@ class MatchingService
                 $q->whereNull('expires_at')
                   ->orWhere('expires_at', '>=', now());
             })
-            ->chunk(100, function($offers) use ($user) {
-                foreach ($offers as $offer) {
-                    // JAMAIS d'IA automatique lors d'un matching de masse
-                    $this->match($user, $offer, false, false);
-                }
+            ->chunkById(25, function($offers) use ($user) {
+                \App\Jobs\MatchChunkJob::dispatch($user, $offers->pluck('id')->toArray());
             });
     }
 
@@ -344,6 +391,49 @@ class MatchingService
                     $this->match($user, $offer, false, false);
                 }
             });
+    }
+
+    /**
+     * Tente de trouver les coordonnées d'une offre à partir de son libellé location.
+     */
+    private function getJobCoords(?string $location): ?array
+    {
+        if (!$location) return null;
+
+        // 1. Cherche un code postal dans le texte (4 chiffres pour la Belgique)
+        if (preg_match('/(\d{4})/', $location, $matches)) {
+            $zip = ZipCode::where('zip_code', $matches[1])->first();
+            if ($zip) return ['lat' => $zip->latitude, 'lon' => $zip->longitude];
+        }
+
+        // 2. Nettoyage des préfixes administratifs courants
+        $cleanLocation = trim(str_ireplace(['Arrondissement de', 'Province de', 'Région de'], '', $location));
+        
+        // 3. Cherche par nom de ville exact (insensible à la casse via le driver sqlite/mysql par défaut)
+        $zip = ZipCode::where('city', $cleanLocation)->first();
+        if ($zip) return ['lat' => $zip->latitude, 'lon' => $zip->longitude];
+
+        // 4. Si toujours rien, on essaie de voir si un nom de ville connu est CONTENU dans le texte
+        // Pour éviter de ramer, on ne fait ça que pour les villes de + de 4 lettres
+        if (strlen($cleanLocation) > 3) {
+            $zip = ZipCode::whereRaw('? LIKE "%" || city || "%"', [$cleanLocation])->first();
+            if ($zip) return ['lat' => $zip->latitude, 'lon' => $zip->longitude];
+        }
+
+        return null;
+    }
+
+    /**
+     * Formule de Haversine pour calculer la distance entre deux points GPS (en km).
+     */
+    private function calculateDistance($lat1, $lon1, $lat2, $lon2)
+    {
+        $earthRadius = 6371;
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+        $a = sin($dLat/2) * sin($dLat/2) + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLon/2) * sin($dLon/2);
+        $c = 2 * atan2(sqrt($a), sqrt(1-$a));
+        return $earthRadius * $c;
     }
 
     /**

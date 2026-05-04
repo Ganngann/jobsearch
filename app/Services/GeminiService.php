@@ -8,16 +8,30 @@ use Illuminate\Support\Facades\Log;
 class GeminiService
 {
     protected ?string $apiKey;
-    protected string $baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent';
+    protected string $model = 'gemini-2.0-flash-lite';
 
     public function __construct()
     {
         $this->apiKey = config('services.gemini.key', env('GEMINI_API_KEY')) ?? '';
     }
 
+    /**
+     * Définit le modèle à utiliser pour la prochaine requête.
+     */
+    public function withModel(string $model): self
+    {
+        $this->model = $model;
+        return $this;
+    }
+
+    protected function getUrl(): string
+    {
+        return "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent";
+    }
+
     public function analyzeMatch(string $prompt): ?array
     {
-        return $this->generateJson($prompt);
+        return $this->withModel('gemini-2.0-flash-lite')->generateJson($prompt);
     }
 
     /**
@@ -43,7 +57,7 @@ class GeminiService
                 return $exception instanceof \Illuminate\Http\Client\ConnectionException ||
                        ($exception->response && $exception->response->status() === 503);
             })
-            ->post("{$this->baseUrl}?key={$this->apiKey}", $payload);
+            ->post("{$this->getUrl()}?key={$this->apiKey}", $payload);
 
         if ($response->failed()) {
             Log::error('Gemini API request failed (ask) after retries', ['error' => $response->body()]);
@@ -82,7 +96,7 @@ class GeminiService
         }
         ";
 
-        return $this->generateJson($prompt);
+        return $this->withModel('gemini-3.1-flash-lite-preview')->generateJson($prompt);
     }
 
     /**
@@ -111,7 +125,7 @@ class GeminiService
         }
         ";
 
-        return $this->generateJson($prompt);
+        return $this->withModel('gemini-3.1-flash-lite-preview')->generateJson($prompt);
     }
 
     public function chat(array $messages, ?string $systemInstruction = null, ?array $responseSchema = null): ?array
@@ -149,7 +163,7 @@ class GeminiService
                 return $exception instanceof \Illuminate\Http\Client\ConnectionException ||
                        ($exception->response && $exception->response->status() === 503);
             })
-            ->post("{$this->baseUrl}?key={$this->apiKey}", $payload);
+            ->post("{$this->getUrl()}?key={$this->apiKey}", $payload);
 
         if ($response->failed()) {
             Log::error('Gemini API request failed', ['error' => $response->body()]);
