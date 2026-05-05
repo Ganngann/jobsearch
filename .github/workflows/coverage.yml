@@ -51,4 +51,20 @@ jobs:
         env:
           DB_CONNECTION: sqlite
           DB_DATABASE: database/database.sqlite
-        run: php artisan test --coverage
+        run: |
+          php artisan test --coverage --coverage-clover=coverage.xml --coverage-html=coverage-report
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: php-coverage-report
+          path: coverage-report/
+
+      - name: Post Coverage Summary
+        if: always()
+        run: |
+          if [ -f coverage.xml ]; then
+            PERCENTAGE=$(php -r '$xml = simplexml_load_file("coverage.xml"); $metrics = $xml->project->metrics; $covered = (float)$metrics["coveredstatements"]; $total = (float)$metrics["statements"]; echo $total > 0 ? round(($covered / $total) * 100, 2) : 0;')
+            echo "### 📊 Code Coverage: ${PERCENTAGE}%" >> $GITHUB_STEP_SUMMARY
+          fi
