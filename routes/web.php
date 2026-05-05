@@ -6,6 +6,9 @@ use App\Http\Controllers\ForemSearchController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
+    if (auth()->check()) {
+        return redirect()->route('dashboard');
+    }
     $stats = [
         'jobs' => \App\Models\JobOffer::where('status', 'active')->count(),
         'metiers' => \App\Models\Metier::whereHas('jobOffers')->count(),

@@ -34,9 +34,31 @@ class JobOfferController extends Controller
     {
         $user = Auth::user();
 
-        // Si le profil n'est pas prêt, on redirige vers l'accueil onboarding
+        // Onboarding progress redirection logic
         if (!$user->isProfileMature()) {
-            return redirect()->route('onboarding');
+            // Step 1: Narrative & Journey
+            if ($user->getNarrativeProgress() < 100) {
+                // If totally empty, show the choice page (welcome/onboarding)
+                if ($user->facts()->count() == 0 && $user->experiences()->count() == 0) {
+                    return redirect()->route('onboarding');
+                }
+                return redirect()->route('profile.builder');
+            }
+
+            // Step 2: Skills validation
+            if ($user->getSkillsProgress() < 100) {
+                return redirect()->route('profile.skills.index');
+            }
+
+            // Step 3: ROME Targeting
+            if ($user->getRomeProgress() < 100) {
+                return redirect()->route('discovery.index');
+            }
+
+            // Step 4: Mobility
+            if ($user->getMobilityProgress() < 100) {
+                return redirect()->route('profile.mobility.index');
+            }
         }
 
         $query = JobOffer::query();

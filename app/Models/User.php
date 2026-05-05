@@ -162,12 +162,46 @@ class User extends Authenticatable
         return $this->hasMany(VolunteerExperience::class)->orderBy('start_date', 'desc');
     }
 
+    public function getNarrativeProgress(): int
+    {
+        $factsCount = $this->facts()->count();
+        $journeyCount = $this->experiences()->count() + $this->educations()->count();
+        
+        $narrativeScore = min(70, ($factsCount / 20) * 70);
+        $journeyScore = min(30, ($journeyCount / 3) * 30);
+        
+        return (int) round($narrativeScore + $journeyScore);
+    }
+
+    public function getSkillsProgress(): int
+    {
+        $skillsCount = $this->validatedSkills()->count();
+        return (int) min(100, round(($skillsCount / 50) * 100));
+    }
+
+    public function getRomeProgress(): int
+    {
+        $specificCount = $this->preferredMetiers()->wherePivot('status', 'favorite')->count();
+        $familyCount = $this->preferredReferentielMetiers()->wherePivot('status', 'favorite')->count();
+        $romeCount = $specificCount + $familyCount;
+        
+        return (int) min(100, round(($romeCount / 3) * 100));
+    }
+
+    public function getMobilityProgress(): int
+    {
+        return $this->zip_code ? 100 : 0;
+    }
+
     /**
      * Vérifie si le profil est prêt pour le matching.
      */
     public function isProfileMature(): bool
     {
-        return empty($this->getMissingProfileElements());
+        return $this->getNarrativeProgress() >= 100 
+            && $this->getSkillsProgress() >= 100 
+            && $this->getRomeProgress() >= 100 
+            && $this->getMobilityProgress() >= 100;
     }
 
     /**
@@ -177,20 +211,20 @@ class User extends Authenticatable
     {
         $missing = [];
 
-        $metiersCount = $this->preferredMetiers()->wherePivot('status', '!=', 'refused')->count();
-        $familiesCount = $this->preferredReferentielMetiers()->wherePivot('status', '!=', 'refused')->count();
-
-        if (($metiersCount + $familiesCount) < 1) {
-            $missing[] = 'un métier préféré ou une famille ROME';
+        if ($this->getNarrativeProgress() < 100) {
+            $missing[] = 'un récit complet (faits et expériences)';
         }
 
-        if ($this->skills()->count() < 5) {
-            $count = 5 - $this->skills()->count();
-            $missing[] = "{$count} compétence(s) technique(s) supplémentaire(s)";
+        if ($this->getSkillsProgress() < 100) {
+            $missing[] = 'au moins 50 compétences validées';
         }
 
-        if (empty($this->zip_code)) {
-            $missing[] = 'votre code postal (zone de mobilité)';
+        if ($this->getRomeProgress() < 100) {
+            $missing[] = 'au moins 3 métiers favoris';
+        }
+
+        if ($this->getMobilityProgress() < 100) {
+            $missing[] = 'votre zone de mobilité (code postal)';
         }
 
         return $missing;
