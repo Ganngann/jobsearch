@@ -35,10 +35,12 @@ class ProfileMappingService
             ->pluck('skill_id')
             ->toArray();
 
-        // 2. On récupère le catalogue SANS les compétences déjà triées et AVEC au moins une offre
+        // 2. On récupère le catalogue SANS les compétences déjà triées et AVEC au moins DEUX offres actives
         $allSkills = Skill::select('id', 'label')
             ->whereNotIn('id', $knownSkillIds)
-            ->has('jobOffers')
+            ->whereHas('jobOffers', function($query) {
+                $query->where('status', 'active');
+            }, '>=', 2)
             ->get();
         
         $skillsCatalog = $allSkills->map(fn($s) => "[ID:{$s->id}] {$s->label}")->implode("\n");
@@ -79,11 +81,16 @@ class ProfileMappingService
 
         if (empty($selectedIds)) return [];
 
-        // 5. On récupère les compétences par ID
+        // 5. On récupère les compétences par ID (en s'assurant qu'elles respectent toujours les critères)
         $suggestedSkills = Skill::query()
             ->whereIn('id', $selectedIds)
             ->whereNotIn('id', $knownSkillIds)
-            ->withCount('jobOffers')
+            ->whereHas('jobOffers', function($query) {
+                $query->where('status', 'active');
+            }, '>=', 2)
+            ->withCount(['jobOffers' => function($query) {
+                $query->where('status', 'active');
+            }])
             ->get();
 
         // On remap pour inclure la raison de l'IA
