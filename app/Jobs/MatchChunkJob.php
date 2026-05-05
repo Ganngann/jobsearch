@@ -26,7 +26,7 @@ class MatchChunkJob implements ShouldQueue
     {
         // Préparation du contexte (Sac à Dos) pour éviter les N+1
         $context = [
-            'skill_ids' => $this->user->skills()->pluck('skills.id')->toArray(),
+            'skill_ids' => $this->user->validatedSkills()->pluck('skills.id')->toArray(),
             'permit_ids' => $this->user->permits()->pluck('permits.id')->toArray(),
             'language_ids' => $this->user->languages()->pluck('languages.id')->toArray(),
             'preferred_metiers' => $this->user->preferredMetiers,

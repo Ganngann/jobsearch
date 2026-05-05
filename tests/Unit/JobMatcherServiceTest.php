@@ -141,4 +141,39 @@ class JobMatcherServiceTest extends TestCase
         $this->assertEquals(70, $result['details']['location']['score']);
         $this->assertEquals('À vérifier (distance)', $result['details']['location']['message']);
     }
+    public function test_calculate_hard_score_ignores_non_active_skills(): void
+    {
+        $user = User::factory()->create(['zip_code' => '1000']);
+        $employer = Employer::create(['label' => 'Test Employer']);
+
+        $activeSkill = Skill::create(['label' => 'Active', 'code' => 'S1', 'type' => 'hard']);
+        $draftSkill = Skill::create(['label' => 'Draft', 'code' => 'S2', 'type' => 'hard']);
+        $refusedSkill = Skill::create(['label' => 'Refused', 'code' => 'S3', 'type' => 'hard']);
+
+        $user->skills()->attach($activeSkill->id, ['status' => 'active', 'level' => 'expert']);
+        $user->skills()->attach($draftSkill->id, ['status' => 'draft', 'level' => 'expert']);
+        $user->skills()->attach($refusedSkill->id, ['status' => 'refused', 'level' => 'expert']);
+
+        $jobOffer = JobOffer::create([
+            'forem_id' => '111',
+            'forem_ref' => 'REF111',
+            'employer_id' => $employer->id,
+            'contract_type' => 'CDI',
+            'working_regime' => 'Temps plein',
+            'title' => 'Test Job',
+            'location' => '1000 Bruxelles',
+            'is_detailed' => true,
+        ]);
+
+        // Job has all three skills
+        $jobOffer->skills()->attach([$activeSkill->id, $draftSkill->id, $refusedSkill->id]);
+
+        $result = $this->service->calculateHardScore($user, $jobOffer);
+
+        // Only the active skill should be matched
+        // Matched = 1, Total = 3 => Score = (1/3) * 100 = 33.33
+        $this->assertEquals(round(33.3333333333), round($result['details']['skills']['score']));
+        $this->assertCount(1, $result['details']['skills']['matched']);
+        $this->assertEquals('Active', $result['details']['skills']['matched'][0]['label']);
+    }
 }

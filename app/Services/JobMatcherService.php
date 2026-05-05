@@ -38,7 +38,7 @@ class JobMatcherService
             return ['score' => 100, 'matched' => [], 'missing' => []];
         }
 
-        $userSkillIds = $user->skills->pluck('id')->toArray();
+        $userSkillIds = $user->validatedSkills->pluck('id')->toArray();
         $matched = [];
         $missing = [];
         $requiredMissingCount = 0;

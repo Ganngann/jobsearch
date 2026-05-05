@@ -297,7 +297,7 @@ EOT;
                 'name' => $user->name,
                 'birth_date' => $user->birth_date?->format('Y-m-d') ?? 'Unknown',
             ],
-            'skills' => $user->skills->pluck('name')->toArray(),
+            'skills' => $user->validatedSkills->pluck('label')->toArray(),
             'experiences' => $user->experiences->map(fn($e) => array_filter([
                 'id' => $e->id,
                 'status' => $e->status !== 'validated' ? $e->status : null,

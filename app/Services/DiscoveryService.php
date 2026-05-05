@@ -86,7 +86,7 @@ RÉPONSES AU FORMAT JSON UNIQUEMENT :
 
     protected function formatUserProfile(User $user)
     {
-        $skills = $user->skills->pluck('label')->implode(', ');
+        $skills = $user->validatedSkills->pluck('label')->implode(', ');
         $aspirations = $user->aspirations;
         $profileText = $user->profile_text;
         $headline = $user->headline;

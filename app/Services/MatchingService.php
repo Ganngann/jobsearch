@@ -133,7 +133,7 @@ class MatchingService
         $allJobSkills = $jobOffer->skills;
         $missingSkills = collect();
         if ($allJobSkills->count() > 0) {
-            $userSkillIds = $context['skill_ids'] ?? $user->skills()->pluck('skills.id')->toArray();
+            $userSkillIds = $context['skill_ids'] ?? $user->validatedSkills()->pluck('skills.id')->toArray();
             $matchedSkills = $allJobSkills->whereIn('id', $userSkillIds);
             
             $baseSkillScore = ($matchedSkills->count() / $allJobSkills->count()) * 40;
@@ -301,7 +301,7 @@ class MatchingService
      */
     protected function buildPrompt(User $user, JobOffer $jobOffer, float $distance = null): string
     {
-        $userSkills = $user->skills()->pluck('label')->implode(', ');
+        $userSkills = $user->validatedSkills()->pluck('label')->implode(', ');
         $userLangs = $user->languages()->withPivot('level')->get()->map(fn($l) => "{$l->label} ({$l->pivot->level})")->implode(', ');
         
         // Récupération de tous les récits

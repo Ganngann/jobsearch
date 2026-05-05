@@ -8,6 +8,7 @@ use App\Models\Metier;
 use App\Models\Employer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class DashboardTest extends TestCase
 {
@@ -41,7 +42,7 @@ class DashboardTest extends TestCase
         \App\Models\Experience::factory()->count(3)->create(['user_id' => $this->user->id]);
     }
 
-    /** @test */
+    #[Test]
     public function dashboard_page_is_accessible()
     {
         $response = $this->actingAs($this->user)
@@ -53,7 +54,7 @@ class DashboardTest extends TestCase
         $response->assertSee('dashboardApp'); // Ensure the Alpine component is referenced
     }
 
-    /** @test */
+    #[Test]
     public function dashboard_can_be_filtered_by_metier()
     {
         $metier = Metier::first();
@@ -66,7 +67,7 @@ class DashboardTest extends TestCase
         $response->assertViewIs('job-offers.partials.list-items');
     }
 
-    /** @test */
+    #[Test]
     public function dashboard_can_search_offers()
     {
         $offer = JobOffer::first();
@@ -78,7 +79,7 @@ class DashboardTest extends TestCase
         $response->assertStatus(200);
     }
 
-    /** @test */
+    #[Test]
     public function dashboard_job_preview_is_accessible()
     {
         $offer = JobOffer::first();
