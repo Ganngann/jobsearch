@@ -1,4 +1,26 @@
-<div class="lg:col-span-1 bg-white rounded-3xl p-6 shadow-xl border border-slate-100 flex flex-col">
+<div class="lg:col-span-1 bg-white rounded-3xl p-6 shadow-xl border border-slate-100 flex flex-col"
+     x-data="{
+        searchQuery: '',
+        searchResults: [],
+        searching: false,
+        async searchMetiers() {
+            if (this.searchQuery.length < 2) return this.searchResults = [];
+            this.searching = true;
+            const data = await $store.discovery.get(`/api/metiers/search?q=${encodeURIComponent(this.searchQuery)}`);
+            this.searchResults = data || [];
+            this.searching = false;
+        },
+        async addMetier(res) {
+            const data = await $store.discovery.post(`/discovery/metiers/${res.id}/status`, { status: 'favorite' });
+            if (data?.status === 'success') {
+                $store.discovery.addSaved({ id: res.id, code: res.code, title: res.label, type: 'specific' });
+                $store.discovery.updateSuggestionStatus(res, 'favorite');
+                this.searchQuery = '';
+                this.searchResults = [];
+                window.dispatchEvent(new CustomEvent('metier-added'));
+            }
+        }
+     }">
     <h3 class="text-lg font-black text-slate-900 mb-4 flex items-center gap-2">
         <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
         Ajouter manuellement
@@ -25,7 +47,7 @@
                     <span class="text-[10px] text-slate-400 font-medium" x-text="res.code"></span>
                 </div>
                 <button 
-                    @click="setMetierStatus(res, 'favorite'); searchQuery = ''; searchResults = []"
+                    @click="addMetier(res)"
                     class="p-2 bg-white text-indigo-600 rounded-lg shadow-sm opacity-0 group-hover:opacity-100 transition-all hover:bg-indigo-600 hover:text-white"
                 >
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>

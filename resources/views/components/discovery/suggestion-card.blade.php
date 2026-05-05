@@ -1,4 +1,39 @@
-<div class="bg-white rounded-3xl p-8 shadow-xl border border-slate-100 flex flex-col relative overflow-hidden group">
+<div class="bg-white rounded-3xl p-8 shadow-xl border border-slate-100 flex flex-col relative overflow-hidden group"
+     x-data="{
+        async setReferentielStatus(s, status) {
+            const oldStatus = s.status;
+            const newStatus = s.status === status ? 'none' : status;
+            const data = await $store.discovery.post(`/discovery/referentiel/${s.code}/status`, { status: newStatus });
+            
+            if (data?.status === 'success') {
+                s.status = data.current_status;
+                if (s.variants) s.variants.forEach(v => v.status = s.status);
+                if (s.status === 'favorite') {
+                    $store.discovery.addSaved({ id: s.id, code: s.code, title: s.title, type: 'family' });
+                    window.dispatchEvent(new CustomEvent('metier-added'));
+                } else if (oldStatus === 'favorite' && s.status !== 'favorite') {
+                    $store.discovery.removeSaved({ code: s.code, type: 'family' });
+                    window.dispatchEvent(new CustomEvent('metier-removed'));
+                }
+            }
+        },
+        async toggleBlacklist(s) {
+            const isBlacklisting = !s.is_blacklisted;
+            const data = await $store.discovery.post(`/discovery/referentiel/${s.code}/status`, { status: isBlacklisting ? 'refused' : 'none' });
+            
+            if (data?.status === 'success') {
+                s.is_blacklisted = !s.is_blacklisted;
+                if (s.is_blacklisted) {
+                    s.status = 'refused';
+                    if (s.variants) s.variants.forEach(v => v.status = 'refused');
+                    $store.discovery.removeSaved({ code: s.code, type: 'family' });
+                } else {
+                    s.status = 'none';
+                    if (s.variants) s.variants.forEach(v => v.status = 'none');
+                }
+            }
+        }
+     }">
     <!-- Badge Type -->
     <div class="absolute top-0 right-0 p-4">
         <span 

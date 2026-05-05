@@ -1,4 +1,22 @@
-<div class="flex items-center justify-between gap-3 p-2 hover:bg-white rounded-xl transition-colors group/item">
+<div class="flex items-center justify-between gap-3 p-2 hover:bg-white rounded-xl transition-colors group/item"
+     x-data="{
+        async setMetierStatus(v, status) {
+            const oldStatus = v.status;
+            const newStatus = v.status === status ? 'none' : status;
+            const data = await $store.discovery.post(`/discovery/metiers/${v.id}/status`, { status: newStatus });
+            
+            if (data?.status === 'success') {
+                v.status = data.current_status;
+                if (v.status === 'favorite') {
+                    $store.discovery.addSaved({ id: v.id, code: v.code, title: v.label || v.title, type: 'specific' });
+                    window.dispatchEvent(new CustomEvent('metier-added'));
+                } else if (oldStatus === 'favorite' && v.status !== 'favorite') {
+                    $store.discovery.removeSaved({ id: v.id, type: 'specific' });
+                    window.dispatchEvent(new CustomEvent('metier-removed'));
+                }
+            }
+        }
+     }">
     <span class="text-xs font-medium text-slate-600 line-clamp-2" x-text="v.label"></span>
     <div class="flex items-center gap-1 shrink-0">
         <!-- Favorite (+20) -->
