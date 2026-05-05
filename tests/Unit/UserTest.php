@@ -18,22 +18,40 @@ class UserTest extends TestCase
         $user = User::factory()->create(['zip_code' => null]);
 
         $this->assertFalse($user->isProfileMature());
-        $this->assertContains('votre code postal (zone de mobilité)', $user->getMissingProfileElements());
+        $this->assertContains('votre zone de mobilité (code postal)', $user->getMissingProfileElements());
 
-        $this->assertContains('un métier préféré ou une famille ROME', $user->getMissingProfileElements());
-        $this->assertContains('5 compétence(s) technique(s) supplémentaire(s)', $user->getMissingProfileElements());
+        $this->assertContains('au moins 3 métiers favoris', $user->getMissingProfileElements());
+        $this->assertContains('au moins 50 compétences validées', $user->getMissingProfileElements());
+        $this->assertContains('un récit complet (faits et expériences)', $user->getMissingProfileElements());
     }
 
     public function test_is_profile_mature_returns_true_when_all_elements_present(): void
     {
         $user = User::factory()->create(['zip_code' => '1000']);
 
-        $metier = Metier::create(['label' => 'Developper', 'code' => 'M1805']);
-        $user->preferredMetiers()->attach($metier->id, ['status' => 'favorite']);
+        // 3 métiers favoris
+        for ($i = 1; $i <= 3; $i++) {
+            $metier = Metier::create(['label' => "Metier $i", 'code' => "M$i"]);
+            $user->preferredMetiers()->attach($metier->id, ['status' => 'favorite']);
+        }
 
-        for ($i = 1; $i <= 5; $i++) {
+        // 50 skills
+        for ($i = 1; $i <= 50; $i++) {
             $skill = Skill::create(['label' => "Skill $i", 'code' => "S$i", 'type' => 'hard']);
             $user->skills()->attach($skill->id, ['status' => 'active', 'level' => 'expert']);
+        }
+
+        // Narrative: 20 facts and 3 experiences
+        for ($i = 1; $i <= 20; $i++) {
+            $user->facts()->create(['content' => "Fact $i"]);
+        }
+        for ($i = 1; $i <= 3; $i++) {
+            $user->experiences()->create([
+                'title' => "Exp $i",
+                'company' => "Comp $i",
+                'start_date' => now()->subYear(),
+                'description' => "Desc $i"
+            ]);
         }
 
         $this->assertTrue($user->isProfileMature());
