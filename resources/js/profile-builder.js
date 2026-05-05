@@ -27,7 +27,7 @@ export default (initialData) => ({
 
     get filteredFacts() {
         if (this.showAllFacts) return this.facts;
-        return this.facts.filter(f => f.status === 'validated' || f.proposed_action || f.session_id === this.currentSessionId);
+        return this.facts.filter(f => f.status === 'validated' || f.proposed_action || f.session_id === this.currentSessionId || f._isNew);
     },
 
     get pendingChangesCount() {
