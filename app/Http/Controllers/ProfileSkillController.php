@@ -47,21 +47,22 @@ class ProfileSkillController extends Controller
     public function updateStatus(Request $request, Skill $skill)
     {
         $user = Auth::user();
-        $status = $request->input('status'); // active, neutral, refused
+        $status = $request->input('status'); // active, neutral, refused, none
 
-        if (!in_array($status, ['active', 'neutral', 'refused'])) {
+        if (!in_array($status, ['active', 'neutral', 'refused', 'none'])) {
             return response()->json(['status' => 'error', 'message' => 'Statut invalide.'], 400);
         }
 
-        // Si status neutral, on peut aussi l'enlever du profil si on veut être strict, 
-        // mais ici "neutral" veut dire "Je peux m'adapter", donc on le garde avec ce tag.
-        
-        $user->skills()->syncWithoutDetaching([
-            $skill->id => [
-                'status' => $status,
-                'level' => 'intermediate' // Défaut
-            ]
-        ]);
+        if ($status === 'none') {
+            $user->skills()->detach($skill->id);
+        } else {
+            $user->skills()->syncWithoutDetaching([
+                $skill->id => [
+                    'status' => $status,
+                    'level' => 'intermediate' // Défaut
+                ]
+            ]);
+        }
 
         return response()->json([
             'status' => 'success',

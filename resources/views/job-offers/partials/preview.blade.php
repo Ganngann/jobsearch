@@ -328,13 +328,17 @@
                             <div x-data="{ 
                                     hasSkill: {{ $hasSkill ? 'true' : 'false' }},
                                     async toggleSkill() {
-                                        const url = this.hasSkill 
-                                            ? '{{ route('profile.skills.remove', $skill) }}?current_offer_id={{ $jobOffer->id }}' 
-                                            : '{{ route('profile.skills.add', $skill) }}?current_offer_id={{ $jobOffer->id }}';
+                                        const url = '{{ route('profile.skills.status', $skill) }}';
+                                        const newStatus = this.hasSkill ? 'none' : 'active';
                                         
                                         const res = await fetch(url, {
                                             method: 'POST',
-                                            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }
+                                            headers: { 
+                                                'X-CSRF-TOKEN': '{{ csrf_token() }}', 
+                                                'Accept': 'application/json',
+                                                'Content-Type': 'application/json'
+                                            },
+                                            body: JSON.stringify({ status: newStatus })
                                         });
                                         if (res.ok) {
                                             this.hasSkill = !this.hasSkill;
