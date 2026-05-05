@@ -28,7 +28,8 @@ class ForemApiService
         ];
 
         try {
-            $response = Http::withoutVerifying()
+            $response = Http::timeout(15)
+                ->withoutVerifying()
                 ->withHeaders([
                     'User-Agent' => $this->userAgent,
                     'Accept' => 'application/json, text/plain, */*',
@@ -76,7 +77,8 @@ class ForemApiService
         ];
 
         try {
-            $response = Http::withoutVerifying()
+            $response = Http::timeout(15)
+                ->withoutVerifying()
                 ->withHeaders([
                     'User-Agent' => $this->userAgent,
                     'Accept' => 'application/json, text/plain, */*',
@@ -99,7 +101,8 @@ class ForemApiService
         $url = "{$this->baseUrl}/Diffusion/DetailOffre/{$jobId}";
         
         try {
-            $response = Http::withoutVerifying() // Correction SSL
+            $response = Http::timeout(15)
+                ->withoutVerifying() // Correction SSL
                 ->withHeaders([
                     'User-Agent' => $this->userAgent,
                     'Accept' => 'application/json, text/plain, */*',
@@ -136,7 +139,8 @@ class ForemApiService
         ], $criteria);
 
         try {
-            $response = Http::withoutVerifying()
+            $response = Http::timeout(15)
+                ->withoutVerifying()
                 ->withHeaders([
                     'User-Agent' => $this->userAgent,
                     'Accept' => 'application/json, text/plain, */*',
