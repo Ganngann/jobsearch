@@ -24,6 +24,7 @@ class DiscoveryController extends Controller
     {
         $user = Auth::user();
         $suggestions = $user->discoverySuggestions()->get()->map(function($s) use ($user) {
+            $referentiel = ReferentielMetier::where('code', $s->code)->first();
             $pivot = $user->preferredReferentielMetiers()->where('code', $s->code)->first();
             $isParentFavorite = $pivot && $pivot->pivot->status === 'favorite';
             $parentStatus = $pivot ? $pivot->pivot->status : 'none';
@@ -44,6 +45,7 @@ class DiscoveryController extends Controller
             })->count();
             
             return [
+                'id' => $referentiel ? $referentiel->id : null,
                 'code' => $s->code,
                 'title' => $s->title,
                 'reason' => $s->reason,
@@ -56,8 +58,29 @@ class DiscoveryController extends Controller
             ];
         });
 
+        $savedReferentiels = $user->preferredReferentielMetiers()
+            ->wherePivot('status', 'favorite')
+            ->get(['referentiel_metiers.id', 'code', 'title'])
+            ->map(fn($r) => [
+                'id' => $r->id,
+                'code' => $r->code,
+                'title' => $r->title,
+                'type' => 'family'
+            ]);
+
+        $savedMetiers = $user->preferredMetiers()
+            ->wherePivot('status', 'favorite')
+            ->get(['metiers.id', 'code', 'label'])
+            ->map(fn($m) => [
+                'id' => $m->id,
+                'code' => $m->code,
+                'title' => $m->label,
+                'type' => 'specific'
+            ]);
+
         return view('discovery.index', [
-            'initialSuggestions' => $suggestions
+            'initialSuggestions' => $suggestions,
+            'savedMetiers' => $savedReferentiels->concat($savedMetiers)
         ]);
     }
 
@@ -92,11 +115,13 @@ class DiscoveryController extends Controller
         $blacklistedCodes = $user->blacklistedReferentielMetiers()->pluck('code')->toArray();
         
         $enriched = array_map(function($s) use ($user) {
+            $referentiel = ReferentielMetier::where('code', $s['code'])->first();
             $pivot = $user->preferredReferentielMetiers()->where('code', $s['code'])->first();
             $isParentFavorite = $pivot && $pivot->pivot->status === 'favorite';
             $parentStatus = $pivot ? $pivot->pivot->status : 'none';
             $isParentRefused = $pivot && $pivot->pivot->status === 'refused';
 
+            $s['id'] = $referentiel ? $referentiel->id : null;
             $s['status'] = $parentStatus;
             $s['is_favorite'] = $isParentFavorite;
             $s['is_refused'] = $isParentRefused;
