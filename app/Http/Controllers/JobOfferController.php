@@ -57,9 +57,19 @@ class JobOfferController extends Controller
                 $q->where('code', 'LIKE', $request->rome . '%');
             });
         }
+        // 2c. Recherche par mot-clé (Titre ou Employeur)
+        if ($request->filled('q')) {
+            $q = $request->q;
+            $query->where(function($sq) use ($q) {
+                $sq->where('title', 'LIKE', "%{$q}%")
+                   ->orWhereHas('employer', function($eq) use ($q) {
+                       $eq->where('label', 'LIKE', "%{$q}%");
+                   });
+            });
+        }
 
         // 3. Filtrage par Score (Data Match)
-        if ($request->filled('min_score')) {
+        if ($request->filled('min_score') && $request->min_score > 0) {
             $query->whereHas('matches', function($q) use ($user, $request) {
                 $q->where('user_id', $user->id)
                   ->where('pre_score', '>=', $request->min_score);
@@ -99,13 +109,13 @@ class JobOfferController extends Controller
         $topMetiers = \App\Models\Metier::whereHas('jobOffers')
             ->withCount('jobOffers')
             ->orderBy('job_offers_count', 'desc')
-            ->limit(30)
+            ->limit(100)
             ->get();
 
         $topEmployers = \App\Models\Employer::whereHas('jobOffers')
             ->withCount('jobOffers')
             ->orderBy('job_offers_count', 'desc')
-            ->limit(20)
+            ->limit(50)
             ->get();
 
         $favoriteRomeCodes = $user->preferredReferentielMetiers()->pluck('code')->toArray();
@@ -128,8 +138,18 @@ class JobOfferController extends Controller
         $match = $jobOffer->matches()->where('user_id', $user->id)->first();
         
         // Si pas de match, on le crée à la volée (Data Match)
-        if (!$match) {
+        if (!$match && $jobOffer->is_detailed) {
             $match = $this->matchingService->match($user, $jobOffer, false, false);
+        }
+
+        // Fallback pour éviter le crash de la vue si le matching échoue
+        if (!$match) {
+            $match = new \App\Models\UserMatch([
+                'pre_score' => 0,
+                'final_score' => 0,
+                'strengths' => [],
+                'weaknesses' => []
+            ]);
         }
 
         $isParentFavorite = false;
@@ -185,8 +205,18 @@ class JobOfferController extends Controller
         }
 
         $match = $jobOffer->matches()->where('user_id', $user->id)->first();
-        if (!$match) {
+        if (!$match && $jobOffer->is_detailed) {
             $match = $this->matchingService->match($user, $jobOffer, false, false);
+        }
+
+        // Si toujours null (ex: sync échoué), on crée un objet vide pour éviter que la vue ne crashe
+        if (!$match) {
+            $match = new \App\Models\UserMatch([
+                'pre_score' => 0,
+                'final_score' => 0,
+                'strengths' => [],
+                'weaknesses' => []
+            ]);
         }
 
         $hardScore = $this->jobMatcherService->calculateHardScore($user, $jobOffer);

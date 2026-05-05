@@ -110,10 +110,14 @@
                     <!-- Score Data avec Tooltip -->
                     <div class="relative group cursor-help">
                         <div class="text-center p-4 bg-white rounded-2xl border border-slate-100 shadow-sm min-w-[100px] hover:border-indigo-200 transition-all">
-                            <p class="text-3xl font-black {{ ($match->pre_score ?? 0) >= 70 ? 'text-emerald-500' : (($match->pre_score ?? 0) >= 40 ? 'text-amber-500' : 'text-slate-400') }}">
-                                {{ $match->pre_score ?? '--' }}<span class="text-xs">%</span>
-                            </p>
-                            <p class="text-[8px] font-black uppercase tracking-widest text-slate-400 mt-1">Data Match</p>
+                            @if($match->exists)
+                                <p class="text-3xl font-black {{ ($match->pre_score ?? 0) >= 70 ? 'text-emerald-500' : (($match->pre_score ?? 0) >= 40 ? 'text-amber-500' : 'text-slate-400') }}">
+                                    {{ $match->pre_score ?? 0 }}<span class="text-xs">%</span>
+                                </p>
+                            @else
+                                <p class="text-3xl font-black text-slate-300">...</p>
+                            @endif
+                            <p class="text-[8px] font-black uppercase tracking-widest text-slate-400 mt-1">{{ $match->exists ? 'Data Match' : 'Calcul...' }}</p>
                         </div>
 
                         <!-- Tooltip Detail Riche (Positionné à GAUCHE pour ne rien couvrir) -->

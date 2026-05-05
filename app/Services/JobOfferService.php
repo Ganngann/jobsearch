@@ -112,7 +112,7 @@ class JobOfferService
 
             // Metier
             $metierLabel = $jobData['metier'] ?? 'Métier non spécifié';
-            $metierCode = $jobData['experience'][0]['code'] ?? null;
+            $metierCode = $jobData['experience'][0]['code'] ?? (Str::slug($metierLabel) ?: 'N/A');
             $metier = Metier::updateOrCreate(['label' => $metierLabel], ['code' => $metierCode]);
 
             // Construction de la description complète à partir de plusieurs champs Forem
@@ -176,6 +176,7 @@ class JobOfferService
             // Technical
             $techSkills = $jobData['competences'] ?? $jobData['competencies'] ?? [];
             foreach ($techSkills as $sData) {
+                if (!isset($sData['libelle'])) continue;
                 $slug = \Illuminate\Support\Str::slug($sData['libelle']);
                 $skill = Skill::updateOrCreate(
                     ['slug' => $slug],
@@ -190,6 +191,7 @@ class JobOfferService
 
             // Soft Skills
             foreach ($jobData['softSkills'] ?? [] as $sData) {
+                if (!isset($sData['libelle'])) continue;
                 $slug = Str::slug($sData['libelle']);
                 $skill = Skill::updateOrCreate(
                     ['slug' => $slug],
@@ -204,6 +206,7 @@ class JobOfferService
 
             // Office Skills
             foreach ($jobData['officeSkills'] ?? [] as $sData) {
+                if (!isset($sData['libelle'])) continue;
                 $slug = Str::slug($sData['libelle']);
                 $skill = Skill::updateOrCreate(
                     ['slug' => $slug],
@@ -220,6 +223,7 @@ class JobOfferService
 
             // Languages
             foreach ($jobData['langues'] ?? [] as $lData) {
+                if (!isset($lData['libelle'])) continue;
                 $slug = Str::slug($lData['libelle']);
                 $lang = Language::updateOrCreate(
                     ['slug' => $slug],
@@ -235,12 +239,13 @@ class JobOfferService
 
             // Permits
             foreach ($jobData['permisConduire'] ?? [] as $pData) {
-                $label = $pData['libelle'] ?? $pData['valeur'];
+                $label = $pData['libelle'] ?? $pData['valeur'] ?? null;
+                if (!$label) continue;
                 $slug = Permit::generateSlug($label);
                 $permit = Permit::updateOrCreate(
                     ['slug' => $slug],
                     [
-                        'label' => $pData['libelle'] ?? $pData['valeur'], 
+                        'label' => $label, 
                         'code' => isset($pData['code']) && strlen($pData['code']) <= 5 ? $pData['code'] : strtoupper(substr($slug, 0, 3)),
                         'value' => $pData['valeur'] ?? 'B'
                     ]
@@ -252,7 +257,10 @@ class JobOfferService
             foreach ($jobData['experience'] ?? [] as $eData) {
                 if (!isset($eData['libelle'])) continue;
                 
-                $expMetier = Metier::updateOrCreate(['label' => $eData['libelle']]);
+                $expMetier = Metier::updateOrCreate(
+                    ['label' => $eData['libelle']],
+                    ['code' => $eData['code'] ?? (Str::slug($eData['libelle']) ?: 'N/A')]
+                );
                 $jobOffer->requiredExperiences()->syncWithoutDetaching([
                     $expMetier->id => [
                         'is_required' => true,

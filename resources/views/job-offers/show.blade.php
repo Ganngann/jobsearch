@@ -536,10 +536,16 @@
                                 <div class="relative inline-flex items-center justify-center mb-6">
                                     <svg class="w-48 h-48 transform -rotate-90">
                                         <circle cx="96" cy="96" r="84" stroke="currentColor" stroke-width="12" fill="transparent" class="text-slate-800/50"></circle>
-                                        <circle cx="96" cy="96" r="84" stroke="currentColor" stroke-width="12" fill="transparent" stroke-dasharray="527" stroke-dashoffset="{{ 527 - (527 * ($match->final_score ?? $match->pre_score)) / 100 }}" class="{{ $match->final_score >= 70 ? 'text-indigo-500' : ($match->final_score >= 40 ? 'text-amber-500' : 'text-rose-500') }} transition-all duration-1000 ease-out"></circle>
+                                        @if($match->exists)
+                                            <circle cx="96" cy="96" r="84" stroke="currentColor" stroke-width="12" fill="transparent" stroke-dasharray="527" stroke-dashoffset="{{ 527 - (527 * ($match->final_score ?? $match->pre_score)) / 100 }}" class="{{ ($match->final_score ?? $match->pre_score) >= 70 ? 'text-indigo-500' : (($match->final_score ?? $match->pre_score) >= 40 ? 'text-amber-500' : 'text-rose-500') }} transition-all duration-1000 ease-out"></circle>
+                                        @endif
                                     </svg>
                                     <div class="absolute inset-0 flex flex-col items-center justify-center">
-                                        <span class="text-6xl font-black tracking-tighter">{{ $match->final_score ?? $match->pre_score }}<span class="text-2xl text-indigo-400/50">%</span></span>
+                                        @if($match->exists)
+                                            <span class="text-6xl font-black tracking-tighter">{{ $match->final_score ?? $match->pre_score }}<span class="text-2xl text-indigo-400/50">%</span></span>
+                                        @else
+                                            <span class="text-2xl font-black text-slate-500 uppercase tracking-widest">Calcul...</span>
+                                        @endif
                                         <span class="text-[10px] font-black text-slate-500 mt-2 uppercase tracking-[0.2em]">Match Score</span>
                                     </div>
                                 </div>

@@ -151,7 +151,17 @@
                     <h1 class="text-xl font-black text-slate-900">Offres Emploi</h1>
                     <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Exploration en temps réel</p>
                 </div>
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-4">
+                    <div class="relative group">
+                        <input 
+                            type="text" 
+                            x-model="filters.q" 
+                            @input.debounce.500ms="refreshList()"
+                            placeholder="Rechercher un poste, une entreprise..." 
+                            class="w-64 bg-slate-100 border-0 rounded-xl px-4 py-2 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 transition-all pl-10"
+                        >
+                        <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
                     <span class="text-[10px] font-black text-slate-400 px-3 py-1 bg-slate-100 rounded-full">
                         {{ $jobOffers->total() }} résultats
                     </span>
@@ -232,7 +242,8 @@
                     min_score: '{{ request('min_score', 0) }}',
                     metier_id: '{{ request('metier_id') }}',
                     employer_id: '{{ request('employer_id') }}',
-                    rome: '{{ request('rome') }}'
+                    rome: '{{ request('rome') }}',
+                    q: '{{ request('q') }}'
                 },
                 scores: {},
                 page: 1,
@@ -345,7 +356,10 @@
                     
                     const url = new URL(window.location.origin + window.location.pathname);
                     Object.keys(this.filters).forEach(key => {
-                        if (this.filters[key]) url.searchParams.append(key, this.filters[key]);
+                        const val = this.filters[key];
+                        if (val !== null && val !== '' && val !== 0 && val !== '0') {
+                            url.searchParams.append(key, val);
+                        }
                     });
                     url.searchParams.append('partial', '1');
 
@@ -364,30 +378,49 @@
                     this.loadingMore = true;
                     this.page++;
                     
-                    const url = new URL(window.location.origin + window.location.pathname);
-                    Object.keys(this.filters).forEach(key => {
-                        if (this.filters[key]) url.searchParams.append(key, this.filters[key]);
-                    });
-                    url.searchParams.append('page', this.page);
-                    url.searchParams.append('partial', '1');
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('page', this.page);
+                    url.searchParams.set('partial', '1');
 
-                    fetch(url.toString())
-                        .then(res => res.text())
-                        .then(html => {
-                            if (!html.trim()) {
-                                this.noMoreData = true;
-                            } else {
-                                document.getElementById('offers-container').insertAdjacentHTML('beforeend', html);
-                                this.initializeScores();
-                            }
-                            this.loadingMore = false;
-                        });
+                    fetch(url.toString(), {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    })
+                    .then(res => res.text())
+                    .then(html => {
+                        if (!html.trim()) {
+                            this.noMoreData = true;
+                        } else {
+                            const container = document.getElementById('offers-container');
+                            const temp = document.createElement('div');
+                            temp.innerHTML = html;
+                            
+                            // Récupérer les nouveaux éléments
+                            const newElements = Array.from(temp.children);
+                            newElements.forEach(el => {
+                                container.appendChild(el);
+                                // Initialiser Alpine sur le nouvel élément
+                                if (window.Alpine) {
+                                    window.Alpine.initTree(el);
+                                }
+                            });
+                            
+                            this.initializeScores();
+                        }
+                        this.loadingMore = false;
+                    })
+                    .catch(err => {
+                        console.error('Load more failed', err);
+                        this.loadingMore = false;
+                    });
                 },
 
                 updateUrl() {
                     const url = new URL(window.location.origin + window.location.pathname);
                     Object.keys(this.filters).forEach(key => {
-                        if (this.filters[key]) url.searchParams.append(key, this.filters[key]);
+                        const val = this.filters[key];
+                        if (val !== null && val !== '' && val !== 0 && val !== '0') {
+                            url.searchParams.append(key, val);
+                        }
                     });
                     window.history.pushState({}, '', url.toString());
                 }

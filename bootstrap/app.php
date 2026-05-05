@@ -25,8 +25,8 @@ return Application::configure(basePath: dirname(__DIR__))
         // Scan Cycle toutes les 15 minutes pour rafraîchir tout le catalogue
         $schedule->command('forem:scan --mode=cycle')->everyFifteenMinutes();
 
-        // Pull Worker tourne en continu pour les détails (limité pour éviter les chevauchements infinis)
-        $schedule->command('forem:pull-worker --sleep=5 --limit=10')->everyMinute()->withoutOverlapping();
+        // Pull Worker tourne en continu pour les détails (accéléré pour rattraper le retard)
+        $schedule->command('forem:pull-worker --sleep=2 --limit=30')->everyMinute()->withoutOverlapping();
 
         // Chasseur de Pépites IA (Analyse auto du meilleur match pour les utilisateurs actifs)
         $schedule->command('forem:auto-ai')->everyFifteenMinutes();
