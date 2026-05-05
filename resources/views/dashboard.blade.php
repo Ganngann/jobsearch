@@ -1,5 +1,19 @@
 <x-app-layout>
-    <div x-data="dashboardApp()" class="h-[calc(100vh-112px)] flex overflow-hidden bg-slate-50">
+    <div 
+        x-data="dashboardApp({
+            initialSelectedId: '{{ $jobOffers->first()?->forem_id }}',
+            csrfToken: '{{ csrf_token() }}',
+            filters: {
+                sort: '{{ request('sort', 'score_desc') }}',
+                min_score: '{{ request('min_score', 0) }}',
+                metier_id: '{{ request('metier_id') }}',
+                employer_id: '{{ request('employer_id') }}',
+                rome: '{{ request('rome') }}',
+                q: '{{ request('q') }}'
+            }
+        })" 
+        class="h-[calc(100vh-112px)] flex overflow-hidden bg-slate-50"
+    >
         
         <!-- SIDEBAR: Filtres & Exploration -->
         <aside class="w-80 border-r border-slate-200 bg-white flex flex-col shrink-0 overflow-y-auto custom-scrollbar">
@@ -232,214 +246,7 @@
     </div>
 
     <script>
-        function dashboardApp() {
-            return {
-                selectedId: '{{ $jobOffers->first()?->forem_id }}',
-                previewLoading: false,
-                previewHtml: '',
-                filters: {
-                    sort: '{{ request('sort', 'score_desc') }}',
-                    min_score: '{{ request('min_score', 0) }}',
-                    metier_id: '{{ request('metier_id') }}',
-                    employer_id: '{{ request('employer_id') }}',
-                    rome: '{{ request('rome') }}',
-                    q: '{{ request('q') }}'
-                },
-                scores: {},
-                page: 1,
-                loadingMore: false,
-                noMoreData: false,
-
-                init() {
-                    window.dashboard = this;
-                    // Initialiser les scores avec les données déjà présentes
-                    this.initializeScores();
-                    if (this.selectedId) {
-                        this.selectOffer(this.selectedId);
-                    }
-                },
-
-                initializeScores() {
-                    document.querySelectorAll('[data-offer-id]').forEach(el => {
-                        const id = el.dataset.offerId;
-                        this.scores[id] = {
-                            data: el.dataset.preScore,
-                            ia: el.dataset.aiScore === '' ? null : el.dataset.aiScore
-                        };
-                    });
-                },
-
-                async selectOffer(id) {
-                    this.selectedId = id;
-                    this.previewLoading = true;
-                    const res = await fetch(`/jobs/${id}/preview`);
-                    this.previewHtml = await res.text();
-                    this.previewLoading = false;
-
-                    // Si l'offre chargée est déjà en cours d'analyse, on relance le polling
-                    if (this.previewHtml.includes('Analyse IA...')) {
-                        this.pollAiStatus(id);
-                    }
-                },
-
-                async startAiAnalysis(offerId) {
-                    console.log('Starting AI analysis for:', offerId);
-                    this.previewLoading = true; // Feedback immédiat sur tout le panel
-                    
-                    try {
-                        const response = await fetch(`/jobs/${offerId}/match`, {
-                            method: 'POST',
-                            headers: { 
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}', 
-                                'Accept': 'application/json',
-                                'X-Requested-With': 'XMLHttpRequest'
-                            }
-                        });
-
-                        if (!response.ok) {
-                            throw new Error(`Server returned ${response.status}`);
-                        }
-
-                        const data = await response.json();
-                        console.log('Analysis started:', data);
-
-                        // Rafraîchir le preview pour montrer l'état "processing"
-                        await this.selectOffer(offerId);
-                        this.pollAiStatus(offerId);
-                    } catch (e) {
-                        this.previewLoading = false;
-                        console.error('AI Analysis failed to start', e);
-                        alert('Erreur lors du lancement de l\'analyse IA. Veuillez réessayer.');
-                    }
-                },
-
-                pollAiStatus(offerId) {
-                    const timer = setInterval(async () => {
-                        const res = await fetch(`/jobs/${offerId}/preview?check=1`);
-                        const html = await res.text();
-                        
-                        if (html.includes('id="ai-result-ready"') || html.includes('id="ai-result-failed"')) {
-                            clearInterval(timer);
-                            console.log('AI Analysis finished for:', offerId);
-                            
-                            // Extraire le score du HTML pour mettre à jour la liste de gauche
-                            const tempDiv = document.createElement('div');
-                            tempDiv.innerHTML = html;
-                            const scoreEl = tempDiv.querySelector('#ai-result-ready');
-                            if (scoreEl && this.scores[offerId]) {
-                                this.scores[offerId].ia = scoreEl.dataset.score;
-                            }
-
-                            // Rafraîchir complètement le panneau si c'est l'offre sélectionnée
-                            if (this.selectedId == offerId) {
-                                this.selectOffer(offerId);
-                            }
-                        }
-                    }, 3000);
-                },
-
-                updateOfferScore(offerId, score, isBlacklisted) {
-                    if (!this.scores[offerId]) {
-                        this.scores[offerId] = { data: score, ia: null };
-                    } else {
-                        this.scores[offerId].data = score;
-                    }
-                    
-                    const el = document.querySelector(`[data-offer-id="${offerId}"]`);
-                    if (el) el.dataset.preScore = score;
-                },
-
-                setMetier(id) {
-                    this.filters.metier_id = id;
-                    this.filters.employer_id = null;
-                    this.filters.rome = null;
-                    this.refreshList();
-                },
-
-                setEmployer(id) {
-                    this.filters.employer_id = id;
-                    this.filters.metier_id = null;
-                    this.filters.rome = null;
-                    this.refreshList();
-                },
-
-                refreshList() {
-                    this.page = 1;
-                    this.noMoreData = false;
-                    this.updateUrl();
-                    
-                    const url = new URL(window.location.origin + window.location.pathname);
-                    Object.keys(this.filters).forEach(key => {
-                        const val = this.filters[key];
-                        if (val !== null && val !== '' && val !== 0 && val !== '0') {
-                            url.searchParams.append(key, val);
-                        }
-                    });
-                    url.searchParams.append('partial', '1');
-
-                    fetch(url.toString())
-                        .then(res => res.text())
-                        .then(html => {
-                            document.getElementById('offers-container').innerHTML = html;
-                            document.getElementById('offers-scroll-container').scrollTop = 0;
-                            this.initializeScores();
-                        });
-                },
-
-                loadMore() {
-                    if (this.loadingMore || this.noMoreData) return;
-                    
-                    this.loadingMore = true;
-                    this.page++;
-                    
-                    const url = new URL(window.location.href);
-                    url.searchParams.set('page', this.page);
-                    url.searchParams.set('partial', '1');
-
-                    fetch(url.toString(), {
-                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                    })
-                    .then(res => res.text())
-                    .then(html => {
-                        if (!html.trim()) {
-                            this.noMoreData = true;
-                        } else {
-                            const container = document.getElementById('offers-container');
-                            const temp = document.createElement('div');
-                            temp.innerHTML = html;
-                            
-                            // Récupérer les nouveaux éléments
-                            const newElements = Array.from(temp.children);
-                            newElements.forEach(el => {
-                                container.appendChild(el);
-                                // Initialiser Alpine sur le nouvel élément
-                                if (window.Alpine) {
-                                    window.Alpine.initTree(el);
-                                }
-                            });
-                            
-                            this.initializeScores();
-                        }
-                        this.loadingMore = false;
-                    })
-                    .catch(err => {
-                        console.error('Load more failed', err);
-                        this.loadingMore = false;
-                    });
-                },
-
-                updateUrl() {
-                    const url = new URL(window.location.origin + window.location.pathname);
-                    Object.keys(this.filters).forEach(key => {
-                        const val = this.filters[key];
-                        if (val !== null && val !== '' && val !== 0 && val !== '0') {
-                            url.searchParams.append(key, val);
-                        }
-                    });
-                    window.history.pushState({}, '', url.toString());
-                }
-            }
-        }
+        // dashboardApp logic moved to resources/js/dashboard.js
     </script>
 
     <style>

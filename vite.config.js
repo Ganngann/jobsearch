@@ -8,4 +8,8 @@ export default defineConfig({
             refresh: true,
         }),
     ],
+    test: {
+        environment: 'happy-dom',
+        globals: true,
+    },
 });

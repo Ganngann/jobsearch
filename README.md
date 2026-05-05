@@ -24,8 +24,19 @@ composer dev
 
 ## Tests
 
+Lancer toute la suite (PHP + JS) :
 ```bash
 composer test
+```
+
+Lancer uniquement les tests Backend (Laravel) :
+```bash
+php artisan test
+```
+
+Lancer uniquement les tests Frontend (Vitest) :
+```bash
+npm run test:js
 ```
 
 ## Structure Technique

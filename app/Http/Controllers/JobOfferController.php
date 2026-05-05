@@ -123,7 +123,7 @@ class JobOfferController extends Controller
         $favoriteRomeCodes = $user->preferredReferentielMetiers()->pluck('code')->toArray();
 
         if ($request->ajax() || $request->has('partial')) {
-            return view('job-offers.partials.list-items', compact('jobOffers', 'favoriteRomeCodes'))->render();
+            return view('job-offers.partials.list-items', compact('jobOffers', 'favoriteRomeCodes'));
         }
 
         // Données pour les filtres de la sidebar
