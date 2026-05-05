@@ -161,10 +161,17 @@ class JobOfferController extends Controller
         // Vérification du statut de blacklist réel (pour éviter le délai du background job)
         $isOfferBlacklisted = $match->is_blacklisted ?? false;
         if (!$isOfferBlacklisted && $jobOffer->metier_id) {
-            $isOfferBlacklisted = $user->blacklistedMetiers()->where('metier_id', $jobOffer->metier_id)->exists();
+            $isOfferBlacklisted = $user->preferredMetiers()
+                ->where('metier_id', $jobOffer->metier_id)
+                ->wherePivot('status', 'refused')
+                ->exists();
+
             if (!$isOfferBlacklisted && $jobOffer->metier->code) {
                 $parentCode = substr($jobOffer->metier->code, 0, 5);
-                $isOfferBlacklisted = $user->blacklistedReferentielMetiers()->where('code', $parentCode)->exists();
+                $isOfferBlacklisted = $user->preferredReferentielMetiers()
+                    ->where('code', $parentCode)
+                    ->wherePivot('status', 'refused')
+                    ->exists();
             }
         }
 
@@ -240,10 +247,17 @@ class JobOfferController extends Controller
         // Vérification du statut de blacklist réel
         $isOfferBlacklisted = $match->is_blacklisted ?? false;
         if (!$isOfferBlacklisted && $jobOffer->metier_id) {
-            $isOfferBlacklisted = $user->blacklistedMetiers()->where('metier_id', $jobOffer->metier_id)->exists();
+            $isOfferBlacklisted = $user->preferredMetiers()
+                ->where('metier_id', $jobOffer->metier_id)
+                ->wherePivot('status', 'refused')
+                ->exists();
+
             if (!$isOfferBlacklisted && $jobOffer->metier->code) {
                 $parentCode = substr($jobOffer->metier->code, 0, 5);
-                $isOfferBlacklisted = $user->blacklistedReferentielMetiers()->where('code', $parentCode)->exists();
+                $isOfferBlacklisted = $user->preferredReferentielMetiers()
+                    ->where('code', $parentCode)
+                    ->wherePivot('status', 'refused')
+                    ->exists();
             }
         }
 

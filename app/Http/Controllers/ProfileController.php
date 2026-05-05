@@ -179,32 +179,16 @@ class ProfileController extends Controller
     public function edit(Request $request): View
     {
         return view('profile.edit', [
-            'user' => $request->user()->load(['preferredMetiers', 'blacklistedMetiers']),
+            'user' => $request->user(),
             'allSkills' => \App\Models\Skill::all(),
             'allLanguages' => \App\Models\Language::all(),
             'allPermits' => \App\Models\Permit::all(),
-            'allMetiers' => \App\Models\Metier::orderBy('label')->get(),
         ]);
     }
 
     /**
      * Update the user's preferred métiers.
      */
-    public function updateMetiers(Request $request)
-    {
-        $request->validate([
-            'metiers' => ['nullable', 'array'],
-            'metiers.*' => ['exists:metiers,id'],
-        ]);
-
-        $user = $request->user();
-        $user->preferredMetiers()->sync($request->metiers ?? []);
-
-        // Démarrage à froid (Asynchrone)
-        \App\Jobs\RecalculateMatchesJob::dispatch($user);
-
-        return Redirect::route('profile.edit')->with('status', 'metiers-updated');
-    }
 
     /**
      * Update the user's profile information.
@@ -418,67 +402,6 @@ class ProfileController extends Controller
         return response()->json(['success' => true, 'message' => 'Compétence retirée']);
     }
 
-    /**
-     * Blackliste un métier pour l'utilisateur.
-     */
-    public function blacklistMetier(Request $request, \App\Models\Metier $metier)
-    {
-        $user = Auth::user();
-        
-        // Ajouter à la blacklist
-        $user->blacklistedMetiers()->syncWithoutDetaching([$metier->id]);
-        
-        // Supprimer des métiers préférés
-        $user->preferredMetiers()->detach($metier->id);
-        
-        // Déclencher un recalcul pour ce métier (les scores passeront à 0 et le flag is_blacklisted à true)
-        $this->matchingService->triggerMetierMatch($user, $metier->id);
-
-        session()->flash('status', "Métier '{$metier->label}' ajouté à la liste noire");
-
-        return response()->json(['success' => true]);
-    }
-
-    /**
-     * Retire un métier des favoris de l'utilisateur.
-     */
-    public function removeMetier(Request $request, \App\Models\Metier $metier)
-    {
-        $user = Auth::user();
-        $user->preferredMetiers()->detach($metier->id);
-
-        $this->matchingService->triggerMetierMatch($user, $metier->id);
-
-        return response()->json(['success' => true]);
-    }
-
-    /**
-     * Ajoute un métier aux favoris de l'utilisateur.
-     */
-    public function addMetier(Request $request, \App\Models\Metier $metier)
-    {
-        $user = Auth::user();
-        
-        $user->preferredMetiers()->syncWithoutDetaching([$metier->id]);
-        $user->blacklistedMetiers()->detach($metier->id);
-
-        // Déclencher un matching pour ce nouvel intérêt (uniquement sur ce métier)
-        $this->matchingService->triggerMetierMatch($user, $metier->id);
-
-        return response()->json(['success' => true]);
-    }
-
-    /**
-     * Retire un métier de la blacklist.
-     */
-    public function unblacklistMetier(Request $request, \App\Models\Metier $metier)
-    {
-        $request->user()->blacklistedMetiers()->detach($metier->id);
-        
-        $this->matchingService->triggerMetierMatch($request->user(), $metier->id);
-
-        return response()->json(['success' => true]);
-    }
 
     /**
      * Recherche de métiers par mot-clé (API).

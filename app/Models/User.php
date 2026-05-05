@@ -124,10 +124,6 @@ class User extends Authenticatable
         return $this->belongsToMany(Metier::class, 'user_metier')->withPivot('status')->withTimestamps();
     }
 
-    public function blacklistedMetiers(): BelongsToMany
-    {
-        return $this->belongsToMany(Metier::class, 'user_blacklisted_metiers')->withTimestamps();
-    }
 
     public function preferredReferentielMetiers(): BelongsToMany
     {
@@ -149,10 +145,6 @@ class User extends Authenticatable
         return $this->hasMany(Education::class)->orderBy('graduation_year', 'desc');
     }
 
-    public function blacklistedReferentielMetiers(): BelongsToMany
-    {
-        return $this->belongsToMany(ReferentielMetier::class, 'user_blacklisted_referentiel')->withTimestamps();
-    }
 
     public function projects(): HasMany
     {
@@ -189,8 +181,8 @@ class User extends Authenticatable
     {
         $missing = [];
 
-        $metiersCount = $this->preferredMetiers()->count();
-        $familiesCount = $this->preferredReferentielMetiers()->count();
+        $metiersCount = $this->preferredMetiers()->wherePivot('status', '!=', 'refused')->count();
+        $familiesCount = $this->preferredReferentielMetiers()->wherePivot('status', '!=', 'refused')->count();
 
         if (($metiersCount + $familiesCount) < 1) {
             $missing[] = 'un métier préféré ou une famille ROME';

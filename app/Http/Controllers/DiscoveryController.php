@@ -36,7 +36,6 @@ class DiscoveryController extends Controller
                 ->map(function($v) use ($user, $isParentFavorite) {
                     $pivot = $user->preferredMetiers()->where('metier_id', $v->id)->first();
                     $v->status = $pivot ? $pivot->pivot->status : ($isParentFavorite ? 'favorite' : 'none');
-                    $v->is_blacklisted = $user->blacklistedMetiers()->where('metier_id', $v->id)->exists();
                     return $v;
                 });
             
@@ -113,7 +112,6 @@ class DiscoveryController extends Controller
 
         // Récupérer avec l'état des favoris et blacklist
         $favoriteCodes = $user->preferredReferentielMetiers()->pluck('code')->toArray();
-        $blacklistedCodes = $user->blacklistedReferentielMetiers()->pluck('code')->toArray();
         
         $enriched = array_map(function($s) use ($user) {
             $referentiel = ReferentielMetier::where('code', $s['code'])->first();
@@ -134,7 +132,6 @@ class DiscoveryController extends Controller
                 ->map(function($v) use ($user, $isParentFavorite) {
                     $pivot = $user->preferredMetiers()->where('metier_id', $v->id)->first();
                     $v->status = $pivot ? $pivot->pivot->status : ($isParentFavorite ? 'favorite' : 'none');
-                    $v->is_blacklisted = $user->blacklistedMetiers()->where('metier_id', $v->id)->exists();
                     return $v;
                 });
 

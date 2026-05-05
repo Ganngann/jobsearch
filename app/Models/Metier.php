@@ -27,8 +27,4 @@ class Metier extends Model
         return $this->belongsToMany(User::class, 'user_metier')->withTimestamps();
     }
 
-    public function blacklistedByUsers(): BelongsToMany
-    {
-        return $this->belongsToMany(User::class, 'user_blacklisted_metiers')->withTimestamps();
-    }
 }

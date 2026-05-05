@@ -25,10 +25,6 @@
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                     Récits & Expériences
                 </button>
-                <button @click="tab = 'metiers'" :class="tab === 'metiers' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-600 hover:text-gray-900'" class="px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                    Métiers
-                </button>
                 <button @click="tab = 'skills'" :class="tab === 'skills' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-600 hover:text-gray-900'" class="px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     Compétences
@@ -58,12 +54,6 @@
                     </div>
                 </div>
 
-                {{-- Tab: Metiers --}}
-                <div x-show="tab === 'metiers'" x-transition class="p-4 sm:p-8 bg-white shadow sm:rounded-xl border-l-4 border-emerald-500">
-                    <div class="max-w-6xl mx-auto">
-                        @include('profile.partials.update-metiers-form')
-                    </div>
-                </div>
 
                 {{-- Tab 3: Skills --}}
                 <div x-show="tab === 'skills'" x-transition class="p-4 sm:p-8 bg-white shadow sm:rounded-xl border-l-4 border-purple-500">

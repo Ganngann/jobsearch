@@ -20,9 +20,7 @@ class DiscoveryService
         $profile = $this->formatUserProfile($user);
         $referentiel = ReferentielMetier::where('is_active', true)->get(['code', 'title', 'family_name']);
         
-        $favoriteCodes = $user->preferredReferentielMetiers()->pluck('code')->toArray();
-        $blacklistedCodes = $user->blacklistedReferentielMetiers()->pluck('code')->toArray();
-        $excludedCodes = array_unique(array_merge($favoriteCodes, $blacklistedCodes));
+        $excludedCodes = $user->preferredReferentielMetiers()->pluck('code')->toArray();
         $excludedCodesString = !empty($excludedCodes) ? implode(', ', $excludedCodes) : 'Aucun';
 
         $referentielList = $referentiel->map(function($item) {
