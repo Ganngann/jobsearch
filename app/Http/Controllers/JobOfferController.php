@@ -216,16 +216,29 @@ class JobOfferController extends Controller
         // Récupérer ou créer le match de base
         $match = $jobOffer->matches()->firstOrCreate(['user_id' => $user->id]);
         
-        if ($match->ai_status === 'processing') {
-            return response()->json(['status' => 'already_processing']);
+        // Autoriser la relance si l'analyse semble bloquée (plus de 10 minutes)
+        $isStale = $match->ai_status === 'processing' && $match->updated_at->lt(now()->subMinutes(10));
+
+        if ($match->ai_status === 'processing' && !$isStale) {
+            return response()->json([
+                'status' => 'already_processing',
+                'message' => 'Une analyse est déjà en cours pour cette offre.'
+            ]);
         }
 
         // Marquer comme en cours et dispatcher
         $match->update(['ai_status' => 'processing']);
+        
+        \Illuminate\Support\Facades\Log::info("Dispatching AnalyzeJobOffer for User #{$user->id} and JobOffer #{$jobOffer->forem_id}");
+        
         \App\Jobs\AnalyzeJobOffer::dispatch($user, $jobOffer, $match);
 
         if ($request->ajax()) {
-            return response()->json(['status' => 'started', 'ai_status' => 'processing']);
+            return response()->json([
+                'status' => 'started', 
+                'ai_status' => 'processing',
+                'message' => 'L\'analyse IA a été lancée.'
+            ]);
         }
 
         return back()->with('status', 'Analyse IA lancée en arrière-plan.');

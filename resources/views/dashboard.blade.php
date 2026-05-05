@@ -283,9 +283,11 @@
                 },
 
                 async startAiAnalysis(offerId) {
-                    // Trouver le bouton ou l'état dans le DOM pour feedback immédiat
+                    console.log('Starting AI analysis for:', offerId);
+                    this.previewLoading = true; // Feedback immédiat sur tout le panel
+                    
                     try {
-                        await fetch(`/jobs/${offerId}/match`, {
+                        const response = await fetch(`/jobs/${offerId}/match`, {
                             method: 'POST',
                             headers: { 
                                 'X-CSRF-TOKEN': '{{ csrf_token() }}', 
@@ -293,11 +295,21 @@
                                 'X-Requested-With': 'XMLHttpRequest'
                             }
                         });
+
+                        if (!response.ok) {
+                            throw new Error(`Server returned ${response.status}`);
+                        }
+
+                        const data = await response.json();
+                        console.log('Analysis started:', data);
+
                         // Rafraîchir le preview pour montrer l'état "processing"
-                        this.selectOffer(offerId);
+                        await this.selectOffer(offerId);
                         this.pollAiStatus(offerId);
                     } catch (e) {
+                        this.previewLoading = false;
                         console.error('AI Analysis failed to start', e);
+                        alert('Erreur lors du lancement de l\'analyse IA. Veuillez réessayer.');
                     }
                 },
 
@@ -308,6 +320,7 @@
                         
                         if (html.includes('id="ai-result-ready"') || html.includes('id="ai-result-failed"')) {
                             clearInterval(timer);
+                            console.log('AI Analysis finished for:', offerId);
                             
                             // Extraire le score du HTML pour mettre à jour la liste de gauche
                             const tempDiv = document.createElement('div');
@@ -317,8 +330,9 @@
                                 this.scores[offerId].ia = scoreEl.dataset.score;
                             }
 
-                            if (this.selectedId === offerId) {
-                                this.previewHtml = html;
+                            // Rafraîchir complètement le panneau si c'est l'offre sélectionnée
+                            if (this.selectedId == offerId) {
+                                this.selectOffer(offerId);
                             }
                         }
                     }, 3000);

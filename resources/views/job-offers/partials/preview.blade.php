@@ -208,7 +208,11 @@
                         @endif
                     </div>
 
-                    @if($match && $match->ai_status === 'completed')
+                    @php
+                        $isAiStale = $match && $match->ai_status === 'processing' && $match->updated_at->lt(now()->subMinutes(10));
+                    @endphp
+
+                    @if($match && ($match->ai_status === 'completed' || ($match->final_score > 0 && !$isAiStale)))
                         <div id="ai-result-ready" data-score="{{ $match->final_score }}" class="hidden"></div>
                         <!-- Score IA -->
                         <div class="text-center p-4 bg-indigo-600 rounded-2xl shadow-lg shadow-indigo-100 min-w-[100px]">
@@ -237,9 +241,16 @@
                     @endif
                 </div>
 
-                @if($match && ($match->ai_status === 'idle' || $match->ai_status === 'failed'))
-                    <button @click="startAiAnalysis('{{ $jobOffer->forem_id }}')" class="w-full py-3 px-6 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">
-                        {{ $match->ai_status === 'failed' ? 'Réessayer l\'analyse' : 'Lancer Analyse IA' }}
+                @if($match && ($match->ai_status === 'idle' || $match->ai_status === 'failed' || $isAiStale) && !($match->final_score > 0))
+                    <button 
+                        @click="startAiAnalysis('{{ $jobOffer->forem_id }}')" 
+                        :disabled="previewLoading"
+                        class="w-full py-3 px-6 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-wait transition-all shadow-lg shadow-indigo-100 flex items-center justify-center gap-2"
+                    >
+                        <template x-if="previewLoading">
+                            <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        </template>
+                        <span x-text="previewLoading ? 'Lancement...' : '{{ $match->ai_status === 'failed' ? 'Réessayer l\'analyse' : 'Lancer Analyse IA' }}'"></span>
                     </button>
                 @endif
             </div>
