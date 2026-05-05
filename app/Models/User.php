@@ -114,10 +114,6 @@ class User extends Authenticatable
         return $this->hasMany(ProfileSession::class)->orderBy('updated_at', 'desc');
     }
 
-    public function blacklistedSkills(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
-    {
-        return $this->belongsToMany(Skill::class, 'user_blacklisted_skills');
-    }
 
     public function preferredMetiers(): BelongsToMany
     {

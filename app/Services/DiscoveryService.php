@@ -38,7 +38,7 @@ RÉFÉRENTIEL ROME DISPONIBLE :
 
 CONSIGNES CRITIQUES :
 1. Tu dois proposer exactement 12 métiers.
-2. NE SUGGÈRE PAS les codes suivants (déjà favoris ou blacklistés) : {$excludedCodesString}.
+2. NE SUGGÈRE PAS les codes suivants (déjà favoris ou écartés) : {$excludedCodesString}.
 3. Propose un mix équilibré :
    - 6 métiers 'aligned' : proches de son profil actuel.
    - 6 métiers 'surprise' : inattendus mais cohérents avec ses soft skills et aspirations profondes.

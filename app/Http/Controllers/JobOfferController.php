@@ -90,7 +90,7 @@ class JobOfferController extends Controller
                     $join->on('job_offers.id', '=', 'user_matches.job_offer_id')
                          ->where('user_matches.user_id', '=', $user->id);
                 })
-                ->select('job_offers.*', 'user_matches.pre_score', 'user_matches.final_score', 'user_matches.is_blacklisted')
+                ->select('job_offers.*', 'user_matches.pre_score', 'user_matches.final_score')
                 ->orderByRaw('user_matches.final_score DESC NULLS LAST')
                 ->orderByRaw('user_matches.pre_score DESC NULLS LAST');
                 break;
@@ -159,7 +159,7 @@ class JobOfferController extends Controller
         }
 
         // Vérification du statut de blacklist réel (pour éviter le délai du background job)
-        $isOfferBlacklisted = $match->is_blacklisted ?? false;
+        $isOfferBlacklisted = false;
         if (!$isOfferBlacklisted && $jobOffer->metier_id) {
             $isOfferBlacklisted = $user->preferredMetiers()
                 ->where('metier_id', $jobOffer->metier_id)
@@ -245,7 +245,7 @@ class JobOfferController extends Controller
         }
 
         // Vérification du statut de blacklist réel
-        $isOfferBlacklisted = $match->is_blacklisted ?? false;
+        $isOfferBlacklisted = false;
         if (!$isOfferBlacklisted && $jobOffer->metier_id) {
             $isOfferBlacklisted = $user->preferredMetiers()
                 ->where('metier_id', $jobOffer->metier_id)

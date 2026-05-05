@@ -118,7 +118,6 @@
             routes: {
                 message: '{{ route('profile.builder.message') }}',
                 upload: '{{ route('profile.builder.upload') }}',
-                syncSkills: '{{ route('profile.builder.sync-skills') }}'
             }
          })" x-cloak>
         <div class="h-full flex flex-row w-full max-w-[1600px] border-x border-slate-100 shadow-2xl">

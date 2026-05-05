@@ -22,8 +22,4 @@ class Skill extends Model
             ->withTimestamps();
     }
 
-    public function userFacts(): BelongsToMany
-    {
-        return $this->belongsToMany(UserFact::class, 'fact_skill', 'skill_id', 'user_fact_id');
-    }
 }

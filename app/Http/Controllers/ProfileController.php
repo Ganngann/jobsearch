@@ -309,50 +309,6 @@ class ProfileController extends Controller
         return Redirect::to('/');
     }
 
-    /**
-     * Détache une compétence d'un fait spécifique.
-     */
-    public function detachSkillFromFact(Request $request, \App\Models\UserFact $fact, \App\Models\Skill $skill)
-    {
-        if ($fact->user_id !== Auth::id()) abort(403);
-        
-        $fact->skills()->detach($skill->id);
-
-        return response()->json(['success' => true]);
-    }
-
-    /**
-     * Blackliste une compétence pour l'utilisateur.
-     */
-    public function blacklistSkill(Request $request, \App\Models\Skill $skill)
-    {
-        $user = Auth::user();
-        
-        // Ajouter à la blacklist
-        $user->blacklistedSkills()->syncWithoutDetaching([$skill->id]);
-        
-        // Supprimer de tous les faits
-        foreach ($user->facts as $fact) {
-            $fact->skills()->detach($skill->id);
-        }
-        
-        // Supprimer du profil global
-        $user->skills()->detach($skill->id);
-
-        session()->flash('status', "Compétence '{$skill->label}' ajoutée à la liste noire");
-
-        return response()->json(['success' => true]);
-    }
-
-    /**
-     * Retire une compétence de la blacklist.
-     */
-    public function unblacklistSkill(Request $request, \App\Models\Skill $skill)
-    {
-        $request->user()->blacklistedSkills()->detach($skill->id);
-
-        return response()->json(['success' => true]);
-    }
 
     /**
      * Ajoute une compétence au profil de l'utilisateur.

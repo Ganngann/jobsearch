@@ -52,7 +52,6 @@ class DiscoveryController extends Controller
                 'status' => $parentStatus,
                 'is_favorite' => $isParentFavorite,
                 'is_refused' => $isParentRefused,
-                'is_blacklisted' => $isParentRefused,
                 'variants' => $variants,
                 'offers_count' => $offersCount
             ];
@@ -124,7 +123,6 @@ class DiscoveryController extends Controller
             $s['status'] = $parentStatus;
             $s['is_favorite'] = $isParentFavorite;
             $s['is_refused'] = $isParentRefused;
-            $s['is_blacklisted'] = $isParentRefused;
             
             $s['variants'] = Metier::where('code', 'LIKE', $s['code'] . '%')
                 ->orderBy('label')

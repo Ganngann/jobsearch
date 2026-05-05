@@ -39,7 +39,6 @@ class MatchingService
             [
                 'pre_score' => $preScore,
                 'pre_score_details' => $preMatchData['details'],
-                'is_blacklisted' => $preMatchData['details']['is_blacklisted'] ?? false
             ]
         );
 
@@ -127,7 +126,7 @@ class MatchingService
         if ($isFavorite) {
             $score += 20;
         } elseif ($isRefused) {
-            $score -= 40; // Handicap lourd pour les métiers blacklistés
+            $score -= 40; // Handicap lourd pour les métiers écartés
         }
 
         // 4. Compétences (40% max)
@@ -268,7 +267,6 @@ class MatchingService
                     ],
                 ],
                 'vetoes' => $vetoPenalty,
-                'is_blacklisted' => $isRefused,
             ]
         ];
     }

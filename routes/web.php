@@ -58,7 +58,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile/builder', [\App\Http\Controllers\ProfileChatController::class, 'index'])->name('profile.builder');
     Route::post('/profile/builder/message', [\App\Http\Controllers\ProfileChatController::class, 'sendMessage'])->name('profile.builder.message');
     Route::post('/profile/builder/sessions/{session}/archive', [\App\Http\Controllers\ProfileChatController::class, 'toggleArchive'])->name('profile.builder.sessions.archive');
-    Route::post('/profile/builder/sync-skills', [\App\Http\Controllers\ProfileChatController::class, 'syncSkills'])->name('profile.builder.sync-skills');
     Route::post('/profile/builder/upload', [\App\Http\Controllers\ProfileChatController::class, 'uploadDocument'])->name('profile.builder.upload');
     Route::get('/profile/builder/reset', [\App\Http\Controllers\ProfileChatController::class, 'resetSession'])->name('profile.builder.reset');
     Route::patch('/profile/builder/facts/{fact}', [\App\Http\Controllers\ProfileChatController::class, 'updateFact'])->name('profile.builder.facts.update');
@@ -73,11 +72,6 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile/builder/item/{type}/{id}', [\App\Http\Controllers\ProfileChatController::class, 'updateItem'])->name('profile.builder.item.update');
     Route::post('/profile/builder/item/{type}', [\App\Http\Controllers\ProfileChatController::class, 'storeItem'])->name('profile.builder.item.store');
     Route::delete('/profile/builder/facts/{fact}', [\App\Http\Controllers\ProfileChatController::class, 'deleteFact'])->name('profile.builder.facts.delete');
-    Route::delete('/profile/facts/{fact}/skills/{skill}', [ProfileController::class, 'detachSkillFromFact'])->name('profile.facts.skills.detach');
-    Route::post('/profile/skills/{skill}/add', [ProfileController::class, 'addSkill'])->name('profile.skills.add');
-    Route::post('/profile/skills/{skill}/remove', [ProfileController::class, 'removeSkill'])->name('profile.skills.remove');
-    Route::post('/profile/skills/{skill}/blacklist', [ProfileController::class, 'blacklistSkill'])->name('profile.skills.blacklist');
-    Route::delete('/profile/skills/{skill}/blacklist', [ProfileController::class, 'unblacklistSkill'])->name('profile.skills.unblacklist');
 
     Route::get('/api/metiers/search', [ProfileController::class, 'searchMetiers'])->name('api.metiers.search');
     Route::get('/api/skills/search', [ProfileController::class, 'searchSkills'])->name('api.skills.search');

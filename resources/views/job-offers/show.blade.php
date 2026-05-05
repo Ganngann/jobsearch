@@ -93,14 +93,16 @@
                                             </span>
                                         </div>
                                         <div class="space-y-3" x-data="{ 
-                                            async handleSkill(skillId, action) {
+                                            async handleSkill(skillId, status) {
                                                 try {
-                                                    const response = await fetch(`/profile/skills/${skillId}/${action}`, {
+                                                    const response = await fetch(`/profile/skills/${skillId}/status`, {
                                                         method: 'POST',
                                                         headers: {
                                                             'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                                            'Content-Type': 'application/json',
                                                             'Accept': 'application/json'
-                                                        }
+                                                        },
+                                                        body: JSON.stringify({ status: status })
                                                     });
                                                     if (response.ok) {
                                                         window.location.reload();
@@ -120,11 +122,11 @@
                                                         {{ $skill['label'] }}
                                                     </div>
                                                     <div class="flex items-center gap-1 opacity-0 group-hover/skill:opacity-100 transition-opacity">
-                                                        <button @click="handleSkill({{ $skill['id'] }}, 'remove')" class="p-1.5 text-slate-400 hover:text-amber-500 hover:bg-amber-50 rounded-lg transition-all" title="Retirer de mon profil">
-                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                        <button @click="handleSkill({{ $skill['id'] }}, 'neutral')" class="p-1.5 text-slate-400 hover:text-amber-500 hover:bg-amber-50 rounded-lg transition-all" title="Ignorer">
+                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"></path></svg>
                                                         </button>
-                                                        <button @click="handleSkill({{ $skill['id'] }}, 'blacklist')" class="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all" title="Blacklister">
-                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
+                                                        <button @click="handleSkill({{ $skill['id'] }}, 'refused')" class="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all" title="Écarter">
+                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                                                         </button>
                                                     </div>
                                                 </div>
@@ -136,11 +138,11 @@
                                                         {{ $skill['label'] }}
                                                     </div>
                                                     <div class="flex items-center gap-1 opacity-0 group-hover/skill:opacity-100 transition-opacity">
-                                                        <button @click="handleSkill({{ $skill['id'] }}, 'add')" class="p-1.5 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all" title="Ajouter à mon profil">
+                                                        <button @click="handleSkill({{ $skill['id'] }}, 'active')" class="p-1.5 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all" title="Ajouter à mon profil">
                                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                                         </button>
-                                                        <button @click="handleSkill({{ $skill['id'] }}, 'blacklist')" class="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all" title="Blacklister">
-                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
+                                                        <button @click="handleSkill({{ $skill['id'] }}, 'refused')" class="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all" title="Écarter">
+                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                                                         </button>
                                                     </div>
                                                 </div>
@@ -295,12 +297,12 @@
                                                 @endif
 
                                                 <button 
-                                                    onclick="blacklistMetier({{ $jobOffer->metier->id }}, '{{ addslashes($jobOffer->metier->label) }}')"
+                                                    onclick="refuseMetier({{ $jobOffer->metier->id }}, '{{ addslashes($jobOffer->metier->label) }}')"
                                                     class="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all flex items-center gap-2 group"
-                                                    title="Blacklister ce métier"
+                                                    title="Écarter ce métier"
                                                 >
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
-                                                    <span class="text-[10px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">Blacklister ce métier</span>
+                                                    <span class="text-[10px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">Écarter ce métier</span>
                                                 </button>
                                             </div>
                                         @endif
@@ -666,7 +668,7 @@
             }).then(() => window.location.reload());
         }
 
-        function blacklistMetier(id, label) {
+        function refuseMetier(id, label) {
             fetch(`/discovery/metiers/${id}/status`, {
                 method: 'POST',
                 headers: {

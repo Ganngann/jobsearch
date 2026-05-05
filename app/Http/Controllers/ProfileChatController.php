@@ -69,7 +69,6 @@ class ProfileChatController extends Controller
         }
 
         $facts = $user->facts()
-            ->with('skills')
             ->orderByRaw('CASE WHEN proposed_action IS NOT NULL THEN 0 ELSE 1 END')
             ->orderBy('updated_at', 'desc')
             ->get();
@@ -246,7 +245,6 @@ class ProfileChatController extends Controller
             'user' => $user->fresh(),
             'stats' => $stats,
             'facts' => $user->facts()
-                ->with('skills')
                 ->orderByRaw('CASE WHEN proposed_action IS NOT NULL THEN 0 ELSE 1 END')
                 ->orderBy('updated_at', 'desc')
                 ->get(),
@@ -377,10 +375,6 @@ class ProfileChatController extends Controller
         return response()->json(['success' => true]);
     }
 
-    public function syncSkills(Request $request, \App\Services\ProfileMappingService $mappingService)
-    {
-        return response()->json($mappingService->mapUserFacts(Auth::user()));
-    }
 
     public function updateFact(Request $request, UserFact $fact)
     {

@@ -4,7 +4,7 @@
             {{ __('Mes Récits & Expériences') }}
         </h2>
         <p class="mt-2 text-sm text-gray-500 max-w-2xl">
-            {{ __("Ces faits constituent la base de votre profil. Chaque récit est lié à des compétences Forem spécifiques pour maximiser votre visibilité auprès des recruteurs.") }}
+            {{ __("Ces faits constituent la base de votre profil et sont utilisés par l'IA pour comprendre votre parcours et vous suggérer des opportunités pertinentes.") }}
         </p>
     </header>
 
@@ -46,26 +46,6 @@
                     </div>
                 </div>
 
-                <div class="mt-6 pt-4 border-t border-gray-50 relative">
-                    <div class="flex flex-wrap gap-1.5">
-                        <template x-for="skill in fact.skills" :key="skill.id">
-                            <div class="flex items-center gap-1 bg-white border border-gray-100 text-gray-500 px-2 py-0.5 rounded-lg shadow-sm group/skill hover:border-indigo-200 transition-all">
-                                <span class="text-[9px] font-bold" x-text="skill.label"></span>
-                                <div class="flex items-center gap-0.5 ml-1 opacity-0 group-hover/skill:opacity-100 transition-opacity">
-                                    <button @click="detachSkill(fact, skill)" class="p-0.5 hover:text-amber-500 transition-colors" title="Détacher de ce récit">
-                                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>
-                                    </button>
-                                    <button @click="confirmBlacklist(skill)" class="p-0.5 hover:text-red-500 transition-colors" title="Blacklister globalement">
-                                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
-                                    </button>
-                                </div>
-                            </div>
-                        </template>
-                        <template x-if="!fact.skills || fact.skills.length === 0">
-                            <span class="text-[9px] text-gray-300 italic">Aucune compétence liée</span>
-                        </template>
-                    </div>
-                </div>
             </div>
         </template>
 
@@ -85,7 +65,7 @@
     <script>
         function manageFacts() {
             return {
-                facts: @json($user->facts()->with('skills')->withCount('skills')->orderBy('skills_count', 'desc')->get()),
+                facts: @json($user->facts()->orderBy('updated_at', 'desc')->get()),
                 editingId: null,
                 editContent: '',
 
@@ -104,16 +84,6 @@
                             title: 'Supprimer ce récit ?', 
                             message: 'Cette action est irréversible et retirera les compétences associées.',
                             callback: () => this.deleteFact(id)
-                        } 
-                    }));
-                },
-
-                async confirmBlacklist(skill) {
-                    window.dispatchEvent(new CustomEvent('confirm', { 
-                        detail: { 
-                            title: `Blacklister '${skill.label}' ?`, 
-                            message: 'Elle sera retirée de partout et ne sera plus jamais suggérée par l\'IA.',
-                            callback: () => this.blacklistSkill(skill)
                         } 
                     }));
                 },
@@ -145,34 +115,6 @@
                         }
                     } catch (e) { this.notify('Erreur lors de la suppression', 'error'); }
                 },
-
-                async detachSkill(fact, skill) {
-                    try {
-                        const response = await fetch(`/profile/facts/${fact.id}/skills/${skill.id}`, {
-                            method: 'DELETE',
-                            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }
-                        });
-                        if (response.ok) {
-                            fact.skills = fact.skills.filter(s => s.id !== skill.id);
-                            this.notify('Compétence détachée');
-                        }
-                    } catch (e) { this.notify('Erreur lors du détachement', 'error'); }
-                },
-
-                async blacklistSkill(skill) {
-                    try {
-                        const response = await fetch(`/profile/skills/${skill.id}/blacklist`, {
-                            method: 'POST',
-                            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }
-                        });
-                        if (response.ok) {
-                            this.facts.forEach(f => {
-                                f.skills = f.skills.filter(s => s.id !== skill.id);
-                            });
-                            this.notify(`'${skill.label}' a été blacklistée`);
-                        }
-                    } catch (e) { this.notify('Erreur lors du blacklistage', 'error'); }
-                }
             }
         }
     </script>
