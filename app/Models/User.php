@@ -245,7 +245,7 @@ class User extends Authenticatable
     {
         // Reset du compteur si on a changé de jour
         if ($this->last_ai_usage_at && !$this->last_ai_usage_at->isToday()) {
-            $this->daily_ai_usage = 0;
+            $this->update(['daily_ai_usage' => 0]);
         }
 
         if ($this->daily_ai_usage >= $this->daily_ai_limit) {
