@@ -83,15 +83,6 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile/skills/{skill}/blacklist', [ProfileController::class, 'unblacklistSkill'])->name('profile.skills.unblacklist');
     Route::post('/profile/metiers/{metier}/blacklist', [ProfileController::class, 'blacklistMetier'])->name('profile.metiers.blacklist');
     Route::delete('/profile/metiers/{metier}/blacklist', [ProfileController::class, 'unblacklistMetier'])->name('profile.metiers.unblacklist');
-    // User Journey (Experiences & Education)
-    Route::get('/profile/journey', [\App\Http\Controllers\UserJourneyController::class, 'index'])->name('profile.journey');
-    Route::post('/profile/journey/experience', [\App\Http\Controllers\UserJourneyController::class, 'storeExperience'])->name('profile.journey.experience.store');
-    Route::delete('/profile/journey/experience/{experience}', [\App\Http\Controllers\UserJourneyController::class, 'deleteExperience'])->name('profile.journey.experience.delete');
-    Route::post('/profile/journey/education', [\App\Http\Controllers\UserJourneyController::class, 'storeEducation'])->name('profile.journey.education.store');
-    Route::delete('/profile/journey/education/{education}', [\App\Http\Controllers\UserJourneyController::class, 'deleteEducation'])->name('profile.journey.education.delete');
-
-    Route::post('/profile/journey/experience/{experience}/validate', [\App\Http\Controllers\UserJourneyController::class, 'validateExperience'])->name('profile.journey.experience.validate');
-    Route::post('/profile/journey/education/{education}/validate', [\App\Http\Controllers\UserJourneyController::class, 'validateEducation'])->name('profile.journey.education.validate');
 
     Route::get('/api/metiers/search', [ProfileController::class, 'searchMetiers'])->name('api.metiers.search');
     Route::get('/api/skills/search', [ProfileController::class, 'searchSkills'])->name('api.skills.search');
