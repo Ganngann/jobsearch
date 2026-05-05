@@ -31,7 +31,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Discovery
     Route::get('/discovery', [\App\Http\Controllers\DiscoveryController::class, 'index'])->name('discovery.index');
     Route::get('/discovery/suggest', [\App\Http\Controllers\DiscoveryController::class, 'suggest'])->name('discovery.suggest');
-    Route::post('/discovery/referentiel/{referentiel}/status', [\App\Http\Controllers\DiscoveryController::class, 'setReferentielStatus'])->name('discovery.referentiel-status');
+    Route::post('/discovery/referentiel/{code}/status', [\App\Http\Controllers\DiscoveryController::class, 'setReferentielStatus'])->name('discovery.referentiel-status');
     Route::get('/discovery/children/{code}', [\App\Http\Controllers\DiscoveryController::class, 'children'])->name('discovery.children');
     Route::post('/discovery/metiers/{metier}/status', [\App\Http\Controllers\DiscoveryController::class, 'setMetierStatus'])->name('discovery.metier-status');
 });

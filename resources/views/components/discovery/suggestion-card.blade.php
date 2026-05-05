@@ -3,7 +3,7 @@
         async setReferentielStatus(s, status) {
             const oldStatus = s.status;
             const newStatus = s.status === status ? 'none' : status;
-            const data = await $store.discovery.post(`/discovery/referentiel/${s.code}/status`, { status: newStatus });
+            const data = await $store.discovery.post(`/discovery/referentiel/${s.code}/status`, { status: newStatus, title: s.title });
             
             if (data?.status === 'success') {
                 s.status = data.current_status;
@@ -20,7 +20,7 @@
         },
         async toggleBlacklist(s) {
             const isBlacklisting = !s.is_blacklisted;
-            const data = await $store.discovery.post(`/discovery/referentiel/${s.code}/status`, { status: isBlacklisting ? 'refused' : 'none' });
+            const data = await $store.discovery.post(`/discovery/referentiel/${s.code}/status`, { status: isBlacklisting ? 'refused' : 'none', title: s.title });
             
             if (data?.status === 'success') {
                 s.is_blacklisted = !s.is_blacklisted;

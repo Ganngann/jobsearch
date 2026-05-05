@@ -145,10 +145,15 @@ class DiscoveryController extends Controller
         ]);
     }
 
-    public function setReferentielStatus(ReferentielMetier $referentiel, Request $request)
+    public function setReferentielStatus($code, Request $request)
     {
         $user = Auth::user();
         $status = $request->input('status'); // favorite, neutral, refused, none
+
+        $referentiel = ReferentielMetier::firstOrCreate(
+            ['code' => $code],
+            ['title' => $request->input('title') ?? 'Domaine ' . $code]
+        );
 
         if ($status === 'none') {
             $user->preferredReferentielMetiers()->detach($referentiel->id);
