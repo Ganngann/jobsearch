@@ -7,10 +7,10 @@
             
             if (data?.status === 'success') {
                 v.status = data.current_status;
-                if (v.status === 'favorite') {
-                    $store.discovery.addSaved({ id: v.id, code: v.code, title: v.label || v.title, type: 'specific' });
+                if (v.status !== 'none') {
+                    $store.discovery.addSaved({ id: v.id, code: v.code, title: v.label || v.title, type: 'specific', status: v.status });
                     window.dispatchEvent(new CustomEvent('metier-added'));
-                } else if (oldStatus === 'favorite' && v.status !== 'favorite') {
+                } else {
                     $store.discovery.removeSaved({ id: v.id, type: 'specific' });
                     window.dispatchEvent(new CustomEvent('metier-removed'));
                 }

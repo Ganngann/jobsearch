@@ -13,7 +13,7 @@
         async addMetier(res) {
             const data = await $store.discovery.post(`/discovery/metiers/${res.id}/status`, { status: 'favorite' });
             if (data?.status === 'success') {
-                $store.discovery.addSaved({ id: res.id, code: res.code, title: res.label, type: 'specific' });
+                $store.discovery.addSaved({ id: res.id, code: res.code, title: res.label, type: 'specific', status: 'favorite' });
                 $store.discovery.updateSuggestionStatus(res, 'favorite');
                 this.searchQuery = '';
                 this.searchResults = [];

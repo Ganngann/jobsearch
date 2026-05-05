@@ -8,10 +8,11 @@
             if (data?.status === 'success') {
                 s.status = data.current_status;
                 if (s.variants) s.variants.forEach(v => v.status = s.status);
-                if (s.status === 'favorite') {
-                    $store.discovery.addSaved({ id: s.id, code: s.code, title: s.title, type: 'family' });
+                
+                if (s.status !== 'none') {
+                    $store.discovery.addSaved({ id: s.id, code: s.code, title: s.title, type: 'family', status: s.status });
                     window.dispatchEvent(new CustomEvent('metier-added'));
-                } else if (oldStatus === 'favorite' && s.status !== 'favorite') {
+                } else {
                     $store.discovery.removeSaved({ code: s.code, type: 'family' });
                     window.dispatchEvent(new CustomEvent('metier-removed'));
                 }
@@ -23,13 +24,13 @@
             
             if (data?.status === 'success') {
                 s.is_blacklisted = !s.is_blacklisted;
-                if (s.is_blacklisted) {
-                    s.status = 'refused';
-                    if (s.variants) s.variants.forEach(v => v.status = 'refused');
-                    $store.discovery.removeSaved({ code: s.code, type: 'family' });
+                s.status = s.is_blacklisted ? 'refused' : 'none';
+                if (s.variants) s.variants.forEach(v => v.status = s.status);
+                
+                if (s.status !== 'none') {
+                    $store.discovery.addSaved({ id: s.id, code: s.code, title: s.title, type: 'family', status: s.status });
                 } else {
-                    s.status = 'none';
-                    if (s.variants) s.variants.forEach(v => v.status = 'none');
+                    $store.discovery.removeSaved({ code: s.code, type: 'family' });
                 }
             }
         }

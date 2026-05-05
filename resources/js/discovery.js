@@ -47,12 +47,15 @@ export default () => {
 
         // State Management
         addSaved(item) {
-            const exists = item.type === 'specific' 
-                ? this.savedMetiers.find(m => m.id === item.id && m.type === 'specific')
-                : this.savedMetiers.find(m => m.code === item.code && m.type === 'family');
+            const index = item.type === 'specific' 
+                ? this.savedMetiers.findIndex(m => m.id === item.id && m.type === 'specific')
+                : this.savedMetiers.findIndex(m => m.code === item.code && m.type === 'family');
 
-            if (!exists) {
+            if (index === -1) {
                 this.savedMetiers = [...this.savedMetiers, item];
+            } else {
+                // Update status if it changed
+                this.savedMetiers[index].status = item.status;
             }
         },
 

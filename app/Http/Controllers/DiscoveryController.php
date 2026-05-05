@@ -53,29 +53,30 @@ class DiscoveryController extends Controller
                 'status' => $parentStatus,
                 'is_favorite' => $isParentFavorite,
                 'is_refused' => $isParentRefused,
+                'is_blacklisted' => $isParentRefused,
                 'variants' => $variants,
                 'offers_count' => $offersCount
             ];
         });
 
         $savedReferentiels = $user->preferredReferentielMetiers()
-            ->wherePivot('status', 'favorite')
             ->get(['referentiel_metiers.id', 'code', 'title'])
             ->map(fn($r) => [
                 'id' => $r->id,
                 'code' => $r->code,
                 'title' => $r->title,
-                'type' => 'family'
+                'type' => 'family',
+                'status' => $r->pivot->status
             ]);
 
         $savedMetiers = $user->preferredMetiers()
-            ->wherePivot('status', 'favorite')
             ->get(['metiers.id', 'code', 'label'])
             ->map(fn($m) => [
                 'id' => $m->id,
                 'code' => $m->code,
                 'title' => $m->label,
-                'type' => 'specific'
+                'type' => 'specific',
+                'status' => $m->pivot->status
             ]);
 
         return view('discovery.index', [
@@ -125,6 +126,7 @@ class DiscoveryController extends Controller
             $s['status'] = $parentStatus;
             $s['is_favorite'] = $isParentFavorite;
             $s['is_refused'] = $isParentRefused;
+            $s['is_blacklisted'] = $isParentRefused;
             
             $s['variants'] = Metier::where('code', 'LIKE', $s['code'] . '%')
                 ->orderBy('label')
