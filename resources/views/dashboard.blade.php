@@ -1,15 +1,15 @@
 <x-app-layout>
     <div 
         x-data="dashboardApp({
-            initialSelectedId: '{{ $jobOffers->first()?->forem_id }}',
-            csrfToken: '{{ csrf_token() }}',
+            initialSelectedId: {{ Js::from($jobOffers->first()?->forem_id) }},
+            csrfToken: {{ Js::from(csrf_token()) }},
             filters: {
-                sort: '{{ request('sort', 'score_desc') }}',
-                min_score: '{{ request('min_score', 0) }}',
-                metier_id: '{{ request('metier_id') }}',
-                employer_id: '{{ request('employer_id') }}',
-                rome: '{{ request('rome') }}',
-                q: '{{ request('q') }}'
+                sort: {{ Js::from(request('sort', 'score_desc')) }},
+                min_score: {{ Js::from(request('min_score', 0)) }},
+                metier_id: {{ Js::from(request('metier_id')) }},
+                employer_id: {{ Js::from(request('employer_id')) }},
+                rome: {{ Js::from(request('rome')) }},
+                q: {{ Js::from(request('q')) }}
             }
         })" 
         class="h-[calc(100vh-112px)] flex overflow-hidden bg-slate-50"

@@ -46,7 +46,16 @@
             </div>
 
             <!-- Main Content Grid -->
-            <div x-data="mobilityApp()">
+            <div x-data="mobilityApp({
+                zip_code: {{ Js::from($user->zip_code) }},
+                radius: {{ Js::from($user->radius ?? 20) }},
+                permits: {{ Js::from($userPermitIds) }},
+                nonePermitId: {{ Js::from(\App\Models\Permit::where('code', 'NONE')->first()?->id ?? 0) }},
+                csrfToken: {{ Js::from(csrf_token()) }},
+                routes: {
+                    update: {{ Js::from(route('profile.mobility.update')) }}
+                }
+            })">
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
                     <!-- Left Column: Form -->
                     <div class="lg:col-span-5 space-y-6">
@@ -253,59 +262,4 @@
             </div>
         </div>
     </div>
-    <script>
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('mobilityApp', () => ({
-                zip_code: '{{ $user->zip_code }}',
-                radius: {{ $user->radius ?? 20 }},
-                permits: @json($userPermitIds),
-                nonePermitId: {{ \App\Models\Permit::where('code', 'NONE')->first()?->id ?? 0 }},
-                isSaving: false,
-                showSuccess: false,
-
-                togglePermit(id) {
-                    if (id === this.nonePermitId) {
-                        this.permits = this.permits.includes(id) ? [] : [id];
-                    } else {
-                        if (this.permits.includes(id)) {
-                            this.permits = this.permits.filter(p => p !== id);
-                        } else {
-                            this.permits = this.permits.filter(p => p !== this.nonePermitId);
-                            this.permits.push(id);
-                        }
-                    }
-                    this.save();
-                },
-
-                async save() {
-                    this.isSaving = true;
-                    try {
-                        const response = await fetch('{{ route('profile.mobility.update') }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                'Accept': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                _method: 'PATCH',
-                                zip_code: this.zip_code,
-                                radius: this.radius,
-                                permits: this.permits
-                            })
-                        });
-                        if (!response.ok) throw new Error('Erreur');
-                        
-                        window.dispatchEvent(new CustomEvent('mobility-updated'));
-                        this.showSuccess = true;
-                        setTimeout(() => { this.showSuccess = false; }, 3000);
-                    } catch (e) {
-                        console.error(e);
-                    } finally {
-                        setTimeout(() => { this.isSaving = false; }, 600);
-                    }
-                }
-            }));
-        });
-    </script>
 </x-app-layout>

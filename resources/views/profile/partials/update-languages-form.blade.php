@@ -28,59 +28,12 @@
         })->values();
     @endphp
 
-    <div x-data='{
-        search: "",
-        isSaving: false,
-        selectedItems: @json($initialLanguages),
-        allAvailable: @json($availableLanguages),
-
-        get filteredAvailable() {
-            const query = this.search.toLowerCase();
-            return this.allAvailable.filter(item => {
-                const matchesSearch = item.label.toLowerCase().includes(query) || item.code.toLowerCase().includes(query);
-                const notSelected = !this.selectedItems.find(s => s.id === item.id);
-                return matchesSearch && notSelected;
-            });
-        },
-
-        async save() {
-            this.isSaving = true;
-            try {
-                const response = await fetch("{{ route("profile.languages.update") }}", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRF-TOKEN": "{{ csrf_token() }}",
-                        "Accept": "application/json"
-                    },
-                    body: JSON.stringify({
-                        _method: "PATCH",
-                        languages: this.selectedItems.map(i => i.id),
-                        levels: this.selectedItems.reduce((acc, i) => {
-                            acc[i.id] = i.level;
-                            return acc;
-                        }, {})
-                    })
-                });
-                if (!response.ok) throw new Error("Erreur");
-            } catch (e) {
-                console.error(e);
-            } finally {
-                setTimeout(() => { this.isSaving = false; }, 600);
-            }
-        },
-
-        addItem(item) {
-            this.selectedItems.push({ ...item, level: "" });
-            this.save();
-            this.search = "";
-        },
-
-        removeItem(id) {
-            this.selectedItems = this.selectedItems.filter(i => i.id !== id);
-            this.save();
-        }
-    }'>
+    <div x-data="languagesForm({
+        selectedItems: {{ Js::from($initialLanguages) }},
+        allAvailable: {{ Js::from($availableLanguages) }},
+        csrfToken: {{ Js::from(csrf_token()) }},
+        route: {{ Js::from(route('profile.languages.update')) }}
+    })">
         <div class="flex justify-between items-center mb-8">
             <div>
                 <h2 class="text-xl font-black text-gray-900 tracking-tight">{{ __('Langues & Communication') }}</h2>

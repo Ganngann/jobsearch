@@ -8,7 +8,10 @@
         </p>
     </header>
 
-    <div x-data="manageFacts()" class="grid grid-cols-1 md:grid-cols-6 gap-4">
+    <div x-data="manageFacts({
+        facts: {{ Js::from($user->facts()->orderBy('updated_at', 'desc')->get()) }},
+        csrfToken: {{ Js::from(csrf_token()) }}
+    })" class="grid grid-cols-1 md:grid-cols-6 gap-4">
         <template x-for="(fact, index) in facts" :key="fact.id">
             <div :class="{
                     'md:col-span-4 md:row-span-2': index === 0,
@@ -62,60 +65,5 @@
         </template>
     </div>
 
-    <script>
-        function manageFacts() {
-            return {
-                facts: @json($user->facts()->orderBy('updated_at', 'desc')->get()),
-                editingId: null,
-                editContent: '',
 
-                editFact(fact) {
-                    this.editingId = fact.id;
-                    this.editContent = fact.content;
-                },
-
-                notify(message, type = 'success') {
-                    window.dispatchEvent(new CustomEvent('notify', { detail: { message, type } }));
-                },
-
-                async confirmDelete(id) {
-                    window.dispatchEvent(new CustomEvent('confirm', { 
-                        detail: { 
-                            title: 'Supprimer ce récit ?', 
-                            message: 'Cette action est irréversible et retirera les compétences associées.',
-                            callback: () => this.deleteFact(id)
-                        } 
-                    }));
-                },
-
-                async updateFact(fact) {
-                    try {
-                        const response = await fetch(`/profile/builder/facts/${fact.id}`, {
-                            method: 'PATCH',
-                            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
-                            body: JSON.stringify({ content: this.editContent })
-                        });
-                        if (response.ok) {
-                            fact.content = this.editContent;
-                            this.editingId = null;
-                            this.notify('Récit mis à jour');
-                        }
-                    } catch (e) { this.notify('Erreur lors de la mise à jour', 'error'); }
-                },
-
-                async deleteFact(id) {
-                    try {
-                        const response = await fetch(`/profile/builder/facts/${id}`, {
-                            method: 'DELETE',
-                            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }
-                        });
-                        if (response.ok) {
-                            this.facts = this.facts.filter(f => f.id !== id);
-                            this.notify('Récit supprimé');
-                        }
-                    } catch (e) { this.notify('Erreur lors de la suppression', 'error'); }
-                },
-            }
-        }
-    </script>
 </section>

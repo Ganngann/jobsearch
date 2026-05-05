@@ -2,11 +2,11 @@
     <div class="py-12 bg-slate-50 min-h-screen" 
          x-data="{}" 
          x-init="$store.discovery.setData({ 
-            suggestions: {{ $initialSuggestions->toJson() }}, 
-            savedMetiers: {{ $savedMetiers->toJson() }},
+            suggestions: {{ Js::from($initialSuggestions) }}, 
+            savedMetiers: {{ Js::from($savedMetiers) }},
             config: {
-                suggestRoute: '{{ route('discovery.suggest') }}',
-                csrfToken: '{{ csrf_token() }}'
+                suggestRoute: {{ Js::from(route('discovery.suggest')) }},
+                csrfToken: {{ Js::from(csrf_token()) }}
             }
          })">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">

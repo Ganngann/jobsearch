@@ -1,33 +1,9 @@
-<section x-data='{
-    zip_code: "{{ $user->zip_code }}",
-    radius: {{ $user->radius ?? 20 }},
-    isSaving: false,
-
-    async save() {
-        this.isSaving = true;
-        try {
-            const response = await fetch("{{ route("profile.mobility.update") }}", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN": "{{ csrf_token() }}",
-                    "Accept": "application/json"
-                },
-                body: JSON.stringify({
-                    _method: "PATCH",
-                    zip_code: this.zip_code,
-                    radius: this.radius
-                })
-            });
-            if (!response.ok) throw new Error("Erreur");
-            window.dispatchEvent(new CustomEvent('mobility-updated'));
-        } catch (e) {
-            console.error(e);
-        } finally {
-            setTimeout(() => { this.isSaving = false; }, 600);
-        }
-    }
-}'>
+<section x-data="mobilityForm({
+    zip_code: {{ Js::from($user->zip_code) }},
+    radius: {{ Js::from($user->radius ?? 20) }},
+    csrfToken: {{ Js::from(csrf_token()) }},
+    route: {{ Js::from(route('profile.mobility.update')) }}
+})">
     <div class="flex justify-between items-center mb-8">
         <div>
             <h2 class="text-xl font-black text-gray-900 tracking-tight">{{ __('Mobilité Géographique') }}</h2>

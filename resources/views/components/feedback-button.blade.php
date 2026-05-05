@@ -1,4 +1,9 @@
-<div x-data="feedbackSystem()" class="fixed bottom-6 right-6 z-[100]">
+<div x-data="feedbackSystem({
+    csrfToken: '{{ csrf_token() }}',
+    routes: {
+        store: '{{ route('feedback.store') }}'
+    }
+})" class="fixed bottom-6 right-6 z-[100]">
     <!-- Bouton Flottant -->
     <button 
         @click="open = !open" 
@@ -72,48 +77,7 @@
     </div>
 </div>
 
-<script>
-    function feedbackSystem() {
-        return {
-            open: false,
-            message: '',
-            type: 'feedback',
-            loading: false,
-            sent: false,
-            hasInteracted: localStorage.getItem('feedback_interacted') === 'true',
 
-            sendFeedback() {
-                this.loading = true;
-                this.hasInteracted = true;
-                localStorage.setItem('feedback_interacted', 'true');
-
-                fetch('{{ route('feedback.store') }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    },
-                    body: JSON.stringify({
-                        message: this.message,
-                        type: this.type,
-                        page_url: window.location.href
-                    })
-                })
-                .then(res => res.json())
-                .then(data => {
-                    this.sent = true;
-                    this.message = '';
-                })
-                .catch(err => {
-                    alert('Oups, erreur lors de l\'envoi. Réessaie plus tard !');
-                })
-                .finally(() => {
-                    this.loading = false;
-                });
-            }
-        }
-    }
-</script>
 
 <style>
     [x-cloak] { display: none !important; }

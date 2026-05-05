@@ -9,7 +9,12 @@
         </p>
     </header>
 
-    <div x-data="aiWizard()" class="p-6 bg-indigo-50 rounded-2xl border border-indigo-100">
+    <div x-data="aiWizard({
+        csrfToken: {{ Js::from(csrf_token()) }},
+        routes: {
+            analyze: {{ Js::from(route('profile.analyze')) }}
+        }
+    })" class="p-6 bg-indigo-50 rounded-2xl border border-indigo-100">
         <div x-show="!loading && !suggestion">
             <x-input-label for="cv_text" :value="__('Votre parcours ou CV (Texte brut)')" />
             <x-textarea id="cv_text" x-model="text" class="mt-1 block w-full bg-white" rows="8" placeholder="Copiez-collez votre texte ici..."></x-textarea>
@@ -73,53 +78,5 @@
         </div>
     </div>
 
-    <script>
-        function aiWizard() {
-            return {
-                text: '',
-                loading: false,
-                suggestion: null,
-                
-                async analyze() {
-                    this.loading = true;
-                    try {
-                        const response = await fetch('{{ route('profile.analyze') }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name=\"csrf-token\"]').getAttribute('content')
-                            },
-                            body: JSON.stringify({ text: this.text })
-                        });
-                        
-                        if (!response.ok) throw new Error('Erreur lors de l\'analyse');
-                        
-                        this.suggestion = await response.json();
-                    } catch (error) {
-                        console.error('Erreur:', error.message);
-                    } finally {
-                        this.loading = false;
-                    }
-                },
 
-                applySuggestion() {
-                    // Remplir les champs du formulaire principal
-                    document.getElementById('headline').value = this.suggestion.headline;
-                    document.getElementById('profile_text').value = this.suggestion.profile_text;
-                    document.getElementById('aspirations').value = this.suggestion.aspirations;
-                    
-                    // Dispatcher des événements pour Alpine.js si nécessaire
-                    document.getElementById('headline').dispatchEvent(new Event('input'));
-                    document.getElementById('profile_text').dispatchEvent(new Event('input'));
-                    document.getElementById('aspirations').dispatchEvent(new Event('input'));
-
-                    // Cocher les compétences (plus complexe car elles sont dans un autre formulaire)
-                    // On va simplement afficher un message pour dire que c'est fait pour les textes
-                    
-                    this.suggestion = null;
-                    this.text = '';
-                }
-            }
-        }
-    </script>
 </section>

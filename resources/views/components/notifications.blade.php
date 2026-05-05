@@ -28,13 +28,14 @@
             @if(session('error'))
                 this.add("{{ session('error') }}", 'error');
             @endif
+        },
+        async handleConfirm(detail) {
+            const result = await this.ask(detail.title, detail.message);
+            if (result) detail.callback();
         }
      }"
      @notify.window="add($event.detail.message, $event.detail.type)"
-     @confirm.window="async (e) => { 
-        const result = await ask(e.detail.title, e.detail.message);
-        if (result) e.detail.callback();
-     }"
+     @confirm.window="handleConfirm($event.detail)"
      class="fixed inset-0 pointer-events-none z-[9999]">
     
     {{-- Toasts Container --}}

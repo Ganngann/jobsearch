@@ -22,7 +22,7 @@
             </div>
         </div>
 
-        <div class="py-12">
+        <div class="py-12" x-data="jobDetails({ csrfToken: {{ Js::from(csrf_token()) }} })">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
                     
@@ -92,29 +92,7 @@
                                                 {{ round($hardScore['details']['skills']['score']) }}%
                                             </span>
                                         </div>
-                                        <div class="space-y-3" x-data="{ 
-                                            async handleSkill(skillId, status) {
-                                                try {
-                                                    const response = await fetch(`/profile/skills/${skillId}/status`, {
-                                                        method: 'POST',
-                                                        headers: {
-                                                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                                            'Content-Type': 'application/json',
-                                                            'Accept': 'application/json'
-                                                        },
-                                                        body: JSON.stringify({ status: status })
-                                                    });
-                                                    if (response.ok) {
-                                                        window.location.reload();
-                                                    } else {
-                                                        $dispatch('notify', { message: 'Une erreur est survenue lors de la mise à jour.', type: 'error' });
-                                                    }
-                                                } catch (e) { 
-                                                    console.error(e); 
-                                                    $dispatch('notify', { message: 'Erreur de connexion au serveur.', type: 'error' });
-                                                }
-                                            }
-                                        }">
+                                        <div class="space-y-3">
                                             @foreach($hardScore['details']['skills']['matched'] as $skill)
                                                 <div class="flex items-center justify-between group/skill">
                                                     <div class="flex items-center gap-2 text-xs font-bold text-slate-700">
@@ -288,7 +266,7 @@
                                                     </div>
                                                 @else
                                                     <button 
-                                                        onclick="addMetier({{ $jobOffer->metier->id }})"
+                                                        @click="addMetier({{ $jobOffer->metier->id }})"
                                                         class="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
                                                         title="Ajouter aux métiers favoris"
                                                     >
@@ -297,7 +275,7 @@
                                                 @endif
 
                                                 <button 
-                                                    onclick="refuseMetier({{ $jobOffer->metier->id }}, '{{ addslashes($jobOffer->metier->label) }}')"
+                                                    @click="refuseMetier({{ $jobOffer->metier->id }})"
                                                     class="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all flex items-center gap-2 group"
                                                     title="Écarter ce métier"
                                                 >
@@ -655,31 +633,5 @@
             </div>
         </div>
     </div>
-    <script>
-        function addMetier(id) {
-            fetch(`/discovery/metiers/${id}/status`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({ status: 'favorite' })
-            }).then(() => window.location.reload());
-        }
 
-        function refuseMetier(id, label) {
-            fetch(`/discovery/metiers/${id}/status`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({ status: 'refused' })
-            }).then(() => {
-                window.location.href = "{{ route('dashboard') }}";
-            });
-        }
-    </script>
 </x-app-layout>
