@@ -96,7 +96,7 @@ class ForemApiService
     /**
      * Détail d'une offre (Detail API)
      */
-    public function getJobDetail(int $jobId): array
+    public function getJobDetail(int $jobId): ?array
     {
         $url = "{$this->baseUrl}/Diffusion/DetailOffre/{$jobId}";
         
@@ -108,6 +108,11 @@ class ForemApiService
                     'Accept' => 'application/json, text/plain, */*',
                     'Referer' => "https://www.leforem.be/recherche-offres/detail-offre/{$jobId}",
                 ])->get($url);
+
+            if ($response->status() === 404) {
+                Log::warning("Forem Detail API: Offer #{$jobId} not found (404).");
+                return null;
+            }
 
             if ($response->failed()) {
                 Log::error("Forem Detail API Error for ID {$jobId}: {$response->status()}");

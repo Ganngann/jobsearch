@@ -655,22 +655,26 @@
     </div>
     <script>
         function addMetier(id) {
-            fetch(`/profile/metiers/${id}/add`, {
+            fetch(`/discovery/metiers/${id}/status`, {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Content-Type': 'application/json',
                     'Accept': 'application/json'
-                }
+                },
+                body: JSON.stringify({ status: 'favorite' })
             }).then(() => window.location.reload());
         }
 
         function blacklistMetier(id, label) {
-            fetch(`/profile/metiers/${id}/blacklist`, {
+            fetch(`/discovery/metiers/${id}/status`, {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Content-Type': 'application/json',
                     'Accept': 'application/json'
-                }
+                },
+                body: JSON.stringify({ status: 'refused' })
             }).then(() => {
                 window.location.href = "{{ route('dashboard') }}";
             });

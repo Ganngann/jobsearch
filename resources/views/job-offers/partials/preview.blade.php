@@ -14,10 +14,11 @@
                     },
                     async toggleFavorite() {
                         @if($jobOffer->metier_id)
-                        const action = this.isPreferred ? 'remove' : 'add';
-                        await fetch(`/profile/metiers/{{ $jobOffer->metier_id }}/${action}`, {
+                        const status = this.isPreferred ? 'none' : 'favorite';
+                        await fetch(`/discovery/metiers/{{ $jobOffer->metier_id }}/status`, {
                             method: 'POST',
-                            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }
+                            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                            body: JSON.stringify({ status })
                         });
                         this.isPreferred = !this.isPreferred;
                         if(this.isPreferred) this.isBlacklisted = false;
@@ -26,9 +27,10 @@
                     },
                     async blacklist() {
                         @if($jobOffer->metier_id)
-                        await fetch(`/profile/metiers/{{ $jobOffer->metier_id }}/blacklist`, {
+                        await fetch(`/discovery/metiers/{{ $jobOffer->metier_id }}/status`, {
                             method: 'POST',
-                            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }
+                            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                            body: JSON.stringify({ status: 'refused' })
                         });
                         this.isBlacklisted = true;
                         this.isPreferred = false;
@@ -37,9 +39,10 @@
                     },
                     async unblacklist() {
                         @if($jobOffer->metier_id)
-                        await fetch(`/profile/metiers/{{ $jobOffer->metier_id }}/unblacklist`, {
+                        await fetch(`/discovery/metiers/{{ $jobOffer->metier_id }}/status`, {
                             method: 'POST',
-                            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }
+                            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                            body: JSON.stringify({ status: 'none' })
                         });
                         this.isBlacklisted = false;
                         if(window.dashboard) window.dashboard.refreshList();

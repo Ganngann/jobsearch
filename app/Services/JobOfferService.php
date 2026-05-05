@@ -92,7 +92,13 @@ class JobOfferService
         
         $jobData = $this->foremApi->getJobDetail($jobOffer->forem_id);
         
-        if (!$jobData) {
+        if ($jobData === null) {
+            \Illuminate\Support\Facades\Log::warning("Offre #{$jobOffer->forem_id} introuvable sur le Forem. Marquage comme expirée.");
+            $jobOffer->update(['status' => 'expired', 'is_detailed' => true]);
+            return false;
+        }
+
+        if (empty($jobData)) {
             \Illuminate\Support\Facades\Log::error("Échec de récupération des détails pour l'offre #{$jobOffer->forem_id}");
             return false;
         }
@@ -286,10 +292,12 @@ class JobOfferService
                 $q->where('metiers.id', $jobOffer->metier_id);
             })->get();
 
-            foreach ($users as $user) {
-                // On calcule au moins le Layer 1. L'IA suivra si pre_score >= 70.
-                $this->matchingService->match($user, $jobOffer);
-            }
+            DB::transaction(function() use ($users, $jobOffer) {
+                foreach ($users as $user) {
+                    // On calcule au moins le Layer 1. L'IA suivra si pre_score >= 70.
+                    $this->matchingService->match($user, $jobOffer);
+                }
+            }, 5);
         }
 
         return true;

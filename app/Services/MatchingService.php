@@ -374,7 +374,7 @@ class MatchingService
                 $q->whereNull('expires_at')
                   ->orWhere('expires_at', '>=', now());
             })
-            ->chunkById(500, function($offers, $index) use ($user) {
+            ->chunkById(100, function($offers, $index) use ($user) {
                 // On espace les calculs de 2 secondes par lot
                 // Lot 1 : 0s, Lot 2 : 2s, Lot 3 : 4s...
                 \App\Jobs\MatchChunkJob::dispatch($user, $offers->pluck('id')->toArray())
