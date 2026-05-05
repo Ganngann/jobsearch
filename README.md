@@ -1,44 +1,39 @@
-# Job Matching Platform
+# JobSearch
 
-A modern web platform designed to parse resumes, analyze candidate profiles, and seamlessly match them with the best-fitting job opportunities.
+Plateforme de matching d'offres d'emploi basée sur l'analyse de profils via IA.
 
-## Project Domain
-The application functions as an intelligent career gateway:
-- **Resume Parsing:** Uses `ResumeParserService` to intelligently extract candidates' information.
-- **Profile Mapping:** Connects traits and qualifications via `AIProfileService` and `ProfileMappingService`.
-- **API Integrations:** Extends functionality and opportunities via the `ForemApiService`.
-- **Job Matching:** Matches candidates to optimal roles using `JobMatcherService` and `MatchingService`.
+## Stack Technique
 
-## Tech Stack
-- **Framework:** Laravel 13
-- **Language:** PHP 8.3
-- **Frontend Tools:** Alpine.js, Tailwind CSS, Vite
+- **Backend** : Laravel 13 (PHP 8.3)
+- **Frontend** : Alpine.js, Tailwind CSS, Vite
+- **Services** : Google Gemini (LLM), smalot/pdfparser (Parsing PDF)
+- **Base de données** : SQLite
 
-## Setup and Development
+## Installation
 
-Follow these steps to set up the project locally.
-
-### Prerequisites
-- PHP 8.3 or higher
-- Node.js & npm
-- Composer
-
-### Installation
-1. Clone the repository.
-2. Run the automated setup script to configure the environment, install dependencies, set application keys, migrate the database, and build frontend assets:
-   ```bash
-   composer setup
-   ```
-
-### Running the Application
-To run the application locally for development, execute:
 ```bash
-composer run dev
+composer setup
 ```
-This single command spins up multiple processes (via concurrently) including the local server, queue listener, log viewer, and Vite's frontend server.
 
-### Testing
-Run tests to verify the setup:
+## Développement
+
+Lancement de l'environnement complet (Serveur, Queue, Pail, Vite) :
 ```bash
-composer run test
+composer dev
 ```
+
+## Tests
+
+```bash
+composer test
+```
+
+## Structure Technique
+
+Le projet repose sur une architecture orientée services (`app/Services`) pour isoler la logique métier :
+
+- **ResumeParserService** : Extraction de données structurées depuis les fichiers PDF.
+- **AIProfileService** & **ProfileMappingService** : Enrichissement et structuration des profils utilisateurs via LLM.
+- **ForemApiService** : Ingestion de données depuis des API tierces.
+- **JobMatcherService** & **MatchingService** : Moteur de calcul de compatibilité entre profils et offres.
+- **DiscoveryService** : Logique de recommandation d'offres.
