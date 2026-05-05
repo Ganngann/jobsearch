@@ -3,13 +3,18 @@
         $match = $offer->userMatch;
         $score = $match ? ($match->final_score ?? $match->pre_score) : null;
     @endphp
+    @php
+        $isOfferBlacklisted = $match->is_blacklisted ?? false;
+        // Optionnel: check réel si on veut être ultra-précis dans la liste aussi
+        // Mais is_blacklisted du join devrait suffire la plupart du temps après refresh
+    @endphp
     <div 
         @click="selectOffer('{{ $offer->forem_id }}')"
         data-offer-id="{{ $offer->forem_id }}"
         data-pre-score="{{ $match->pre_score ?? 0 }}"
         data-ai-score="{{ $match->final_score ?? '' }}"
         :class="selectedId == '{{ $offer->forem_id }}' ? 'border-indigo-500 ring-2 ring-indigo-500/10 bg-white' : 'border-slate-100 hover:border-slate-300 bg-white'"
-        class="p-5 rounded-2xl border cursor-pointer transition-all duration-300 shadow-sm hover:shadow-md group relative overflow-hidden"
+        class="p-5 rounded-2xl border cursor-pointer transition-all duration-300 shadow-sm hover:shadow-md group relative overflow-hidden {{ $isOfferBlacklisted ? 'opacity-50 grayscale-[0.5]' : '' }}"
     >
         <!-- Scores Section -->
         <div class="absolute top-0 right-0 p-3 flex gap-4">

@@ -5,7 +5,7 @@
             <div class="flex-1">
                 <div class="flex items-center gap-3 mb-3" x-data="{ 
                     isPreferred: {{ $jobOffer->metier_id ? (auth()->user()->preferredMetiers->contains($jobOffer->metier_id) ? 'true' : 'false') : 'false' }},
-                    isBlacklisted: {{ ($match->is_blacklisted ?? false) ? 'true' : 'false' }},
+                    isBlacklisted: {{ $isOfferBlacklisted ? 'true' : 'false' }},
                     matchScore: {{ $match->pre_score ?? 'null' }},
                     init() {
                         if (window.dashboard && this.matchScore !== null) {
@@ -34,10 +34,20 @@
                         this.isPreferred = false;
                         if(window.dashboard) window.dashboard.refreshList();
                         @endif
+                    },
+                    async unblacklist() {
+                        @if($jobOffer->metier_id)
+                        await fetch(`/profile/metiers/{{ $jobOffer->metier_id }}/unblacklist`, {
+                            method: 'POST',
+                            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }
+                        });
+                        this.isBlacklisted = false;
+                        if(window.dashboard) window.dashboard.refreshList();
+                        @endif
                     }
                 }">
                     @if($jobOffer->metier_id)
-                    <div class="flex items-center rounded-full p-1 border transition-all duration-300" :class="isBlacklisted ? 'bg-rose-50 border-rose-200' : 'bg-indigo-50 border-indigo-100'">
+                    <div class="flex items-center rounded-full p-1 border transition-all duration-300 shadow-sm" :class="isBlacklisted ? 'bg-rose-50 border-rose-200' : 'bg-indigo-50 border-indigo-100'">
                         <span class="px-3 py-1 text-[10px] font-black uppercase tracking-widest transition-colors duration-300" :class="isBlacklisted ? 'text-rose-700' : 'text-indigo-700'">
                             {{ $jobOffer->metier->label ?? 'Métier non spécifié' }}
                         </span>
@@ -47,11 +57,11 @@
                                 <span class="text-[8px] font-black uppercase">Famille</span>
                             </div>
                         @endif
-                        <div class="flex items-center gap-1 border-l border-indigo-200 ml-1 pl-1">
+                        <div class="flex items-center gap-1 border-l ml-1 pl-1" :class="isBlacklisted ? 'border-rose-200' : 'border-indigo-200'">
                             <button @click="toggleFavorite()" :class="isPreferred ? 'text-rose-500 bg-rose-50' : 'text-slate-400 hover:text-rose-500'" class="p-1 rounded-full transition-all" title="Ajouter aux favoris">
                                 <svg class="w-3.5 h-3.5" :fill="isPreferred ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
                             </button>
-                            <button @click="blacklist()" class="p-1 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-all" title="Ne plus voir ce métier">
+                            <button @click="isBlacklisted ? unblacklist() : blacklist()" :class="isBlacklisted ? 'text-rose-600 bg-rose-100' : 'text-slate-400 hover:text-rose-500'" class="p-1 rounded-full transition-all" :title="isBlacklisted ? 'Retirer du blacklist' : 'Ne plus voir ce métier'">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
                             </button>
                         </div>

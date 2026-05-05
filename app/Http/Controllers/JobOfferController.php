@@ -158,7 +158,17 @@ class JobOfferController extends Controller
             $isParentFavorite = $user->preferredReferentielMetiers()->where('code', $parentCode)->exists();
         }
 
-        return view('job-offers.partials.preview', compact('jobOffer', 'match', 'user', 'isParentFavorite'));
+        // Vérification du statut de blacklist réel (pour éviter le délai du background job)
+        $isOfferBlacklisted = $match->is_blacklisted ?? false;
+        if (!$isOfferBlacklisted && $jobOffer->metier_id) {
+            $isOfferBlacklisted = $user->blacklistedMetiers()->where('metier_id', $jobOffer->metier_id)->exists();
+            if (!$isOfferBlacklisted && $jobOffer->metier->code) {
+                $parentCode = substr($jobOffer->metier->code, 0, 5);
+                $isOfferBlacklisted = $user->blacklistedReferentielMetiers()->where('code', $parentCode)->exists();
+            }
+        }
+
+        return view('job-offers.partials.preview', compact('jobOffer', 'match', 'user', 'isParentFavorite', 'isOfferBlacklisted'));
     }
 
     /**
@@ -227,7 +237,17 @@ class JobOfferController extends Controller
             $isParentFavorite = $user->preferredReferentielMetiers()->where('code', $parentCode)->exists();
         }
 
-        return view('job-offers.show', compact('jobOffer', 'match', 'user', 'hardScore', 'isParentFavorite'));
+        // Vérification du statut de blacklist réel
+        $isOfferBlacklisted = $match->is_blacklisted ?? false;
+        if (!$isOfferBlacklisted && $jobOffer->metier_id) {
+            $isOfferBlacklisted = $user->blacklistedMetiers()->where('metier_id', $jobOffer->metier_id)->exists();
+            if (!$isOfferBlacklisted && $jobOffer->metier->code) {
+                $parentCode = substr($jobOffer->metier->code, 0, 5);
+                $isOfferBlacklisted = $user->blacklistedReferentielMetiers()->where('code', $parentCode)->exists();
+            }
+        }
+
+        return view('job-offers.show', compact('jobOffer', 'match', 'user', 'hardScore', 'isParentFavorite', 'isOfferBlacklisted'));
     }
 
     /**
