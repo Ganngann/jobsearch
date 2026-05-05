@@ -56,7 +56,7 @@ class ProfileMappingServiceTest extends TestCase
 
         // Mock Gemini response
         $this->geminiMock->shouldReceive('withModel')
-            ->with('gemini-2.0-flash-lite')
+            ->with('gemini-2.5-flash-lite')
             ->andReturn($this->geminiMock);
 
         $this->geminiMock->shouldReceive('generateJson')
@@ -131,6 +131,113 @@ class ProfileMappingServiceTest extends TestCase
             ->andReturn(['suggestions' => []]);
 
         $this->service->suggestSkills($user);
+    }
+
+    public function test_suggest_skills_marks_unselected_skills_as_neutral(): void
+    {
+        $user = User::factory()->create();
+        $employer = Employer::create(['label' => 'Test Employer']);
+
+        $sSelected = Skill::factory()->create(['label' => 'Selected']);
+        $this->createJobOffer($employer, 'active', [$sSelected->id]);
+        $this->createJobOffer($employer, 'active', [$sSelected->id]);
+
+        $sRejected = Skill::factory()->create(['label' => 'Rejected']);
+        $this->createJobOffer($employer, 'active', [$sRejected->id]);
+        $this->createJobOffer($employer, 'active', [$sRejected->id]);
+
+        $this->geminiMock->shouldReceive('withModel')->andReturn($this->geminiMock);
+        $this->geminiMock->shouldReceive('generateJson')->andReturn([
+            'suggestions' => [
+                ['id' => $sSelected->id, 'reason' => 'match']
+            ]
+        ]);
+
+        $this->service->suggestSkills($user);
+
+        // Check user skills
+        $this->assertDatabaseHas('user_skill', [
+            'user_id' => $user->id,
+            'skill_id' => $sRejected->id,
+            'status' => 'neutral'
+        ]);
+
+        // Selected skill is NOT in user_skill yet because suggestSkills only RETURNS it, 
+        // it doesn't attach it (the user must accept it via another controller)
+        $this->assertDatabaseMissing('user_skill', [
+            'user_id' => $user->id,
+            'skill_id' => $sSelected->id
+        ]);
+    }
+
+    public function test_suggest_skills_prompt_catalog_is_sorted_by_increasing_popularity(): void
+    {
+        $user = User::factory()->create();
+        $employer = Employer::create(['label' => 'Test Employer']);
+
+        $sLeast = Skill::factory()->create(['label' => 'Least Popular']);
+        $this->createJobOffer($employer, 'active', [$sLeast->id]);
+        $this->createJobOffer($employer, 'active', [$sLeast->id]); // 2 offers
+
+        $sMost = Skill::factory()->create(['label' => 'Most Popular']);
+        $this->createJobOffer($employer, 'active', [$sMost->id]);
+        $this->createJobOffer($employer, 'active', [$sMost->id]);
+        $this->createJobOffer($employer, 'active', [$sMost->id]);
+        $this->createJobOffer($employer, 'active', [$sMost->id]); // 4 offers
+
+        $this->geminiMock->shouldReceive('withModel')->andReturn($this->geminiMock);
+        $this->geminiMock->shouldReceive('generateJson')
+            ->once()
+            ->withArgs(function($prompt) use ($sLeast, $sMost) {
+                $posLeast = strpos($prompt, "[ID:{$sLeast->id}]");
+                $posMost = strpos($prompt, "[ID:{$sMost->id}]");
+                
+                return $posLeast !== false && $posMost !== false && $posLeast < $posMost;
+            })
+            ->andReturn(['suggestions' => []]);
+
+        $this->service->suggestSkills($user);
+    }
+
+    public function test_suggest_skills_are_sorted_by_increasing_popularity(): void
+    {
+        $user = User::factory()->create();
+        $employer = Employer::create(['label' => 'Test Employer']);
+
+        // S1: 2 active offers (Least popular)
+        $s1 = Skill::factory()->create(['label' => 'Skill 2']);
+        $this->createJobOffer($employer, 'active', [$s1->id]);
+        $this->createJobOffer($employer, 'active', [$s1->id]);
+
+        // S2: 4 active offers (Most popular)
+        $s2 = Skill::factory()->create(['label' => 'Skill 4']);
+        $this->createJobOffer($employer, 'active', [$s2->id]);
+        $this->createJobOffer($employer, 'active', [$s2->id]);
+        $this->createJobOffer($employer, 'active', [$s2->id]);
+        $this->createJobOffer($employer, 'active', [$s2->id]);
+
+        // S3: 3 active offers (Medium)
+        $s3 = Skill::factory()->create(['label' => 'Skill 3']);
+        $this->createJobOffer($employer, 'active', [$s3->id]);
+        $this->createJobOffer($employer, 'active', [$s3->id]);
+        $this->createJobOffer($employer, 'active', [$s3->id]);
+
+        $this->geminiMock->shouldReceive('withModel')->andReturn($this->geminiMock);
+        $this->geminiMock->shouldReceive('generateJson')->andReturn([
+            'suggestions' => [
+                ['id' => $s1->id, 'reason' => 'r1'],
+                ['id' => $s2->id, 'reason' => 'r2'],
+                ['id' => $s3->id, 'reason' => 'r3'],
+            ]
+        ]);
+
+        $results = $this->service->suggestSkills($user);
+
+        // Expected order: S1 (2), S3 (3), S2 (4)
+        $this->assertCount(3, $results);
+        $this->assertEquals($s1->id, $results[0]['id']);
+        $this->assertEquals($s3->id, $results[1]['id']);
+        $this->assertEquals($s2->id, $results[2]['id']);
     }
 
     private function createJobOffer($employer, $status, array $skillIds)

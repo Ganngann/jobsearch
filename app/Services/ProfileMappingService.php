@@ -36,12 +36,30 @@ class ProfileMappingService
             ->toArray();
 
         // 2. On récupère le catalogue SANS les compétences déjà triées et AVEC au moins DEUX offres actives
+        // Optimisation : On récupère les IDs et les counts en une seule requête groupée pour éviter les N+1/sous-requêtes lourdes
+        // Limite à 100 pour la performance et la pertinence (les plus populaires parmis celles non traitées)
+        $skillCounts = DB::table('job_offer_skill')
+            ->join('job_offers', 'job_offer_skill.job_offer_id', '=', 'job_offers.id')
+            ->where('job_offers.status', 'active')
+            ->whereNotIn('skill_id', $knownSkillIds)
+            ->select('skill_id', DB::raw('COUNT(*) as count'))
+            ->groupBy('skill_id')
+            ->havingRaw('COUNT(*) >= 2')
+            ->orderByDesc('count')
+            ->limit(100)
+            ->get()
+            ->pluck('count', 'skill_id');
+
         $allSkills = Skill::select('id', 'label')
+            ->whereIn('id', $skillCounts->keys())
             ->whereNotIn('id', $knownSkillIds)
-            ->whereHas('jobOffers', function($query) {
-                $query->where('status', 'active');
-            }, '>=', 2)
-            ->get();
+            ->get()
+            ->map(function($skill) use ($skillCounts) {
+                // On injecte manuellement le count pour le tri et l'affichage ultérieur
+                $skill->job_offers_count = $skillCounts[$skill->id] ?? 0;
+                return $skill;
+            })
+            ->sortBy('job_offers_count');
         
         $skillsCatalog = $allSkills->map(fn($s) => "[ID:{$s->id}] {$s->label}")->implode("\n");
 
@@ -75,9 +93,18 @@ class ProfileMappingService
         }
         ";
 
-        $aiResponse = $this->gemini->withModel('gemini-2.0-flash-lite')->generateJson($prompt);
+        $aiResponse = $this->gemini->withModel('gemini-2.5-flash-lite')->generateJson($prompt);
         $suggestionsData = $aiResponse['suggestions'] ?? [];
         $selectedIds = collect($suggestionsData)->pluck('id')->toArray();
+
+        // On identifie les IDs qui étaient dans le catalogue mais n'ont pas été retenus par l'IA
+        // On les définit comme "neutre" pour ne plus les suggérer à l'avenir
+        $rejectedIds = collect($allSkills->pluck('id'))->diff($selectedIds);
+        if ($rejectedIds->isNotEmpty()) {
+            $user->skills()->syncWithoutDetaching(
+                $rejectedIds->mapWithKeys(fn($id) => [$id => ['status' => 'neutral', 'level' => 'intermediate']])->toArray()
+            );
+        }
 
         if (empty($selectedIds)) return [];
 
@@ -104,6 +131,6 @@ class ProfileMappingService
                 'type' => $s->type,
                 'reason' => $reasons[$s->id] ?? "Basé sur votre profil"
             ];
-        })->sortByDesc('popularity')->values()->toArray();
+        })->sortBy('popularity')->values()->toArray();
     }
 }
