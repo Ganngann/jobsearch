@@ -210,7 +210,7 @@ class AIProfileService
         $factCount = $user->facts()->count();
         $consolidationInstruction = "";
         
-        if ($factCount > 22) {
+        if ($factCount > 50) {
             $consolidationInstruction = "\n⚠️ MODE RÉDACTEUR EN CHEF : ALERTE SATURATION ({$factCount} faits).
             1. INTERDICTION FORMELLE d'écraser un fait par un sujet différent via 'update'.
             2. Pour chaque nouvelle info, tu DOIS obligatoirement LIBÉRER de la place : identifie deux faits similaires, FUSIONNE-LES en envoyant une action 'update' (le texte combiné) et une action 'delete'.
