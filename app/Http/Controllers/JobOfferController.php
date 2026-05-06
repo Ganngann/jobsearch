@@ -34,6 +34,7 @@ class JobOfferController extends Controller
     {
         $user = Auth::user();
 
+        /* 
         // Onboarding progress redirection logic
         if (!$user->isProfileMature()) {
             // Step 1: Narrative & Journey
@@ -60,6 +61,7 @@ class JobOfferController extends Controller
                 return redirect()->route('profile.mobility.index');
             }
         }
+        */
 
         $query = JobOffer::query();
 
@@ -105,6 +107,14 @@ class JobOfferController extends Controller
             case 'recent':
                 $query->orderBy('published_at', 'desc');
                 break;
+            case 'vector_desc':
+                $query->leftJoin('user_matches', function($join) use ($user) {
+                    $join->on('job_offers.id', '=', 'user_matches.job_offer_id')
+                         ->where('user_matches.user_id', '=', $user->id);
+                })
+                ->select('job_offers.*', 'user_matches.vector_score')
+                ->orderByRaw('user_matches.vector_score DESC NULLS LAST');
+                break;
             case 'score_desc':
             default:
                 // Jointure simple sur les scores pré-calculés
@@ -112,7 +122,7 @@ class JobOfferController extends Controller
                     $join->on('job_offers.id', '=', 'user_matches.job_offer_id')
                          ->where('user_matches.user_id', '=', $user->id);
                 })
-                ->select('job_offers.*', 'user_matches.pre_score', 'user_matches.final_score')
+                ->select('job_offers.*', 'user_matches.pre_score', 'user_matches.final_score', 'user_matches.vector_score')
                 ->orderByRaw('user_matches.final_score DESC NULLS LAST')
                 ->orderByRaw('user_matches.pre_score DESC NULLS LAST');
                 break;

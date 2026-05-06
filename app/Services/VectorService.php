@@ -1,0 +1,133 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\JobOffer;
+use App\Models\User;
+use Illuminate\Support\Facades\Log;
+
+class VectorService
+{
+    protected GeminiService $gemini;
+
+    public function __construct(GeminiService $gemini)
+    {
+        $this->gemini = $gemini;
+    }
+
+    /**
+     * Génère et sauvegarde le vecteur pour une offre d'emploi.
+     */
+    public function updateJobVector(JobOffer $job): bool
+    {
+        $text = $this->buildJobString($job);
+        $vector = $this->gemini->embed($text, 'RETRIEVAL_DOCUMENT');
+
+        if ($vector) {
+            $normalized = $this->normalize($vector);
+            $job->update(['vector_embedding' => $normalized]);
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Génère et sauvegarde le vecteur pour un utilisateur.
+     */
+    public function updateUserVector(User $user): bool
+    {
+        $text = $this->buildUserString($user);
+        $vector = $this->gemini->embed($text, 'RETRIEVAL_QUERY');
+
+        if ($vector) {
+            $normalized = $this->normalize($vector);
+            $user->update(['vector_embedding' => $normalized]);
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Calcule la similitude cosinus entre deux vecteurs.
+     * Puisque les vecteurs sont normalisés à l'insertion, le cosinus est égal au produit scalaire.
+     */
+    public function cosineSimilarity(array $vec1, array $vec2): float
+    {
+        $dotProduct = 0;
+        $count = count($vec1);
+        
+        for ($i = 0; $i < $count; $i++) {
+            $dotProduct += $vec1[$i] * $vec2[$i];
+        }
+        
+        return (float) $dotProduct;
+    }
+
+    /**
+     * Normalise un vecteur (L2 norm).
+     */
+    protected function normalize(array $vector): array
+    {
+        $norm = sqrt(array_sum(array_map(fn($x) => $x * $x, $vector)));
+        
+        if ($norm == 0) return $vector;
+        
+        return array_map(fn($x) => $x / $norm, $vector);
+    }
+
+    /**
+     * Construit la chaîne de texte exhaustive pour une offre.
+     */
+    protected function buildJobString(JobOffer $job): string
+    {
+        $skills = $job->skills->pluck('label')->implode(', ');
+        $languages = $job->languages->pluck('label')->implode(', ');
+        $permits = $job->permits->pluck('label')->implode(', ');
+        $sectors = $job->sectors->pluck('label')->implode(', ');
+        $experiences = $job->requiredExperiences->pluck('label')->implode(', ');
+        $studies = $job->studies->pluck('label')->implode(', ');
+
+        $content = "Métier: {$job->metier?->label} | ";
+        $content .= "Description: " . strip_tags($job->description) . " | ";
+        $content .= "Compétences: {$skills} | ";
+        $content .= "Langues: {$languages} | ";
+        $content .= "Permis: {$permits} | ";
+        $content .= "Secteurs: {$sectors} | ";
+        $content .= "Expériences: {$experiences} | ";
+        $content .= "Études: {$studies} | ";
+        $content .= "Employeur: " . strip_tags($job->employer?->description ?? '');
+
+        return "title: {$job->title} | text: " . trim($content);
+    }
+
+    /**
+     * Construit la chaîne de texte exhaustive pour un utilisateur.
+     */
+    protected function buildUserString(User $user): string
+    {
+        $skills = $user->validatedSkills->pluck('label')->implode(', ');
+        $facts = $user->facts->pluck('content')->implode(' ');
+        $experiences = $user->experiences->map(fn($e) => "{$e->title} chez {$e->company}: {$e->description}")->implode(' | ');
+        $educations = $user->educations->map(fn($e) => "{$e->degree} à {$e->school}")->implode(' | ');
+        $projects = $user->projects->pluck('name')->implode(', ');
+        $certifications = $user->certifications->pluck('name')->implode(', ');
+        $languages = $user->languages->pluck('label')->implode(', ');
+        $interests = $user->interests->pluck('name')->implode(', ');
+
+        $content = "Headline: {$user->headline} | ";
+        $content .= "Aspirations: {$user->aspirations} | ";
+        $content .= "Bio: {$user->profile_text} | ";
+        $content .= "Compétences: {$skills} | ";
+        $content .= "Récits: {$facts} | ";
+        $content .= "Parcours: {$experiences} | ";
+        $content .= "Études: {$educations} | ";
+        $content .= "Projets: {$projects} | ";
+        $content .= "Certifs: {$certifications} | ";
+        $content .= "Langues: {$languages} | ";
+        $content .= "Loisirs: {$interests}";
+
+        return "task: search result | query: " . trim($content);
+    }
+}

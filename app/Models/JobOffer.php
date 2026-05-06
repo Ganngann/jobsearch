@@ -53,6 +53,7 @@ class JobOffer extends Model
         'last_seen_at',
         'detailed_at',
         'content_hash',
+        'vector_embedding',
     ];
 
     protected $casts = [
@@ -66,6 +67,7 @@ class JobOffer extends Model
         'working_hours' => 'decimal:2',
         'last_seen_at' => 'datetime',
         'detailed_at' => 'datetime',
+        'vector_embedding' => 'array',
     ];
 
     public function metier(): BelongsTo

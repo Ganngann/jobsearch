@@ -21,16 +21,25 @@
                 
                 <!-- Section: Tri & Vue -->
                 <div>
-                    <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Affichage & Tri</h3>
+                    <div class="flex items-center gap-2 mb-4">
+                        <svg class="w-3 h-3 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"></path></svg>
+                        <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Trier les offres</h3>
+                    </div>
                     <div class="space-y-2">
-                        <select 
-                            x-model="filters.sort" 
-                            @change="refreshList()"
-                            class="w-full bg-slate-50 border-0 rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 transition-all"
-                        >
-                            <option value="score_desc">🏆 Meilleur Match</option>
-                            <option value="recent">📅 Plus récents</option>
-                        </select>
+                        <div class="relative">
+                            <select 
+                                x-model="filters.sort" 
+                                @change="refreshList()"
+                                class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-4 py-3.5 text-sm font-black text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all appearance-none cursor-pointer"
+                            >
+                                <option value="score_desc">🏆 Meilleur Match (Data)</option>
+                                <option value="vector_desc">✨ Similitude Sémantique</option>
+                                <option value="recent">📅 Plus récents</option>
+                            </select>
+                            <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -179,6 +188,14 @@
                     <span class="text-[10px] font-black text-slate-400 px-3 py-1 bg-slate-100 rounded-full">
                         {{ $jobOffers->total() }} résultats
                     </span>
+                    <button 
+                        @click="syncSimilarities()" 
+                        class="p-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-all shadow-sm flex items-center gap-2"
+                        title="Calculer les similitudes vectorielles"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        <span class="text-[10px] font-black uppercase tracking-widest">Vector Match</span>
+                    </button>
                 </div>
             </div>
 

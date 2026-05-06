@@ -37,6 +37,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/discovery/referentiel/{code}/status', [\App\Http\Controllers\DiscoveryController::class, 'setReferentielStatus'])->name('discovery.referentiel-status');
     Route::get('/discovery/children/{code}', [\App\Http\Controllers\DiscoveryController::class, 'children'])->name('discovery.children');
     Route::post('/discovery/metiers/{metier}/status', [\App\Http\Controllers\DiscoveryController::class, 'setMetierStatus'])->name('discovery.metier-status');
+
+    // Vector Testing
+    Route::post('/jobs/{jobOffer}/embed', [\App\Http\Controllers\VectorController::class, 'embedJob'])->name('jobs.embed');
+    Route::post('/profile/embed', [\App\Http\Controllers\VectorController::class, 'embedProfile'])->name('profile.embed');
+    Route::post('/matching/vector-sync', [\App\Http\Controllers\VectorController::class, 'syncSimilarities'])->name('matching.vector-sync');
 });
 
 Route::middleware('auth')->group(function () {

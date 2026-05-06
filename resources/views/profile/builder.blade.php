@@ -126,11 +126,21 @@
             <aside class="w-64 border-r border-slate-100 bg-white flex flex-col hidden lg:flex">
                 <div class="p-6 border-b border-slate-50 flex items-center justify-between">
                     <h2 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Historique</h2>
-                    <a href="{{ route('profile.builder.reset') }}" class="p-2 text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all shadow-sm shadow-indigo-50/50" title="Nouvelle discussion">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" />
-                        </svg>
-                    </a>
+                    <div class="flex items-center gap-2">
+                        <button 
+                            @click="embedProfile()" 
+                            class="p-2 text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all shadow-sm shadow-indigo-50/50" 
+                            title="Vectoriser mon profil"
+                            :disabled="isTyping"
+                        >
+                            <svg class="w-4 h-4" :class="isTyping ? 'animate-pulse' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        </button>
+                        <a href="{{ route('profile.builder.reset') }}" class="p-2 text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all shadow-sm shadow-indigo-50/50" title="Nouvelle discussion">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" />
+                            </svg>
+                        </a>
+                    </div>
                 </div>
                 
                 <div class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3">

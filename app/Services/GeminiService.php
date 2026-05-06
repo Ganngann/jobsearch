@@ -265,4 +265,54 @@ class GeminiService
 
         return $text;
     }
+
+    /**
+     * Génère un vecteur (embedding) pour un texte donné.
+     * Utilise le modèle gemini-embedding-001.
+     */
+    public function embed(string $text, string $taskType = 'RETRIEVAL_DOCUMENT'): ?array
+    {
+        if (empty($this->apiKey)) {
+            Log::warning('Gemini API key is missing.');
+            return null;
+        }
+
+        $payload = [
+            'model' => 'models/gemini-embedding-001',
+            'taskType' => $taskType,
+            'content' => [
+                'parts' => [['text' => $text]]
+            ],
+            'outputDimensionality' => 768
+        ];
+
+        Log::info('GEMINI EMBED REQUEST', [
+            'task' => $taskType,
+            'text' => $text,
+            'char_count' => strlen($text)
+        ]);
+
+        $response = Http::withoutVerifying()
+            ->withHeaders(['Content-Type' => 'application/json'])
+            ->timeout(25)
+            ->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key={$this->apiKey}", $payload);
+
+        if ($response->failed()) {
+            Log::error('GEMINI EMBED FAILED', [
+                'status' => $response->status(),
+                'error' => $response->body()
+            ]);
+            return null;
+        }
+
+        $result = $response->json();
+        $embedding = $result['embedding']['values'] ?? null;
+
+        Log::info('GEMINI EMBED RESPONSE', [
+            'status' => $response->status(),
+            'vector_size' => $embedding ? count($embedding) : 0
+        ]);
+
+        return $embedding;
+    }
 }

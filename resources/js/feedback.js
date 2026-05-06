@@ -31,7 +31,8 @@ export default (initialData) => ({
             this.message = '';
         })
         .catch(err => {
-            alert('Oups, erreur lors de l\'envoi. Réessaie plus tard !');
+            console.error('Feedback send error', err);
+            // On pourrait ajouter un this.error = true ici si le template le supporte
         })
         .finally(() => {
             this.loading = false;

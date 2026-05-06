@@ -21,6 +21,7 @@ class UserMatch extends Model
         'ai_raw_response',
         'ai_status',
         'analyzed_at',
+        'vector_score',
     ];
 
     protected $casts = [

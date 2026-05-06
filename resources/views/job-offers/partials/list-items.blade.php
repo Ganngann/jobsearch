@@ -11,8 +11,9 @@
     <div 
         @click="selectOffer('{{ $offer->forem_id }}')"
         data-offer-id="{{ $offer->forem_id }}"
-        data-pre-score="{{ $match->pre_score ?? 0 }}"
-        data-ai-score="{{ $match->final_score ?? '' }}"
+        data-pre-score="{{ $match?->pre_score ?? 0 }}"
+        data-ai-score="{{ $match?->final_score ?? '' }}"
+        data-vector-score="{{ ($match?->vector_score !== null) ? round($match->vector_score * 100) : '' }}"
         :class="selectedId == '{{ $offer->forem_id }}' ? 'border-indigo-500 ring-2 ring-indigo-500/10 bg-white' : 'border-slate-100 hover:border-slate-300 bg-white'"
         class="p-5 rounded-2xl border cursor-pointer transition-all duration-300 shadow-sm hover:shadow-md group relative overflow-hidden {{ $isOfferBlacklisted ? 'opacity-50 grayscale-[0.5]' : '' }}"
     >
@@ -22,9 +23,18 @@
             <div class="text-right">
                 <p class="text-lg font-black leading-none" 
                    :class="(scores['{{ $offer->forem_id }}']?.data >= 70) ? 'text-emerald-500' : ((scores['{{ $offer->forem_id }}']?.data >= 40) ? 'text-amber-500' : 'text-slate-400')">
-                    <span x-text="scores['{{ $offer->forem_id }}']?.data ?? '{{ $match->pre_score ?? 0 }}'"></span><span class="text-[9px]">%</span>
+                    <span x-text="scores['{{ $offer->forem_id }}']?.data ?? '{{ $match?->pre_score ?? 0 }}'"></span><span class="text-[9px]">%</span>
                 </p>
                 <p class="text-[7px] font-black uppercase text-slate-300 tracking-tighter">Data</p>
+            </div>
+
+            <!-- Vector Match -->
+            <div class="text-right pl-4 border-l border-slate-100">
+                <p class="text-lg font-black leading-none" 
+                   :class="(scores['{{ $offer->forem_id }}']?.vector >= 70) ? 'text-violet-600' : ((scores['{{ $offer->forem_id }}']?.vector >= 40) ? 'text-violet-400' : 'text-slate-200')">
+                    <span x-text="scores['{{ $offer->forem_id }}']?.vector ?? '--'"></span><span class="text-[9px]">%</span>
+                </p>
+                <p class="text-[7px] font-black uppercase text-violet-300 tracking-tighter">Vecteur</p>
             </div>
 
             <!-- IA Match (Score ou Placeholder) -->

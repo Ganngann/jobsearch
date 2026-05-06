@@ -40,6 +40,7 @@ class User extends Authenticatable
         'daily_ai_usage',
         'last_seen_at',
         'last_ai_usage_at',
+        'vector_embedding',
     ];
 
     /**
@@ -66,6 +67,7 @@ class User extends Authenticatable
             'birth_date' => 'date',
             'last_seen_at' => 'datetime',
             'last_ai_usage_at' => 'datetime',
+            'vector_embedding' => 'array',
         ];
     }
 

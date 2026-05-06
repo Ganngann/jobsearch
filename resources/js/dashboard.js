@@ -33,7 +33,8 @@ export default function dashboardApp(config = {}) {
                 const id = el.dataset.offerId;
                 this.scores[id] = {
                     data: el.dataset.preScore,
-                    ia: el.dataset.aiScore === '' || el.dataset.aiScore === undefined ? null : el.dataset.aiScore
+                    ia: el.dataset.aiScore === '' || el.dataset.aiScore === undefined ? null : el.dataset.aiScore,
+                    vector: el.dataset.vectorScore === '' || el.dataset.vectorScore === undefined ? null : el.dataset.vectorScore
                 };
             });
         },
@@ -115,6 +116,55 @@ export default function dashboardApp(config = {}) {
                     clearInterval(this.pollInterval);
                 }
             }, 3000);
+        },
+
+        async embedJob(offerId) {
+            this.previewLoading = true;
+            try {
+                const res = await fetch(`/jobs/${offerId}/embed`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': this.csrfToken, 'Accept': 'application/json' }
+                });
+                const data = await res.json();
+                
+                // Mettre à jour le score dans la liste si présent
+                if (data.score !== undefined && this.scores[offerId]) {
+                    this.scores[offerId].vector = data.score;
+                }
+
+                await this.selectOffer(offerId);
+            } catch (e) {
+                console.error('Embedding failed', e);
+                // Notification supprimée (alert banni)
+
+            } finally {
+                this.previewLoading = false;
+            }
+        },
+
+        async syncSimilarities() {
+            this.previewLoading = true;
+            try {
+                const res = await fetch(`/matching/vector-sync`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': this.csrfToken, 'Accept': 'application/json' }
+                });
+                const data = await res.json();
+                
+                if (!res.ok) {
+                    throw new Error(data.error || 'Erreur serveur');
+                }
+
+                this.refreshList();
+                // Succès silencieux (la liste se rafraîchit)
+
+            } catch (e) {
+                console.error('Sync failed', e);
+                // Erreur logguée en console uniquement
+
+            } finally {
+                this.previewLoading = false;
+            }
         },
 
         updateOfferScore(offerId, score, isBlacklisted) {

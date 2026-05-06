@@ -88,7 +88,7 @@ class JobOfferService
      */
     public function syncFullDetails(JobOffer $jobOffer)
     {
-        \Illuminate\Support\Facades\Log::info("Début du Lazy Loading pour l'offre #{$jobOffer->forem_id}");
+        \Illuminate\Support\Facades\Log::debug("Début du Lazy Loading pour l'offre #{$jobOffer->forem_id}");
         
         $jobData = $this->foremApi->getJobDetail($jobOffer->forem_id);
         
@@ -103,7 +103,7 @@ class JobOfferService
             return false;
         }
 
-        \Illuminate\Support\Facades\Log::info("Détails reçus pour #{$jobOffer->forem_id}, mise à jour de la DB...");
+        \Illuminate\Support\Facades\Log::debug("Détails reçus pour #{$jobOffer->forem_id}, mise à jour de la DB...");
 
         return DB::transaction(function () use ($jobOffer, $jobData) {
             // Employer

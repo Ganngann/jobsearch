@@ -208,6 +208,16 @@
                         @endif
                     </div>
 
+                    <!-- Vector Match -->
+                    @if($match && $match->vector_score !== null)
+                        <div class="text-center p-4 bg-violet-600 rounded-2xl shadow-lg shadow-violet-100 min-w-[100px]">
+                            <p class="text-3xl font-black text-white">
+                                {{ round($match->vector_score * 100) }}<span class="text-xs">%</span>
+                            </p>
+                            <p class="text-[8px] font-black uppercase tracking-widest text-violet-200 mt-1">Vector Match</p>
+                        </div>
+                    @endif
+
                     @php
                         $isAiStale = $match && $match->ai_status === 'processing' && $match->updated_at->lt(now()->subMinutes(10));
                     @endphp
@@ -241,21 +251,46 @@
                     @endif
                 </div>
 
-                @if($match && ($match->ai_status === 'idle' || $match->ai_status === 'failed' || $isAiStale) && !($match->final_score > 0))
+                <div class="w-full flex gap-2">
                     <button 
                         @click="startAiAnalysis('{{ $jobOffer->forem_id }}')" 
                         :disabled="previewLoading"
-                        class="w-full py-3 px-6 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-wait transition-all shadow-lg shadow-indigo-100 flex items-center justify-center gap-2"
+                        class="flex-1 py-3 px-6 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2 {{ ($match && $match->final_score > 0 && !$isAiStale) ? 'bg-indigo-50 text-indigo-600 border border-indigo-100 hover:bg-indigo-100 shadow-indigo-50' : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-100' }}"
                     >
                         <template x-if="previewLoading">
                             <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                         </template>
-                        <span x-text="previewLoading ? 'Lancement...' : '{{ $match->ai_status === 'failed' ? 'Réessayer l\'analyse' : 'Lancer Analyse IA' }}'"></span>
+                        <span x-text="previewLoading ? 'Lancement...' : '{{ ($match && $match->final_score > 0 && !$isAiStale) ? 'Relancer IA' : 'Lancer Analyse IA' }}'"></span>
                     </button>
-                @endif
+
+                    <button 
+                        @click="embedJob('{{ $jobOffer->forem_id }}')" 
+                        :disabled="previewLoading"
+                        class="py-3 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center border {{ $jobOffer->vector_embedding ? 'bg-indigo-50 text-indigo-600 border-indigo-100 hover:bg-indigo-100' : 'bg-slate-100 text-slate-600 border-transparent hover:bg-slate-200' }}"
+                        title="{{ $jobOffer->vector_embedding ? 'Mettre à jour le vecteur' : 'Calculer le vecteur (Embedding)' }}"
+                    >
+                        <svg class="w-4 h-4" :class="previewLoading ? 'animate-pulse' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        <span class="ml-2">{{ $jobOffer->vector_embedding ? 'Update Vecteur' : 'Vectoriser' }}</span>
+                    </button>
+                </div>
+            </div>
             </div>
         </div>
-    </div>
+
+    <!-- Embedding Status -->
+    @if($jobOffer->vector_embedding)
+        <div class="px-8 py-2 bg-emerald-50 border-y border-emerald-100 flex items-center justify-between">
+            <span class="text-[9px] font-black uppercase text-emerald-700 tracking-widest flex items-center gap-1">
+                <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
+                Vecteur disponible
+            </span>
+            @if($match && $match->vector_score !== null)
+                <span class="text-[9px] font-black uppercase text-emerald-700 tracking-widest">
+                    Similitude : {{ number_format($match->vector_score * 100, 1) }}%
+                </span>
+            @endif
+        </div>
+    @endif
 
     <!-- Content -->
     <div class="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar">
