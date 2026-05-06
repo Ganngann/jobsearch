@@ -28,14 +28,17 @@ class AnalyzeJobOffer implements ShouldQueue
      */
     public function handle(\App\Services\MatchingService $matchingService): void
     {
+        \Illuminate\Support\Facades\Log::info("Starting AI Analysis for User #{$this->user->id} and JobOffer #{$this->jobOffer->forem_id}");
         $this->match->update(['ai_status' => 'processing']);
 
         try {
             $success = $matchingService->performAiAnalysis($this->user, $this->jobOffer, $this->match);
             
             if ($success) {
+                \Illuminate\Support\Facades\Log::info("AI Analysis COMPLETED for User #{$this->user->id} and JobOffer #{$this->jobOffer->forem_id}");
                 $this->match->update(['ai_status' => 'completed']);
             } else {
+                \Illuminate\Support\Facades\Log::warning("AI Analysis FAILED for User #{$this->user->id} and JobOffer #{$this->jobOffer->forem_id}");
                 $this->match->update(['ai_status' => 'failed']);
             }
         } catch (\Exception $e) {

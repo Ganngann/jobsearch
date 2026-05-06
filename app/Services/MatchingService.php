@@ -277,6 +277,7 @@ class MatchingService
     public function performAiAnalysis(User $user, JobOffer $jobOffer, UserMatch $match, float $distance = null): bool
     {
         $prompt = $this->buildPrompt($user, $jobOffer, $distance);
+        Log::info("Sending request to Gemini for JobOffer #{$jobOffer->forem_id}");
         $result = $this->gemini->analyzeMatch($prompt);
 
         if ($result) {
@@ -290,8 +291,11 @@ class MatchingService
                 'ai_raw_response' => $result,
                 'analyzed_at' => now(),
             ]);
+            Log::info("Gemini analysis successful for JobOffer #{$jobOffer->forem_id}. Score: {$result['score']}");
             return true;
         }
+
+        Log::error("Gemini analysis returned null for JobOffer #{$jobOffer->forem_id}");
 
         return false;
     }
