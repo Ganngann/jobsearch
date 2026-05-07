@@ -45,6 +45,19 @@ export default (initialData) => ({
         }
     },
 
+    async fetchSoftSkills() {
+        this.loading = true;
+        try {
+            const res = await fetch(this.routes.soft);
+            const data = await res.json();
+            this.suggestions = data.suggestions.map(s => ({ ...s, hidden: false }));
+        } catch (e) {
+            console.error(e);
+        } finally {
+            this.loading = false;
+        }
+    },
+
     async setStatus(skill, status) {
         try {
             const res = await fetch(`/profile/skills/${skill.id}/status`, {

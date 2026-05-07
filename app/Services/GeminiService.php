@@ -294,7 +294,8 @@ class GeminiService
 
         $response = Http::withoutVerifying()
             ->withHeaders(['Content-Type' => 'application/json'])
-            ->timeout(25)
+            ->timeout(30)
+            ->retry(3, 1000) // 3 tentatives, 1s d'intervalle entre chaque
             ->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key={$this->apiKey}", $payload);
 
         if ($response->failed()) {

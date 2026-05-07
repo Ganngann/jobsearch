@@ -166,26 +166,61 @@
             </div>
         </section>
 
-        <!-- Stats -->
+        <!-- Live Engine Stats -->
         <section class="pb-24 px-4">
-            <div class="max-w-4xl mx-auto py-12 px-8 glass rounded-[2.5rem] border border-white/5">
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-                    <div>
-                        <div class="text-3xl font-black text-white mb-1">{{ $stats['jobs'] ?? '3k+' }}</div>
-                        <div class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Offres Scannées</div>
+            <div class="max-w-5xl mx-auto">
+                <div class="glass rounded-[3rem] border border-white/10 overflow-hidden shadow-2xl relative">
+                    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-50"></div>
+                    
+                    <div class="grid grid-cols-2 md:grid-cols-4 divide-x divide-white/5">
+                        <!-- Stat 1 -->
+                        <div class="p-8 lg:p-12 text-center group hover:bg-white/[0.02] transition-colors">
+                            <div class="text-indigo-400 text-xs font-bold uppercase tracking-[0.2em] mb-4 opacity-70">Base de données</div>
+                            <div class="text-4xl lg:text-5xl font-black text-white mb-2 tracking-tighter">
+                                {{ number_format($stats['total'], 0, ',', ' ') }}
+                            </div>
+                            <div class="text-[10px] font-medium text-slate-500 uppercase tracking-widest">Offres Indexées</div>
+                        </div>
+
+                        <!-- Stat 2 -->
+                        <div class="p-8 lg:p-12 text-center group hover:bg-white/[0.02] transition-colors">
+                            <div class="text-purple-400 text-xs font-bold uppercase tracking-[0.2em] mb-4 opacity-70">Analyse IA</div>
+                            <div class="text-4xl lg:text-5xl font-black text-white mb-2 tracking-tighter">
+                                {{ number_format($stats['detailed'], 0, ',', ' ') }}
+                            </div>
+                            <div class="text-[10px] font-medium text-slate-500 uppercase tracking-widest">Descriptions Lues</div>
+                        </div>
+
+                        <!-- Stat 3 -->
+                        <div class="p-8 lg:p-12 text-center group hover:bg-white/[0.02] transition-colors">
+                            <div class="text-pink-400 text-xs font-bold uppercase tracking-[0.2em] mb-4 opacity-70">Moteur Sémantique</div>
+                            <div class="text-4xl lg:text-5xl font-black text-white mb-2 tracking-tighter">
+                                {{ number_format($stats['vectorized'], 0, ',', ' ') }}
+                            </div>
+                            <div class="text-[10px] font-medium text-slate-500 uppercase tracking-widest">Offres Vectorisées</div>
+                        </div>
+
+                        <!-- Stat 4 -->
+                        <div class="p-8 lg:p-12 text-center group hover:bg-white/[0.02] transition-colors relative overflow-hidden">
+                            <div class="text-emerald-400 text-xs font-bold uppercase tracking-[0.2em] mb-4 opacity-70 flex items-center justify-center gap-2">
+                                <span class="relative flex h-2 w-2">
+                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                </span>
+                                Temps Réel
+                            </div>
+                            <div class="text-4xl lg:text-5xl font-black text-white mb-2 tracking-tighter">
+                                {{ number_format($stats['active'], 0, ',', ' ') }}
+                            </div>
+                            <div class="text-[10px] font-medium text-slate-500 uppercase tracking-widest">Jobs Actifs</div>
+                        </div>
                     </div>
-                    <div>
-                        <div class="text-3xl font-black text-white mb-1">98%</div>
-                        <div class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Précision IA</div>
-                    </div>
-                    <div>
-                        <div class="text-3xl font-black text-white mb-1">{{ $stats['metiers'] ?? '200+' }}</div>
-                        <div class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Métiers</div>
-                    </div>
-                    <div>
-                        <div class="text-3xl font-black text-white mb-1">24/7</div>
-                        <div class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Sync Forem</div>
-                    </div>
+                </div>
+                
+                <div class="mt-6 text-center">
+                    <p class="text-slate-500 text-[10px] uppercase tracking-[0.3em] font-medium">
+                        Dernière synchronisation : <span class="text-slate-300">{{ now()->format('H:i') }}</span> • Moteur Gemini 1.5 Flash
+                    </p>
                 </div>
             </div>
         </section>

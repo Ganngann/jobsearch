@@ -25,8 +25,19 @@ class VectorService
 
         if ($vector) {
             $normalized = $this->normalize($vector);
-            $job->update(['vector_embedding' => $normalized]);
-            return true;
+            
+            try {
+                // Tentative de sauvegarde avec une patience accrue (10 tentatives, 1s d'intervalle)
+                // Total de 10 secondes de patience avant l'échec critique.
+                return retry(10, function() use ($job, $normalized) {
+                    return $job->update(['vector_embedding' => $normalized]);
+                }, 1000); 
+            } catch (\Exception $e) {
+                $errorMsg = "ÉCHEC CRITIQUE : Impossible de sauvegarder le vecteur pour l'offre #{$job->id} après 10 tentatives. Arrêt du processus pour éviter tout gaspillage API. Erreur : " . $e->getMessage();
+                Log::error($errorMsg);
+                // On lance une exception pour stopper net le processus appelant
+                throw new \RuntimeException($errorMsg);
+            }
         }
 
         return false;
@@ -42,8 +53,15 @@ class VectorService
 
         if ($vector) {
             $normalized = $this->normalize($vector);
-            $user->update(['vector_embedding' => $normalized]);
-            return true;
+            
+            try {
+                return retry(5, function() use ($user, $normalized) {
+                    return $user->update(['vector_embedding' => $normalized]);
+                }, 100);
+            } catch (\Exception $e) {
+                Log::error("Impossible de sauvegarder le vecteur pour l'utilisateur #{$user->id} : " . $e->getMessage());
+                return false;
+            }
         }
 
         return false;
@@ -82,7 +100,10 @@ class VectorService
      */
     protected function buildJobString(JobOffer $job): string
     {
-        $skills = $job->skills->pluck('label')->implode(', ');
+        $allSkills = $job->skills;
+        $hardSkills = $allSkills->where('type', 'hard')->pluck('label')->implode(', ');
+        $softSkills = $allSkills->where('type', 'soft')->pluck('label')->implode(', ');
+
         $languages = $job->languages->pluck('label')->implode(', ');
         $permits = $job->permits->pluck('label')->implode(', ');
         $sectors = $job->sectors->pluck('label')->implode(', ');
@@ -91,7 +112,8 @@ class VectorService
 
         $content = "Métier: {$job->metier?->label} | ";
         $content .= "Description: " . strip_tags($job->description) . " | ";
-        $content .= "Compétences: {$skills} | ";
+        $content .= "Compétences Techniques: {$hardSkills} | ";
+        $content .= "Soft Skills: {$softSkills} | ";
         $content .= "Langues: {$languages} | ";
         $content .= "Permis: {$permits} | ";
         $content .= "Secteurs: {$sectors} | ";
@@ -107,7 +129,10 @@ class VectorService
      */
     protected function buildUserString(User $user): string
     {
-        $skills = $user->validatedSkills->pluck('label')->implode(', ');
+        $allSkills = $user->validatedSkills;
+        $hardSkills = $allSkills->where('type', 'hard')->pluck('label')->implode(', ');
+        $softSkills = $allSkills->where('type', 'soft')->pluck('label')->implode(', ');
+
         $facts = $user->facts->pluck('content')->implode(' ');
         $experiences = $user->experiences->map(fn($e) => "{$e->title} chez {$e->company}: {$e->description}")->implode(' | ');
         $educations = $user->educations->map(fn($e) => "{$e->degree} à {$e->school}")->implode(' | ');
@@ -119,7 +144,8 @@ class VectorService
         $content = "Headline: {$user->headline} | ";
         $content .= "Aspirations: {$user->aspirations} | ";
         $content .= "Bio: {$user->profile_text} | ";
-        $content .= "Compétences: {$skills} | ";
+        $content .= "Compétences Techniques: {$hardSkills} | ";
+        $content .= "Soft Skills: {$softSkills} | ";
         $content .= "Récits: {$facts} | ";
         $content .= "Parcours: {$experiences} | ";
         $content .= "Études: {$educations} | ";

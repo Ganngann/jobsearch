@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\JobOffer;
 use App\Models\User;
+use App\Models\UserMatch;
 use App\Services\VectorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -84,22 +85,39 @@ class VectorController extends Controller
                 : back()->with('error', $msg);
         }
 
-        // On récupère toutes les offres actives détaillées
+        // Lever la limite de temps pour ce calcul massif
+        set_time_limit(0);
+
+        // On récupère toutes les offres actives détaillées via un curseur
         $jobs = JobOffer::where('status', 'active')
             ->where('is_detailed', true)
             ->whereNotNull('vector_embedding')
-            ->get();
+            ->cursor();
 
         $count = 0;
+        $upsertData = [];
+        
         foreach ($jobs as $job) {
             $score = $this->vectorService->cosineSimilarity($user->vector_embedding, $job->vector_embedding);
             
-            // On met à jour le UserMatch existant ou on en crée un
-            $user->matches()->updateOrCreate(
-                ['job_offer_id' => $job->id],
-                ['vector_score' => $score]
-            );
+            $upsertData[] = [
+                'user_id' => $user->id,
+                'job_offer_id' => $job->id,
+                'vector_score' => $score
+            ];
+            
             $count++;
+            
+            // On traite par paquets de 500 pour ne pas saturer la requête SQL
+            if (count($upsertData) >= 500) {
+                UserMatch::upsert($upsertData, ['user_id', 'job_offer_id'], ['vector_score']);
+                $upsertData = [];
+            }
+        }
+
+        // Dernier paquet
+        if (!empty($upsertData)) {
+            UserMatch::upsert($upsertData, ['user_id', 'job_offer_id'], ['vector_score']);
         }
 
         $msg = "Similitude calculée pour {$count} offres.";

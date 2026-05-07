@@ -305,7 +305,10 @@ class MatchingService
      */
     protected function buildPrompt(User $user, JobOffer $jobOffer, float $distance = null): string
     {
-        $userSkills = $user->validatedSkills()->pluck('label')->implode(', ');
+        $allUserSkills = $user->validatedSkills;
+        $userHardSkills = $allUserSkills->where('type', 'hard')->pluck('label')->implode(', ');
+        $userSoftSkills = $allUserSkills->where('type', 'soft')->pluck('label')->implode(', ');
+
         $userLangs = $user->languages()->withPivot('level')->get()->map(fn($l) => "{$l->label} ({$l->pivot->level})")->implode(', ');
         
         // Récupération de tous les récits
@@ -326,7 +329,8 @@ class MatchingService
         - Titre/Headline : {$user->headline}
         - Bio/Résumé : {$user->profile_text}
         - Aspirations : {$user->aspirations}
-        - Compétences déclarées : {$userSkills}
+        - Compétences Techniques : {$userHardSkills}
+        - Soft Skills : {$userSoftSkills}
         - Langues : {$userLangs}
         - Mobilité : Rayon maximum de " . ($user->radius ?? 30) . " km autour de son domicile.
 

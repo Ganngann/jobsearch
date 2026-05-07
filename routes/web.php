@@ -6,12 +6,11 @@ use App\Http\Controllers\ForemSearchController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    if (auth()->check()) {
-        return redirect()->route('dashboard');
-    }
     $stats = [
-        'jobs' => \App\Models\JobOffer::where('status', 'active')->count(),
-        'metiers' => \App\Models\Metier::whereHas('jobOffers')->count(),
+        'total' => \App\Models\JobOffer::count(),
+        'detailed' => \App\Models\JobOffer::where('is_detailed', true)->count(),
+        'vectorized' => \App\Models\JobOffer::whereNotNull('vector_embedding')->count(),
+        'active' => \App\Models\JobOffer::where('status', 'active')->count(),
     ];
     return view('welcome', compact('stats'));
 });
@@ -59,6 +58,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile/skills', [\App\Http\Controllers\ProfileSkillController::class, 'index'])->name('profile.skills.index');
     Route::post('/profile/skills/suggest', [\App\Http\Controllers\ProfileSkillController::class, 'suggest'])->name('profile.skills.suggest');
     Route::post('/profile/skills/{skill}/status', [\App\Http\Controllers\ProfileSkillController::class, 'updateStatus'])->name('profile.skills.status');
+    Route::get('/profile/skills/soft', [\App\Http\Controllers\ProfileSkillController::class, 'softSkills'])->name('profile.skills.soft');
 
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
