@@ -10,6 +10,7 @@ use App\Services\MatchingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class JobOfferController extends Controller
 {
@@ -113,7 +114,7 @@ class JobOfferController extends Controller
                          ->where('user_matches.user_id', '=', $user->id);
                 })
                 ->select('job_offers.*', 'user_matches.vector_score')
-                ->orderByRaw('user_matches.vector_score DESC NULLS LAST');
+                ->orderBy('user_matches.vector_score', 'desc');
                 break;
             case 'score_desc':
             default:
@@ -123,8 +124,8 @@ class JobOfferController extends Controller
                          ->where('user_matches.user_id', '=', $user->id);
                 })
                 ->select('job_offers.*', 'user_matches.pre_score', 'user_matches.final_score', 'user_matches.vector_score')
-                ->orderByRaw('user_matches.final_score DESC NULLS LAST')
-                ->orderByRaw('user_matches.pre_score DESC NULLS LAST');
+                ->orderBy('user_matches.final_score', 'desc')
+                ->orderBy('user_matches.pre_score', 'desc');
                 break;
         }
 
@@ -137,18 +138,22 @@ class JobOfferController extends Controller
         }
 
         // Données pour les filtres de la sidebar
-        // Données pour les filtres de la sidebar : Triés par potentiel de match personnel
-        $topMetiers = \App\Models\Metier::whereHas('jobOffers')
-            ->withCount('jobOffers')
-            ->orderBy('job_offers_count', 'desc')
-            ->limit(100)
-            ->get();
+        // Données pour les filtres de la sidebar : Mise en cache pour 1h
+        $topMetiers = Cache::remember('dashboard.top_metiers', 3600, function() {
+            return \App\Models\Metier::whereHas('jobOffers')
+                ->withCount('jobOffers')
+                ->orderBy('job_offers_count', 'desc')
+                ->limit(100)
+                ->get();
+        });
 
-        $topEmployers = \App\Models\Employer::whereHas('jobOffers')
-            ->withCount('jobOffers')
-            ->orderBy('job_offers_count', 'desc')
-            ->limit(50)
-            ->get();
+        $topEmployers = Cache::remember('dashboard.top_employers', 3600, function() {
+            return \App\Models\Employer::whereHas('jobOffers')
+                ->withCount('jobOffers')
+                ->orderBy('job_offers_count', 'desc')
+                ->limit(50)
+                ->get();
+        });
 
         $favoriteRomeCodes = $user->preferredReferentielMetiers()->pluck('code')->toArray();
 

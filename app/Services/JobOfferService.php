@@ -286,18 +286,9 @@ class JobOfferService
             return true;
         }, 5);
 
-        // APRÈS la transaction : Déclenchement du matching pour la cohorte d'utilisateurs concernés
+        // APRÈS la transaction : Déclenchement du matching en ARRIÈRE-PLAN
         if ($jobOffer->metier_id) {
-            $users = \App\Models\User::whereHas('preferredMetiers', function($q) use ($jobOffer) {
-                $q->where('metiers.id', $jobOffer->metier_id);
-            })->get();
-
-            DB::transaction(function() use ($users, $jobOffer) {
-                foreach ($users as $user) {
-                    // On calcule au moins le Layer 1. L'IA suivra si pre_score >= 70.
-                    $this->matchingService->match($user, $jobOffer);
-                }
-            }, 5);
+            \App\Jobs\BatchMatchJobOffer::dispatch($jobOffer);
         }
 
         return true;
