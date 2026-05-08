@@ -41,6 +41,7 @@ class User extends Authenticatable
         'last_seen_at',
         'last_ai_usage_at',
         'vector_embedding',
+        'is_admin',
     ];
 
     /**
@@ -258,5 +259,10 @@ class User extends Authenticatable
         $this->update(['last_ai_usage_at' => now()]);
 
         return true;
+    }
+
+    public function aiLogs(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(AiLog::class);
     }
 }

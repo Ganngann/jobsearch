@@ -54,6 +54,13 @@
                             {{ __('Modifier Profil') }}
                         </x-dropdown-link>
 
+                        @if(Auth::user()->is_admin)
+                        <div class="border-t border-slate-100 my-1"></div>
+                        <x-dropdown-link :href="route('admin.dashboard')" class="text-indigo-600 font-bold">
+                            {{ __('⚙️ Administration') }}
+                        </x-dropdown-link>
+                        @endif
+
 
                         <!-- Authentication -->
                         <form method="POST" action="{{ route('logout') }}">
@@ -106,6 +113,12 @@
                 <x-responsive-nav-link :href="route('profile.edit')">
                     {{ __('Profile') }}
                 </x-responsive-nav-link>
+
+                @if(Auth::user()->is_admin)
+                <x-responsive-nav-link :href="route('admin.dashboard')" class="text-indigo-600 font-bold">
+                    {{ __('⚙️ Administration') }}
+                </x-responsive-nav-link>
+                @endif
 
                 <!-- Authentication -->
                 <form method="POST" action="{{ route('logout') }}">

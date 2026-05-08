@@ -10,6 +10,7 @@ class GeminiService
     protected ?string $apiKey;
     protected string $model;
     protected array $configModels;
+    protected ?array $lastUsage = null;
 
     public function __construct()
     {
@@ -36,6 +37,30 @@ class GeminiService
     protected function getUrl(): string
     {
         return "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent";
+    }
+
+    public function getLastUsage(): ?array
+    {
+        return $this->lastUsage;
+    }
+
+    public function getModel(): string
+    {
+        return $this->model;
+    }
+
+    public function log(string $category, ?int $userId = null): void
+    {
+        $userId = $userId ?? auth()->id();
+        if (!$userId || !$this->lastUsage) return;
+
+        \App\Models\AiLog::create([
+            'user_id' => $userId,
+            'model' => $this->model,
+            'category' => $category,
+            'tokens_in' => $this->lastUsage['promptTokenCount'] ?? 0,
+            'tokens_out' => $this->lastUsage['candidatesTokenCount'] ?? 0,
+        ]);
     }
 
     public function analyzeMatch(string $prompt): ?array
@@ -76,6 +101,8 @@ class GeminiService
 
         $result = $response->json();
         Log::debug('GEMINI ASK RESPONSE:', ['model' => $this->model, 'result' => $result]);
+        
+        $this->lastUsage = $result['usageMetadata'] ?? null;
         
         return $result['candidates'][0]['content']['parts'][0]['text'] ?? null;
     }
@@ -200,6 +227,8 @@ class GeminiService
         $result = $response->json();
         Log::debug('GEMINI RESPONSE:', ['model' => $this->model, 'result' => $result]);
 
+        $this->lastUsage = $result['usageMetadata'] ?? null;
+
         $text = $result['candidates'][0]['content']['parts'][0]['text'] ?? null;
         if (!$text) return null;
 
@@ -260,6 +289,8 @@ class GeminiService
 
         $result = $response->json();
         $text = $result['candidates'][0]['content']['parts'][0]['text'] ?? null;
+
+        $this->lastUsage = $result['usageMetadata'] ?? null;
 
         Log::info('Gemini OCR Result:', ['model' => $this->model, 'char_count' => strlen($text ?? '')]);
 

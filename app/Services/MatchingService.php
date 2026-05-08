@@ -291,6 +291,9 @@ class MatchingService
                 'ai_raw_response' => $result,
                 'analyzed_at' => now(),
             ]);
+            
+            $this->gemini->log('match', $user->id);
+
             Log::info("Gemini analysis successful for JobOffer #{$jobOffer->forem_id}. Score: {$result['score']}");
             return true;
         }

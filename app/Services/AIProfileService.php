@@ -186,7 +186,13 @@ class AIProfileService
             ];
         }
 
-        return $this->gemini->chat($messages, $systemInstruction, $schema);
+        $response = $this->gemini->chat($messages, $systemInstruction, $schema);
+        
+        if ($response) {
+            $this->gemini->log('chat', $user->id);
+        }
+
+        return $response;
     }
 
     /**

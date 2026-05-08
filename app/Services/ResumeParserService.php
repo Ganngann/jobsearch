@@ -31,12 +31,14 @@ class ResumeParserService
                 if (empty(trim($text))) {
                     Log::info('PDF vide détecté, tentative OCR avec Gemini...');
                     $text = $this->gemini->ocr($file->getRealPath(), 'application/pdf');
+                    $this->gemini->log('ocr');
                 }
             } elseif ($extension === 'docx') {
                 $text = $this->parseDocx($file->getRealPath());
             } elseif (in_array($extension, ['jpg', 'jpeg', 'png', 'webp'])) {
                 Log::info('Image détectée, passage par Gemini OCR...');
                 $text = $this->gemini->ocr($file->getRealPath(), $mimeType);
+                $this->gemini->log('ocr');
             } elseif ($extension === 'txt') {
                 $text = file_get_contents($file->getRealPath());
             }

@@ -140,6 +140,8 @@ class ProfileController extends Controller
             return response()->json(['error' => 'Échec de l\'analyse IA'], 500);
         }
 
+        $this->gemini->log('profile');
+
         return response()->json($suggestion);
     }
 
@@ -160,6 +162,8 @@ class ProfileController extends Controller
         if (!$suggestion) {
             return response()->json(['error' => 'Échec de la génération IA'], 500);
         }
+
+        $this->gemini->log('profile');
 
         return response()->json($suggestion);
     }
