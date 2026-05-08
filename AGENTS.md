@@ -22,7 +22,8 @@
 ## Commandes Utiles
 
 - `composer setup` : Initialisation complète de l'environnement.
-- `composer dev` : Lancement du serveur, de la queue et de Vite via `concurrently`.
+- `composer dev` : Lancement complet (Serveur interne, queue, cron, Vite).
+- `composer dev-herd` : Lancement optimisé pour **Herd** (Sans serveur interne, avec queue, cron, Vite).
 - `composer test` : Exécution de la suite de tests complète (Backend Laravel + Frontend Vitest).
 - `npm run test:js` : Exécution des tests unitaires Javascript uniquement.
 - `php artisan test` : Exécution des tests Laravel uniquement.

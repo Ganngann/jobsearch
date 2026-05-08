@@ -219,7 +219,7 @@
                 
                 <div class="mt-6 text-center">
                     <p class="text-slate-500 text-[10px] uppercase tracking-[0.3em] font-medium">
-                        Dernière synchronisation : <span class="text-slate-300">{{ now()->format('H:i') }}</span> • Moteur Gemini 1.5 Flash
+                        Dernière synchronisation : <span class="text-slate-300">{{ now()->format('H:i') }}</span>
                     </p>
                 </div>
             </div>

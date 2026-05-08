@@ -17,9 +17,14 @@ composer setup
 
 ## Développement
 
-Lancement de l'environnement complet (Serveur, Queue, Pail, Vite) :
+Lancement standard (Serveur interne, Queue, Vite) :
 ```bash
 composer dev
+```
+
+Lancement optimisé pour **Laravel Herd** :
+```bash
+composer dev-herd
 ```
 
 ## Tests
