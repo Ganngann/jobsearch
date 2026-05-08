@@ -51,11 +51,11 @@ class MatchingService
             if ($user->useAiPoint()) {
                 $this->performAiAnalysis($user, $jobOffer, $match, $preMatchData['details']['categories']['location']['distance'] ?? null);
             }
-        } elseif ($triggerAi && $preScore >= 70 && !$match->analyzed_at && $user->isOnline()) {
+        //} elseif ($triggerAi && $preScore >= 70 && !$match->analyzed_at) { // && $user->isOnline()) {
             // Auto : On ne le fait que si l'utilisateur est en ligne et a du quota
-            if ($user->useAiPoint()) {
-                $this->performAiAnalysis($user, $jobOffer, $match, $preMatchData['details']['categories']['location']['distance'] ?? null);
-            }
+            //if ($user->useAiPoint()) {
+            //    $this->performAiAnalysis($user, $jobOffer, $match, $preMatchData['details']['categories']['location']['distance'] ?? null);
+            //}
         }
 
         return $match;
