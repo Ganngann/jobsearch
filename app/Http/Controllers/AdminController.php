@@ -11,12 +11,39 @@ class AdminController extends Controller
 {
     public function dashboard()
     {
-        $users = User::withCount(['matches as ai_calls_count' => function($query) {
-            $query->whereNotNull('analyzed_at');
-        }])
+        $users = User::withCount(['aiLogs as ai_calls_count'])
         ->with(['aiLogs'])
         ->orderBy('last_seen_at', 'desc')
         ->paginate(50);
+
+        // Calcul du coût par utilisateur (ventilé par modèle et catégorie pour l'accordéon)
+        $users->getCollection()->transform(function($user) {
+            $user->ai_details = $user->aiLogs->groupBy(function($log) {
+                return $log->model . '|' . $log->category;
+            })->map(function($logs) {
+                $first = $logs->first();
+                $model = $first->model;
+                $category = $first->category;
+                
+                $rateIn = (float) \App\Models\Setting::get("rate_in_{$model}", 0.10) / 1000000;
+                $rateOut = (float) \App\Models\Setting::get("rate_out_{$model}", 0.30) / 1000000;
+                
+                $totalIn = $logs->sum('tokens_in');
+                $totalOut = $logs->sum('tokens_out');
+                
+                return (object)[
+                    'model' => $model,
+                    'category' => $category,
+                    'count' => $logs->count(),
+                    'total_in' => $totalIn,
+                    'total_out' => $totalOut,
+                    'cost' => ($totalIn * $rateIn) + ($totalOut * $rateOut)
+                ];
+            })->values();
+            
+            $user->total_cost = $user->ai_details->sum('cost');
+            return $user;
+        });
 
         // Statistiques globales détaillées
         $aiStats = \App\Models\AiLog::select(
@@ -29,6 +56,13 @@ class AdminController extends Controller
         ->groupBy('model', 'category')
         ->get();
 
+        $aiStats = $aiStats->map(function($stat) {
+            $rateIn = (float) \App\Models\Setting::get("rate_in_{$stat->model}", 0.10) / 1000000;
+            $rateOut = (float) \App\Models\Setting::get("rate_out_{$stat->model}", 0.30) / 1000000;
+            $stat->cost = ($stat->total_in * $rateIn) + ($stat->total_out * $rateOut);
+            return $stat;
+        });
+
         $stats = [
             'total_users' => User::count(),
             'total_ai_calls' => \App\Models\AiLog::count(),
@@ -36,6 +70,7 @@ class AdminController extends Controller
             'ai_details' => $aiStats,
             'total_tokens_in' => $aiStats->sum('total_in'),
             'total_tokens_out' => $aiStats->sum('total_out'),
+            'total_cost' => $aiStats->sum('cost'),
             
             // Stats de Matching & Vecteurs
             'jobs_total' => \App\Models\JobOffer::count(),
@@ -176,5 +211,31 @@ class AdminController extends Controller
     {
         \Illuminate\Support\Facades\DB::connection('queue')->table('failed_jobs')->delete();
         return back()->with('success', 'Historique des échecs purgé.');
+    }
+
+    /**
+     * Affiche la page des paramètres.
+     */
+    public function settings()
+    {
+        $settings = \App\Models\Setting::where('group', 'ai_pricing')->get();
+        return view('admin.settings', compact('settings'));
+    }
+
+    /**
+     * Met à jour les paramètres.
+     */
+    public function updateSettings(Request $request)
+    {
+        $data = $request->validate([
+            'settings' => 'required|array',
+            'settings.*' => 'required|numeric|min:0',
+        ]);
+
+        foreach ($data['settings'] as $key => $value) {
+            \App\Models\Setting::set($key, $value);
+        }
+
+        return back()->with('success', 'Paramètres mis à jour avec succès.');
     }
 }

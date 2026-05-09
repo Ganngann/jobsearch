@@ -102,4 +102,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/queue/failed/clear', [\App\Http\Controllers\AdminController::class, 'clearFailedJobs'])->name('queue.failed.clear');
     Route::delete('/queue/jobs/{id}', [\App\Http\Controllers\AdminController::class, 'deleteJob'])->name('queue.jobs.delete');
     Route::post('/queue/jobs/{id}/retry', [\App\Http\Controllers\AdminController::class, 'retryJob'])->name('queue.jobs.retry');
+
+    // Settings
+    Route::get('/settings', [\App\Http\Controllers\AdminController::class, 'settings'])->name('settings');
+    Route::post('/settings', [\App\Http\Controllers\AdminController::class, 'updateSettings'])->name('settings.update');
 });

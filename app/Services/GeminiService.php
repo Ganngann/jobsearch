@@ -49,17 +49,27 @@ class GeminiService
         return $this->model;
     }
 
-    public function log(string $category, ?int $userId = null): void
+    public function log(string $category, ?int $userId = null, ?array $manualUsage = null): void
     {
         $userId = $userId ?? auth()->id();
-        if (!$userId || !$this->lastUsage) return;
+        
+        // Fallback pour les tâches d'arrière-plan (ex: vectorisation d'offres en file d'attente)
+        // On attribue l'appel au premier administrateur trouvé si aucun utilisateur n'est connecté.
+        if (!$userId) {
+            $userId = \App\Models\User::where('is_admin', true)->first()?->id;
+        }
+
+        if (!$userId) return;
+
+        $usage = $manualUsage ?? $this->lastUsage;
+        if (!$usage) return;
 
         \App\Models\AiLog::create([
             'user_id' => $userId,
-            'model' => $this->model,
+            'model' => $usage['model'] ?? $this->model,
             'category' => $category,
-            'tokens_in' => $this->lastUsage['promptTokenCount'] ?? 0,
-            'tokens_out' => $this->lastUsage['candidatesTokenCount'] ?? 0,
+            'tokens_in' => $usage['promptTokenCount'] ?? ($usage['tokens_in'] ?? 0),
+            'tokens_out' => $usage['candidatesTokenCount'] ?? ($usage['tokens_out'] ?? 0),
         ]);
     }
 
@@ -345,6 +355,15 @@ class GeminiService
 
         $result = $response->json();
         $embedding = $result['embedding']['values'] ?? null;
+
+        if ($embedding) {
+            // Log de l'appel vectoriel (estimation des tokens car non fournis par l'API embedContent)
+            $this->log('vector', null, [
+                'model' => 'gemini-embedding-001',
+                'promptTokenCount' => ceil(strlen($text) / 4),
+                'candidatesTokenCount' => 0
+            ]);
+        }
 
         Log::info('GEMINI EMBED RESPONSE', [
             'status' => $response->status(),

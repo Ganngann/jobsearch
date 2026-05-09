@@ -158,11 +158,11 @@
                                     </div>
                                     
                                     <!-- Crochet et Score Global Pre-IA -->
-                                    <div class="flex flex-col items-center">
-                                        <svg class="w-full h-3 text-white/20 -mt-1" viewBox="0 0 100 20" preserveAspectRatio="none">
-                                            <path d="M10 0 L10 10 L45 10 L50 20 L55 10 L90 10 L90 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                    <div class="flex flex-col items-center mt-2">
+                                        <svg class="w-full h-2 text-white/20" viewBox="0 0 100 10" preserveAspectRatio="none">
+                                            <path d="M20 0 L20 10 L80 10 L80 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                                         </svg>
-                                        <div class="px-3 py-1 bg-white/5 border border-white/10 rounded-full -mt-1.5 shadow-xl backdrop-blur-sm">
+                                        <div class="px-4 py-1.5 bg-white/5 border border-white/10 rounded-full mt-2 shadow-2xl backdrop-blur-md">
                                             <span class="text-[11px] font-black text-slate-200">{{ round($match->vector_score * ($match->pre_score / 100)) }}%</span>
                                             <span class="text-[7px] font-black uppercase tracking-widest text-slate-500 ml-1">Score Global Pre-IA</span>
                                         </div>
