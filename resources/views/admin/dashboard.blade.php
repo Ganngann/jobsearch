@@ -241,23 +241,40 @@
                                     <table class="w-full text-[10px]">
                                         <thead>
                                             <tr class="bg-slate-50/80 border-b border-slate-100">
-                                                <th class="px-4 py-2 font-black text-slate-400 uppercase tracking-widest">Modèle</th>
-                                                <th class="px-4 py-2 font-black text-slate-400 uppercase tracking-widest">Catégorie</th>
-                                                <th class="px-4 py-2 font-black text-slate-400 uppercase tracking-widest text-center">Appels</th>
-                                                <th class="px-4 py-2 font-black text-slate-400 uppercase tracking-widest text-right">Tokens In</th>
-                                                <th class="px-4 py-2 font-black text-slate-400 uppercase tracking-widest text-right">Tokens Out</th>
+                                                <th class="px-4 py-2 font-black text-slate-400 uppercase tracking-widest text-left">Modèle</th>
+                                                <th class="px-4 py-2 font-black text-slate-400 uppercase tracking-widest text-left">Catégorie</th>
+                                                <th class="px-4 py-2 font-black text-slate-400 uppercase tracking-widest text-center">Usage / Limite</th>
+                                                <th class="px-4 py-2 font-black text-slate-400 uppercase tracking-widest text-right">Définir Limite</th>
+                                                <th class="px-4 py-2 font-black text-slate-400 uppercase tracking-widest text-right">Tokens (In/Out)</th>
                                                 <th class="px-4 py-2 font-black text-slate-400 uppercase tracking-widest text-right">Coût</th>
                                             </tr>
                                         </thead>
                                         <tbody class="divide-y divide-slate-50">
                                             @forelse($user->ai_details as $detail)
                                                 <tr>
-                                                    <td class="px-4 py-2 font-bold text-slate-600">{{ $detail->model }}</td>
-                                                    <td class="px-4 py-2 uppercase font-black text-slate-400">{{ $detail->category }}</td>
-                                                    <td class="px-4 py-2 text-center font-bold">{{ $detail->count }}</td>
-                                                    <td class="px-4 py-2 text-right text-slate-400">{{ number_format($detail->total_in) }}</td>
-                                                    <td class="px-4 py-2 text-right text-slate-400">{{ number_format($detail->total_out) }}</td>
-                                                    <td class="px-4 py-2 text-right font-black text-emerald-600">{{ number_format($detail->cost, 4) }} $</td>
+                                                    <td class="px-4 py-3 font-bold text-slate-600">{{ $detail->model }}</td>
+                                                    <td class="px-4 py-3 uppercase font-black text-slate-400">{{ $detail->category }}</td>
+                                                    <td class="px-4 py-3 text-center">
+                                                        @php 
+                                                            $modelUsage = $user->daily_ai_usage_breakdown[$detail->model] ?? 0;
+                                                            $modelLimit = $user->daily_ai_limits[$detail->model] ?? \App\Models\Setting::get("limit_{$detail->model}", $user->daily_ai_limit);
+                                                        @endphp
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black {{ $modelUsage >= $modelLimit ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 text-slate-600' }}">
+                                                            {{ $modelUsage }} / {{ $modelLimit }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-4 py-3">
+                                                        <form action="{{ route('admin.users.update-limit', $user) }}" method="POST" class="flex gap-2 items-center justify-end" @click.stop>
+                                                            @csrf
+                                                            <input type="hidden" name="model" value="{{ $detail->model }}">
+                                                            <input type="number" name="limit" value="{{ $user->daily_ai_limits[$detail->model] ?? $modelLimit }}" class="w-16 px-2 py-1 bg-slate-50 border border-slate-100 rounded-lg text-[10px] font-bold text-center">
+                                                            <button type="submit" class="p-1 bg-indigo-50 text-indigo-600 rounded hover:bg-indigo-600 hover:text-white transition-all">
+                                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                                            </button>
+                                                        </form>
+                                                    </td>
+                                                    <td class="px-4 py-3 text-right text-slate-400 font-bold">{{ number_format($detail->total_in) }} / {{ number_format($detail->total_out) }}</td>
+                                                    <td class="px-4 py-3 text-right font-black text-emerald-600">{{ number_format($detail->cost, 4) }} $</td>
                                                 </tr>
                                             @empty
                                                 <tr>

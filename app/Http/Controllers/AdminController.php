@@ -16,14 +16,20 @@ class AdminController extends Controller
         ->orderBy('last_seen_at', 'desc')
         ->paginate(50);
 
-        // Calcul du coût par utilisateur (ventilé par modèle et catégorie pour l'accordéon)
-        $users->getCollection()->transform(function($user) {
-            $user->ai_details = $user->aiLogs->groupBy(function($log) {
-                return $log->model . '|' . $log->category;
-            })->map(function($logs) {
-                $first = $logs->first();
-                $model = $first->model;
-                $category = $first->category;
+        // On récupère tous les modèles connus via les settings de limites
+        $availableModels = \App\Models\Setting::where('key', 'like', 'limit_%')
+            ->pluck('key')
+            ->map(fn($k) => str_replace('limit_', '', $k))
+            ->unique();
+
+        // Calcul du coût par utilisateur (ventilé par modèle pour l'accordéon)
+        $users->getCollection()->transform(function($user) use ($availableModels) {
+            $actualLogs = $user->aiLogs->groupBy('model');
+            $userModels = $actualLogs->keys();
+            $allUserModels = $availableModels->concat($userModels)->unique();
+            
+            $user->ai_details = $allUserModels->map(function($model) use ($actualLogs) {
+                $logs = $actualLogs->get($model) ?? collect();
                 
                 $rateIn = (float) \App\Models\Setting::get("rate_in_{$model}", 0.10) / 1000000;
                 $rateOut = (float) \App\Models\Setting::get("rate_out_{$model}", 0.30) / 1000000;
@@ -33,7 +39,7 @@ class AdminController extends Controller
                 
                 return (object)[
                     'model' => $model,
-                    'category' => $category,
+                    'category' => $logs->first()?->category ?? '-', // Pas de catégorie si pas de log
                     'count' => $logs->count(),
                     'total_in' => $totalIn,
                     'total_out' => $totalOut,
@@ -92,9 +98,20 @@ class AdminController extends Controller
 
     public function updateLimit(Request $request, User $user)
     {
-        $request->validate(['limit' => 'required|integer|min:0']);
+        $request->validate([
+            'limit' => 'required|integer|min:0',
+            'model' => 'nullable|string'
+        ]);
+
+        if ($request->model) {
+            $limits = $user->daily_ai_limits ?? [];
+            $limits[$request->model] = (int)$request->limit;
+            $user->update(['daily_ai_limits' => $limits]);
+            return back()->with('success', "Limite IA pour {$request->model} mise à jour pour {$user->name}.");
+        }
+
         $user->update(['daily_ai_limit' => $request->limit]);
-        return back()->with('success', "Limite IA de {$user->name} mise à jour.");
+        return back()->with('success', "Limite IA globale de {$user->name} mise à jour.");
     }
 
     public function clearAllMatches()
@@ -218,7 +235,7 @@ class AdminController extends Controller
      */
     public function settings()
     {
-        $settings = \App\Models\Setting::where('group', 'ai_pricing')->get();
+        $settings = \App\Models\Setting::whereIn('group', ['ai_pricing', 'ai_limits'])->get();
         return view('admin.settings', compact('settings'));
     }
 

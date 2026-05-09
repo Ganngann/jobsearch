@@ -67,9 +67,8 @@ class GeminiService
     {
         $user = $this->contextUser ?? auth()->user();
         
-        // Si pas d'utilisateur explicite ni connecté, on fallback sur le premier admin pour les tâches système.
-        if ($user && !$user->useAiPoint()) {
-            throw new \RuntimeException("Quota IA journalier atteint pour l'utilisateur #{$user->id}");
+        if ($user && !$user->useAiPoint($this->model)) {
+            throw new \RuntimeException("Quota IA journalier atteint pour l'utilisateur #{$user->id} sur le modèle {$this->model}");
         }
     }
 

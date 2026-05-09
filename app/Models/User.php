@@ -41,6 +41,8 @@ class User extends Authenticatable
         'last_seen_at',
         'last_ai_usage_at',
         'vector_embedding',
+        'daily_ai_limits',
+        'daily_ai_usage_breakdown',
         'is_admin',
     ];
 
@@ -69,6 +71,8 @@ class User extends Authenticatable
             'last_seen_at' => 'datetime',
             'last_ai_usage_at' => 'datetime',
             'vector_embedding' => 'array',
+            'daily_ai_limits' => 'array',
+            'daily_ai_usage_breakdown' => 'array',
         ];
     }
 
@@ -255,29 +259,56 @@ class User extends Authenticatable
     }
 
     /**
-     * Tente de consommer un point de quota IA. Retourne true si réussi.
+     * Tente de consommer un point de quota IA pour un modèle spécifique.
+     * Si aucune limite spécifique n'est définie pour le modèle, on utilise la limite globale.
      */
-    public function useAiPoint(): bool
+    public function useAiPoint(?string $model = null): bool
     {
-        // Reset du compteur si on a changé de jour
+        // 1. Reset global et breakdown si on a changé de jour
         if ($this->last_ai_usage_at && !$this->last_ai_usage_at->isToday()) {
             $this->update([
                 'daily_ai_usage' => 0,
+                'daily_ai_usage_breakdown' => [],
                 'last_ai_usage_at' => now()
             ]);
         }
 
-        if ($this->daily_ai_usage >= $this->daily_ai_limit) {
-            \Illuminate\Support\Facades\Log::warning("User #{$this->id} reached AI limit ({$this->daily_ai_usage}/{$this->daily_ai_limit})");
+        // 2. Identification de la limite applicable
+        $limit = $this->daily_ai_limit;
+        if ($model) {
+            if (isset($this->daily_ai_limits[$model])) {
+                $limit = $this->daily_ai_limits[$model];
+            } else {
+                // Fallback sur une limite globale par modèle définie dans les settings, sinon limite user globale
+                $limit = \App\Models\Setting::get("limit_{$model}", $limit);
+            }
+        }
+
+        // 3. Vérification de l'usage pour ce modèle (ou global si pas de modèle)
+        $currentUsage = $model ? ($this->daily_ai_usage_breakdown[$model] ?? 0) : $this->daily_ai_usage;
+
+        if ($currentUsage >= $limit) {
+            \Illuminate\Support\Facades\Log::warning("User #{$this->id} reached AI limit for model {$model} ({$currentUsage}/{$limit})");
             return false;
         }
 
-        // Incrémentation atomique en DB + mise à jour du modèle local
-        $this->increment('daily_ai_usage', 1, [
-            'last_ai_usage_at' => now()
-        ]);
+        // 4. Incrémentation
+        if ($model) {
+            $breakdown = $this->daily_ai_usage_breakdown ?? [];
+            $breakdown[$model] = ($breakdown[$model] ?? 0) + 1;
+            
+            $this->update([
+                'daily_ai_usage' => $this->daily_ai_usage + 1,
+                'daily_ai_usage_breakdown' => $breakdown,
+                'last_ai_usage_at' => now()
+            ]);
+        } else {
+            $this->increment('daily_ai_usage', 1, [
+                'last_ai_usage_at' => now()
+            ]);
+        }
 
-        \Illuminate\Support\Facades\Log::info("User #{$this->id} AI Point consumed. New usage: {$this->daily_ai_usage}");
+        \Illuminate\Support\Facades\Log::info("User #{$this->id} AI Point consumed for model " . ($model ?? 'global') . ". New usage: " . ($model ? $this->daily_ai_usage_breakdown[$model] : $this->daily_ai_usage));
 
         return true;
     }
