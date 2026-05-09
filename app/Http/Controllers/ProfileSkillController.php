@@ -21,8 +21,9 @@ class ProfileSkillController extends Controller
     {
         $user = Auth::user();
         
-        // On récupère les compétences déjà classées
+        // On récupère uniquement les soft skills déjà classées
         $skills = $user->skills()
+            ->where('type', 'soft')
             ->withPivot('status')
             ->get()
             ->groupBy('pivot.status');
@@ -34,15 +35,6 @@ class ProfileSkillController extends Controller
         ]);
     }
 
-    public function suggest()
-    {
-        $user = Auth::user();
-        $suggestions = $this->mappingService->suggestSkills($user, 20);
-
-        return response()->json([
-            'suggestions' => $suggestions
-        ]);
-    }
 
     public function updateStatus(Request $request, Skill $skill)
     {
@@ -71,30 +63,4 @@ class ProfileSkillController extends Controller
         ]);
     }
 
-    public function softSkills()
-    {
-        $user = Auth::user();
-        $currentSkillIds = $user->skills()->pluck('skills.id');
-
-        $softSkills = Skill::where('type', 'soft')
-            ->whereNotIn('id', $currentSkillIds)
-            ->withCount(['jobOffers as popularity' => function($query) {
-                $query->where('status', 'active');
-            }])
-            ->orderBy('popularity', 'desc')
-            ->get()
-            ->map(function($skill) {
-                return [
-                    'id' => $skill->id,
-                    'label' => $skill->label,
-                    'type' => 'soft',
-                    'popularity' => $skill->popularity,
-                    'reason' => 'Compétence comportementale couramment demandée.'
-                ];
-            });
-
-        return response()->json([
-            'suggestions' => $softSkills
-        ]);
-    }
 }

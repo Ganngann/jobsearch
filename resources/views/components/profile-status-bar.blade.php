@@ -10,9 +10,9 @@
     $journeyScore = min(30, ($journeyCount / 3) * 30);
     $narrativeProgress = round($narrativeScore + $journeyScore);
 
-    // 2. Skills Logic (Target 50 mastered)
-    $skillsCount = $user->skills()->wherePivot('status', 'active')->count();
-    $skillsProgress = min(100, round(($skillsCount / 50) * 100));
+    // 2. Soft Skills Logic (Target 15 mastered)
+    $skillsCount = $user->skills()->where('type', 'soft')->wherePivot('status', 'active')->count();
+    $skillsProgress = min(100, round(($skillsCount / 15) * 100));
 
     // 3. ROME Logic (Target 3 favorites: specific OR family)
     $specificCount = $user->preferredMetiers()->wherePivot('status', 'favorite')->count();
@@ -51,7 +51,7 @@
         return Math.round(n + j);
     },
     get skillsProgress() {
-        return Math.min(100, Math.round((this.skillsCount / 50) * 100));
+        return Math.min(100, Math.round((this.skillsCount / 15) * 100));
     },
     get romeProgress() {
         return Math.min(100, Math.round((this.romeCount / 3) * 100));
@@ -128,7 +128,7 @@
 
     <!-- SKILLS PROGRESS -->
     <a href="{{ route('profile.skills.index') }}" class="flex items-center gap-3 group/nav hover:bg-white/50 px-2 py-1 rounded-xl transition-all">
-        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest group-hover/nav:text-purple-600 transition-colors">Compétences</span>
+        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest group-hover/nav:text-purple-600 transition-colors">Savoir-être</span>
         <div class="flex items-center gap-2 group relative">
             <div class="w-20 h-1.5 bg-gray-200 rounded-full overflow-hidden group-hover/nav:ring-4 group-hover/nav:ring-purple-100 transition-all">
                 <div class="bg-purple-500 h-full transition-all duration-1000" :style="`width: ${skillsProgress}%`"></div>
@@ -145,15 +145,15 @@
             <div class="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-72 bg-white border border-gray-100 rounded-2xl shadow-2xl p-5 z-[100] invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all transform translate-y-1 group-hover:translate-y-0">
                 <div class="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-l border-t border-gray-100 rotate-45"></div>
                 <div class="relative space-y-4">
-                    <h4 class="text-[10px] font-black text-purple-600 uppercase tracking-widest text-center">Checklist des Compétences</h4>
+                    <h4 class="text-[10px] font-black text-purple-600 uppercase tracking-widest text-center">Checklist des Savoir-être</h4>
                     <div class="space-y-3">
                         <div class="flex items-center justify-between text-[10px]">
-                            <span class="text-gray-400 font-medium">Compétences identifiées</span>
-                            <span class="font-black text-purple-600"><span x-text="skillsCount"></span> / 50</span>
+                            <span class="text-gray-400 font-medium">Savoir-être validés</span>
+                            <span class="font-black text-purple-600"><span x-text="skillsCount"></span> / 15</span>
                         </div>
                     </div>
                     <div class="pt-3 border-t border-gray-50 text-[9px] text-gray-400 italic text-center">
-                        Rendez-vous dans l'Atelier pour valider ou écarter les suggestions de l'IA.
+                        Rendez-vous dans l'Atelier pour qualifier vos atouts personnels.
                     </div>
                 </div>
             </div>
