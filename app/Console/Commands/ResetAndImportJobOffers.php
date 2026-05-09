@@ -20,8 +20,8 @@ class ResetAndImportJobOffers extends Command
     {
         $this->info('--- NETTOYAGE DE LA BASE DE DONNÉES ---');
         
-        // On désactive les clés étrangères pour le nettoyage (SQLite compatible)
-        DB::statement('PRAGMA foreign_keys = OFF;');
+        // On désactive les clés étrangères pour le nettoyage
+        DB::disableForeignKeyConstraints();
         
         DB::table('user_matches')->delete();
         DB::table('job_offer_skill')->delete();
@@ -32,7 +32,7 @@ class ResetAndImportJobOffers extends Command
         DB::table('job_offers')->delete();
         DB::table('employers')->delete();
         
-        DB::statement('PRAGMA foreign_keys = ON;');
+        DB::enableForeignKeyConstraints();
         
         $this->info('Base de données nettoyée (Offres, Matches, Employeurs).');
         
