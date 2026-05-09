@@ -84,6 +84,26 @@ class VectorService
     }
 
     /**
+     * Calcule le score sémantique remappé (0-100) basé sur un seuil.
+     */
+    public function calculateSemanticScore(array $vec1, array $vec2): float
+    {
+        $cosine = $this->cosineSimilarity($vec1, $vec2);
+        
+        // Log anomalie si besoin
+        if ($cosine > 1.2 || $cosine < -1.2) {
+            Log::warning("Anomalie Cosinus : {$cosine}. Vérifiez la normalisation des vecteurs.");
+        }
+
+        $threshold = config('matching.semantic.min_threshold', 0.6);
+        
+        // Remappage (threshold -> 0 | 1.0 -> 100)
+        $score = max(0, ($cosine - $threshold) / (1 - $threshold)) * 100;
+        
+        return (float) min(100, $score);
+    }
+
+    /**
      * Normalise un vecteur (L2 norm).
      */
     protected function normalize(array $vector): array

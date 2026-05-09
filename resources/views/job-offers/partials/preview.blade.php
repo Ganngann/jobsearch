@@ -212,7 +212,7 @@
                     @if($match && $match->vector_score !== null)
                         <div class="text-center p-4 bg-blue-600 rounded-2xl shadow-lg shadow-blue-100 min-w-[120px]">
                             <p class="text-3xl font-black text-white">
-                                {{ round($match->vector_score * 100) }}<span class="text-xs">%</span>
+                                {{ round($match->vector_score) }}<span class="text-xs">%</span>
                             </p>
                             <p class="text-[8px] font-black uppercase tracking-widest text-blue-200 mt-1">Potentiel Métier</p>
                         </div>
@@ -287,7 +287,7 @@
             </span>
             @if($match && $match->vector_score !== null)
                 <span class="text-[9px] font-black uppercase text-emerald-700 tracking-widest">
-                    Similitude vectorielle : {{ number_format($match->vector_score * 100, 1) }}%
+                    Similitude vectorielle : {{ number_format($match->vector_score, 1) }}%
                 </span>
             @endif
         </div>

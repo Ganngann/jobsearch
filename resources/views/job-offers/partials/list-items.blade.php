@@ -12,7 +12,7 @@
         data-offer-id="{{ $offer->forem_id }}"
         data-pre-score="{{ $match?->pre_score ?? 0 }}"
         data-ai-score="{{ $match?->final_score ?? '' }}"
-        data-vector-score="{{ ($match?->vector_score !== null) ? round($match->vector_score * 100) : '' }}"
+        data-vector-score="{{ ($match?->vector_score !== null) ? round($match->vector_score) : '' }}"
         :class="selectedId == '{{ $offer->forem_id }}' ? 'border-indigo-500 ring-2 ring-indigo-500/10 bg-white' : 'border-slate-100 hover:border-slate-300 bg-white'"
         class="p-5 rounded-2xl border cursor-pointer transition-all duration-300 shadow-sm hover:shadow-md group relative overflow-hidden {{ $isOfferBlacklisted ? 'opacity-50 grayscale-[0.5]' : '' }}"
     >

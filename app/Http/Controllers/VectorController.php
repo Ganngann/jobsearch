@@ -29,7 +29,7 @@ class VectorController extends Controller
             // Recalculer immédiatement la similitude pour l'utilisateur actuel
             $user = auth()->user();
             if ($user && $user->vector_embedding) {
-                $score = $this->vectorService->cosineSimilarity($user->vector_embedding, $jobOffer->vector_embedding);
+                $score = $this->vectorService->calculateSemanticScore($user->vector_embedding, $jobOffer->vector_embedding);
                 $user->matches()->updateOrCreate(
                     ['job_offer_id' => $jobOffer->id],
                     ['vector_score' => $score]
@@ -40,7 +40,7 @@ class VectorController extends Controller
             return request()->expectsJson() 
                 ? response()->json([
                     'message' => $msg,
-                    'score' => isset($score) ? round($score * 100) : null
+                    'score' => isset($score) ? round($score) : null
                 ]) 
                 : back()->with('status', $msg);
         }
@@ -98,7 +98,7 @@ class VectorController extends Controller
         $upsertData = [];
         
         foreach ($jobs as $job) {
-            $score = $this->vectorService->cosineSimilarity($user->vector_embedding, $job->vector_embedding);
+            $score = $this->vectorService->calculateSemanticScore($user->vector_embedding, $job->vector_embedding);
             
             $upsertData[] = [
                 'user_id' => $user->id,

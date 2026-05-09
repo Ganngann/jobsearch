@@ -35,11 +35,7 @@ class MatchingService
         // 1. Layer 1 — Score Sémantique (Fond)
         $semanticScore = 0;
         if ($user->vector_embedding && $jobOffer->vector_embedding) {
-            $cosine = $this->vectorService->cosineSimilarity($user->vector_embedding, $jobOffer->vector_embedding);
-            
-            // Normalisation (0.6 -> 0% | 1.0 -> 100%)
-            $threshold = config('matching.semantic.min_threshold', 0.6);
-            $semanticScore = max(0, ($cosine - $threshold) / (1 - $threshold)) * 100;
+            $semanticScore = $this->vectorService->calculateSemanticScore($user->vector_embedding, $jobOffer->vector_embedding);
         }
 
         // 2. Layer 2 — Pré-score / Attractivité (Forme)
