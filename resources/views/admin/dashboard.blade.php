@@ -178,6 +178,7 @@
                     <thead>
                         <tr class="bg-slate-50">
                             <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Utilisateur</th>
+                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Dernière Connexion</th>
                             <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Appels IA</th>
                             <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Coût IA</th>
                             <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Usage Jour</th>
@@ -200,6 +201,20 @@
                                     </div>
                                     <svg class="w-4 h-4 text-slate-300 transition-transform" :class="selectedUser === {{ $user->id }} ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                                 </div>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                @if($user->last_seen_at)
+                                    <div class="flex flex-col items-center">
+                                        <span class="font-bold text-slate-700 text-xs">
+                                            {{ $user->last_seen_at->isToday() ? $user->last_seen_at->format('H:i') : $user->last_seen_at->translatedFormat('d M Y') }}
+                                        </span>
+                                        <span class="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">
+                                            {{ $user->last_seen_at->diffForHumans() }}
+                                        </span>
+                                    </div>
+                                @else
+                                    <span class="text-slate-300 italic text-xs font-bold">Jamais</span>
+                                @endif
                             </td>
                             <td class="px-6 py-4 text-center font-bold text-slate-700">
                                 {{ $user->ai_calls_count }}
@@ -236,7 +251,7 @@
                         </tr>
                         {{-- Accordion Detail --}}
                         <tr x-show="selectedUser === {{ $user->id }}" x-cloak x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="bg-slate-50/50">
-                            <td colspan="6" class="px-8 py-6">
+                            <td colspan="7" class="px-8 py-6">
                                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
                                     <table class="w-full text-[10px]">
                                         <thead>
