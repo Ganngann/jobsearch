@@ -16,12 +16,24 @@
                 <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
             </div>
             
+            @php 
+                $matchModel = config('services.gemini.models.match');
+                $remainingMatch = Auth::user()->getAiRemainingPoints($matchModel);
+            @endphp
             <button 
-                @click="triggerTopAi()" 
-                class="p-2 bg-amber-50 text-amber-600 rounded-xl hover:bg-amber-100 transition-all shadow-sm flex items-center gap-2 border border-amber-100 relative group"
+                @click="{{ $remainingMatch > 0 ? 'triggerTopAi()' : '' }}" 
+                :disabled="{{ $remainingMatch > 0 ? 'false' : 'true' }}"
+                class="p-2 {{ $remainingMatch > 0 ? 'bg-amber-50 text-amber-600 hover:bg-amber-100' : 'bg-slate-100 text-slate-300 cursor-not-allowed' }} rounded-xl transition-all shadow-sm flex items-center gap-2 border {{ $remainingMatch > 0 ? 'border-amber-100' : 'border-slate-200' }} relative group"
             >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                <span class="text-[10px] font-black uppercase tracking-widest">Analyse IA (Top 20)</span>
+                <div class="flex flex-col items-start gap-0">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        <span class="text-[10px] font-black uppercase tracking-widest">Analyse IA (Top 20)</span>
+                    </div>
+                    @if($remainingMatch > 0)
+                        <span class="text-[7px] font-bold opacity-70 ml-6 uppercase tracking-tighter">{{ $remainingMatch }} crédits restants</span>
+                    @endif
+                </div>
                 
                 <!-- Tooltip technique sans langue de bois -->
                 <div class="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-64 p-3 bg-slate-900 text-white text-[10px] font-bold rounded-xl opacity-0 group-hover:opacity-100 transition-all pointer-events-none z-[100] text-left shadow-2xl border border-white/10">

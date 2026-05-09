@@ -127,13 +127,23 @@
                 <div class="p-6 border-b border-slate-50 flex items-center justify-between">
                     <h2 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Historique</h2>
                     <div class="flex items-center gap-2">
+                        @php 
+                            $vectorModel = 'gemini-embedding-001';
+                            $remainingVector = Auth::user()->getAiRemainingPoints($vectorModel);
+                        @endphp
                         <button 
                             @click="embedProfile()" 
-                            class="p-2 text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all shadow-sm shadow-indigo-50/50" 
-                            title="Vectoriser mon profil"
-                            :disabled="isTyping"
+                            class="p-2 {{ $remainingVector > 0 ? 'text-indigo-600 hover:bg-indigo-50' : 'text-slate-300 cursor-not-allowed' }} rounded-xl transition-all shadow-sm shadow-indigo-50/50 relative group" 
+                            title="{{ $remainingVector > 0 ? 'Envoyer pour analyse' : 'Quota atteint' }}"
+                            :disabled="isTyping || {{ $remainingVector > 0 ? 'false' : 'true' }}"
                         >
                             <svg class="w-4 h-4" :class="isTyping ? 'animate-pulse' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                            @if($remainingVector > 0)
+                            <span class="absolute -top-1 -right-1 flex h-3 w-3">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-3 w-3 bg-indigo-500 flex items-center justify-center text-[7px] text-white font-black">{{ $remainingVector }}</span>
+                            </span>
+                            @endif
                         </button>
                         <a href="{{ route('profile.builder.reset') }}" class="p-2 text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all shadow-sm shadow-indigo-50/50" title="Nouvelle discussion">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -177,6 +187,13 @@
                         </div>
                         <div>
                             <h1 class="text-sm font-black text-slate-900 uppercase tracking-tight">Coach Narratif</h1>
+                            @php 
+                                $chatModel = config('services.gemini.models.chat');
+                                $remainingChat = Auth::user()->getAiRemainingPoints($chatModel);
+                            @endphp
+                            <p class="text-[9px] font-bold {{ $remainingChat > 0 ? 'text-indigo-400' : 'text-rose-400' }} uppercase tracking-widest mt-0.5">
+                                {{ $remainingChat > 0 ? "$remainingChat messages restants" : "Quota atteint" }}
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -209,15 +226,22 @@
                     <div class="absolute bottom-6 left-0 right-0 px-6 z-30">
                         <div class="max-w-2xl mx-auto bg-white border border-slate-200 rounded-2xl p-2 shadow-xl flex items-end gap-2 focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-50 transition-all duration-300">
                             <input type="file" x-ref="documentInput" @change="uploadDocument($event)" class="hidden" accept=".pdf,.doc,.docx,.txt">
+                            @php 
+                                $ocrModel = config('services.gemini.models.ocr');
+                                $remainingOcr = Auth::user()->getAiRemainingPoints($ocrModel);
+                            @endphp
                             <button 
-                                @click="$refs.documentInput.click()"
-                                :disabled="isTyping"
-                                class="p-2.5 text-slate-400 hover:text-indigo-600 transition-colors rounded-xl hover:bg-slate-50"
-                                title="Importer"
+                                @click="{{ $remainingOcr > 0 ? '$refs.documentInput.click()' : '' }}"
+                                :disabled="isTyping || {{ $remainingOcr > 0 ? 'false' : 'true' }}"
+                                class="p-2.5 {{ $remainingOcr > 0 ? 'text-slate-400 hover:text-indigo-600 hover:bg-slate-50' : 'text-slate-200 cursor-not-allowed' }} transition-colors rounded-xl flex flex-col items-center gap-0.5"
+                                title="{{ $remainingOcr > 0 ? 'Importer un document' : 'Quota OCR atteint' }}"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                                 </svg>
+                                @if($remainingOcr > 0)
+                                    <span class="text-[7px] font-black uppercase tracking-tighter opacity-70">{{ $remainingOcr }}</span>
+                                @endif
                             </button>
                             <textarea 
                                 x-model="newMessage" 
@@ -227,14 +251,22 @@
                                 class="flex-1 bg-transparent border-none focus:ring-0 text-sm py-2.5 px-3 custom-scrollbar resize-none max-h-32"
                                 rows="1"
                             ></textarea>
+                            @php 
+                                $chatModel = config('services.gemini.models.chat');
+                                $remainingChat = Auth::user()->getAiRemainingPoints($chatModel);
+                            @endphp
                             <button 
-                                @click="sendMessage()"
-                                :disabled="!newMessage.trim() || isTyping"
-                                class="p-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                @click="{{ $remainingChat > 0 ? 'sendMessage()' : '' }}"
+                                :disabled="!newMessage.trim() || isTyping || {{ $remainingChat > 0 ? 'false' : 'true' }}"
+                                class="p-2.5 {{ $remainingChat > 0 ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-slate-200 text-slate-400 cursor-not-allowed' }} rounded-xl transition-all flex flex-col items-center gap-0.5 min-w-[44px]"
+                                title="{{ $remainingChat > 0 ? 'Envoyer' : 'Quota atteint' }}"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
                                 </svg>
+                                @if($remainingChat > 0)
+                                    <span class="text-[7px] font-black uppercase tracking-tighter">{{ $remainingChat }}</span>
+                                @endif
                             </button>
                         </div>
                     </div>
@@ -274,9 +306,6 @@
                             <!-- CV HEADER -->
                             <x-cv.header />
 
-                            <!-- SECTION COMPÉTENCES -->
-                            <x-cv.skills />
-
                             <!-- SECTION EXPÉRIENCES -->
                             <x-cv.experience />
 
@@ -300,6 +329,9 @@
 
                             <!-- INTERESTS -->
                             <x-cv.interests />
+
+                            <!-- SECTION COMPÉTENCES -->
+                            <x-cv.skills />
                         </div>
                     </div>
                 </aside>

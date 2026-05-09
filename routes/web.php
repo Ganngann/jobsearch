@@ -106,4 +106,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Settings
     Route::get('/settings', [\App\Http\Controllers\AdminController::class, 'settings'])->name('settings');
     Route::post('/settings', [\App\Http\Controllers\AdminController::class, 'updateSettings'])->name('settings.update');
+
+    // Feedback
+    Route::get('/feedback', [\App\Http\Controllers\AdminController::class, 'feedback'])->name('feedback');
 });

@@ -255,4 +255,16 @@ class AdminController extends Controller
 
         return back()->with('success', 'Paramètres mis à jour avec succès.');
     }
+
+    /**
+     * Affiche les retours utilisateurs.
+     */
+    public function feedback()
+    {
+        $feedbacks = \App\Models\UserFeedback::with('user')
+            ->orderBy('created_at', 'desc')
+            ->paginate(50);
+
+        return view('admin.feedback', compact('feedbacks'));
+    }
 }

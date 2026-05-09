@@ -313,6 +313,59 @@ class User extends Authenticatable
         return true;
     }
 
+    /**
+     * Retourne le nombre de points IA restants pour un modèle donné (ou global).
+     */
+    public function getAiRemainingPoints(?string $model = null): int
+    {
+        // Si les points n'ont pas encore été réinitialisés pour aujourd'hui
+        if ($this->last_ai_usage_at && !$this->last_ai_usage_at->isToday()) {
+            if ($model) {
+                if (isset($this->daily_ai_limits[$model])) {
+                    return $this->daily_ai_limits[$model];
+                }
+                return (int) \App\Models\Setting::get("limit_{$model}", $this->daily_ai_limit);
+            }
+            return $this->daily_ai_limit;
+        }
+
+        $limit = $this->daily_ai_limit;
+        if ($model) {
+            if (isset($this->daily_ai_limits[$model])) {
+                $limit = $this->daily_ai_limits[$model];
+            } else {
+                $limit = (int) \App\Models\Setting::get("limit_{$model}", $limit);
+            }
+        }
+
+        $currentUsage = $model ? ($this->daily_ai_usage_breakdown[$model] ?? 0) : $this->daily_ai_usage;
+        
+        return max(0, $limit - $currentUsage);
+    }
+
+    /**
+     * Retourne la date de la dernière modification substantielle du profil.
+     * Englobe le modèle User et toutes ses relations critiques (skills, facts, experiences...).
+     */
+    public function profileUpdatedAt(): \Illuminate\Support\Carbon
+    {
+        $timestamps = [
+            $this->updated_at,
+            $this->skills()->max('user_skill.updated_at'),
+            $this->languages()->max('user_language.updated_at'),
+            $this->facts()->max('updated_at'),
+            $this->experiences()->max('updated_at'),
+            $this->educations()->max('updated_at'),
+            $this->projects()->max('updated_at'),
+            $this->certifications()->max('updated_at'),
+            $this->volunteerExperiences()->max('updated_at'),
+        ];
+
+        $maxTimestamp = collect($timestamps)->filter()->max();
+
+        return $maxTimestamp ? \Illuminate\Support\Carbon::parse($maxTimestamp) : $this->updated_at;
+    }
+
     public function aiLogs(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(AiLog::class);

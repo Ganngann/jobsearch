@@ -243,27 +243,36 @@
                         </div>
                     @endif
                 
-                <div class="w-full flex gap-2">
-                    <button 
-                        @click="startAiAnalysis('{{ $jobOffer->forem_id }}')" 
-                        :disabled="previewLoading"
-                        class="flex-1 py-3 px-6 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2 {{ ($match && $match->final_score > 0 && !$isAiStale) ? 'bg-indigo-50 text-indigo-600 border border-indigo-100 hover:bg-indigo-100 shadow-indigo-50' : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-100' }}"
-                    >
-                        <template x-if="previewLoading">
-                            <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                        </template>
-                        <span x-text="previewLoading ? 'Lancement...' : '{{ ($match && $match->final_score > 0 && !$isAiStale) ? 'Relancer IA' : 'Lancer Analyse IA' }}'"></span>
-                    </button>
+                <div class="w-full flex">
+                    @php 
+                        $matchModel = config('services.gemini.models.match');
+                        $remainingMatch = Auth::user()->getAiRemainingPoints($matchModel);
+                        $profileUpdated = Auth::user()->profileUpdatedAt();
+                        $showRelancer = !$match->analyzed_at || $match->analyzed_at->lt($profileUpdated) || $isAiStale;
+                    @endphp
 
-                    <button 
-                        @click="embedJob('{{ $jobOffer->forem_id }}')" 
-                        :disabled="previewLoading"
-                        class="py-3 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center border {{ $jobOffer->vector_embedding ? 'bg-indigo-50 text-indigo-600 border-indigo-100 hover:bg-indigo-100' : 'bg-slate-100 text-slate-600 border-transparent hover:bg-slate-200' }}"
-                        title="{{ $jobOffer->vector_embedding ? 'Mettre à jour le vecteur' : 'Calculer le vecteur (Embedding)' }}"
-                    >
-                        <svg class="w-4 h-4" :class="previewLoading ? 'animate-pulse' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                        <span class="ml-2">{{ $jobOffer->vector_embedding ? 'Update Vecteur' : 'Vectoriser' }}</span>
-                    </button>
+                    @if($showRelancer)
+                        <button 
+                            @click="{{ $remainingMatch > 0 ? "startAiAnalysis('$jobOffer->forem_id')" : "" }}" 
+                            :disabled="previewLoading || {{ $remainingMatch > 0 ? 'false' : 'true' }}"
+                            class="flex-1 py-3 px-6 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg flex flex-col items-center justify-center gap-1 {{ $remainingMatch > 0 ? (($match && $match->final_score > 0 && !$isAiStale) ? 'bg-indigo-50 text-indigo-600 border border-indigo-100 hover:bg-indigo-100 shadow-indigo-50' : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-100') : 'bg-rose-500/10 text-rose-300 border border-rose-500/20 cursor-not-allowed shadow-none' }}"
+                        >
+                            <div class="flex items-center gap-2">
+                                <template x-if="previewLoading">
+                                    <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                </template>
+                                <span x-text="previewLoading ? 'Lancement...' : '{{ ($match && $match->final_score > 0 && !$isAiStale) ? ($remainingMatch > 0 ? 'Relancer IA' : 'Quota épuisé') : ($remainingMatch > 0 ? 'Lancer Analyse IA' : 'Quota épuisé') }}'"></span>
+                            </div>
+                            @if($remainingMatch > 0)
+                                <span class="text-[8px] font-bold opacity-60">{{ $remainingMatch }} restants</span>
+                            @endif
+                        </button>
+                    @else
+                        <div class="flex-1 py-3 px-6 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                            Analyse à jour
+                        </div>
+                    @endif
                 </div>
             </div>
             </div>
