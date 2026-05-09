@@ -24,9 +24,6 @@
                     <x-nav-link :href="route('profile.skills.index')" :active="request()->routeIs('profile.skills.index')">
                         {{ __('Atelier Compétences') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('forem.search')" :active="request()->routeIs('forem.search')">
-                        {{ __('Recherche Forem') }}
-                    </x-nav-link>
                 </div>
             </div>
 

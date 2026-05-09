@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\JobOfferController;
-use App\Http\Controllers\ForemSearchController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -23,7 +22,6 @@ Route::get('/welcome', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [JobOfferController::class, 'dashboard'])->name('dashboard');
-    Route::get('/search', [ForemSearchController::class, 'index'])->name('forem.search');
     Route::get('/jobs/{jobOffer}/preview', [JobOfferController::class, 'preview'])->name('jobs.preview');
     Route::get('/employers/{employer}/logo', [JobOfferController::class, 'logo'])->name('employers.logo');
     Route::get('/jobs/{jobOffer}', [JobOfferController::class, 'show'])->name('jobs.show');
