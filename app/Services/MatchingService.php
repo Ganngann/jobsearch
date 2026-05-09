@@ -13,10 +13,12 @@ use Illuminate\Support\Collection;
 class MatchingService
 {
     protected $gemini;
+    protected $vectorService;
 
-    public function __construct(GeminiService $gemini)
+    public function __construct(GeminiService $gemini, VectorService $vectorService)
     {
         $this->gemini = $gemini;
+        $this->vectorService = $vectorService;
     }
 
     /**
@@ -30,15 +32,30 @@ class MatchingService
             return null;
         }
 
-        // 1. Layer 1 — Pré-score (Statique)
+        // 1. Layer 1 — Score Sémantique (Fond)
+        $semanticScore = 0;
+        if ($user->vector_embedding && $jobOffer->vector_embedding) {
+            $cosine = $this->vectorService->cosineSimilarity($user->vector_embedding, $jobOffer->vector_embedding);
+            
+            // Normalisation (0.6 -> 0% | 1.0 -> 100%)
+            $threshold = config('matching.semantic.min_threshold', 0.6);
+            $semanticScore = max(0, ($cosine - $threshold) / (1 - $threshold)) * 100;
+        }
+
+        // 2. Layer 2 — Pré-score / Attractivité (Forme)
         $preMatchData = $this->calculatePreScore($user, $jobOffer, $context);
-        $preScore = $preMatchData['score'];
+        $attractivityScore = $preMatchData['score'];
+
+        // 3. Score Final (Multiplicatif)
+        $finalScore = round($semanticScore * ($attractivityScore / 100));
 
         $match = UserMatch::updateOrCreate(
             ['user_id' => $user->id, 'job_offer_id' => $jobOffer->id],
             [
-                'pre_score' => $preScore,
+                'vector_score' => $semanticScore,
+                'pre_score' => $attractivityScore,
                 'pre_score_details' => $preMatchData['details'],
+                'final_score' => $finalScore,
             ]
         );
 
@@ -62,214 +79,126 @@ class MatchingService
     }
 
     /**
-     * Calcule un score rapide basé sur les compétences, langues et permis.
-     * Respecte la stratégie de "Circuit Court" et les "Vetoes".
+     * Calcule le score d'attractivité (Pre-score) basé sur la soustraction.
+     * Philosophie : On part de 100 et on retire les points de friction.
      */
     public function calculatePreScore(User $user, JobOffer $jobOffer, array $context = null): array
     {
-        $vetoPenalty = 0;
+        $config = config('matching');
+        $attractivity = $config['base_score'];
+        $details = ['penalties' => [], 'bonuses' => []];
 
-        // 1. Permis Obligatoires
-        $userPermitIds = $context['permit_ids'] ?? $user->permits()->pluck('permits.id')->toArray();
-        $requiredPermits = $jobOffer->permits()->wherePivot('is_required', true)->get();
-        foreach ($requiredPermits as $permit) {
-            if (!in_array($permit->id, $userPermitIds)) {
-                $vetoPenalty += 30; // Pénalité pour permis manquant
-            }
+        // --- 1. HANDICAPS (SOUSTRACTION) ---
+
+        // A. Métier Refusé
+        $userMetiers = $context['preferred_metiers'] ?? $user->preferredMetiers;
+        $jobMetierId = $jobOffer->metier_id;
+        $isRefusedMetier = $userMetiers->where('id', $jobMetierId)->where('pivot.status', 'refused')->isNotEmpty();
+        
+        if ($isRefusedMetier) {
+            $penalty = $config['handicaps']['refused_metier'];
+            $attractivity -= $penalty;
+            $details['penalties'][] = ['label' => 'Métier refusé', 'value' => -$penalty];
         }
 
-        // 2. Veto : Compétences Refusées (Handicap)
+        // B. Compétences Refusées (JIT)
         $refusedSkillIds = $context['refused_skill_ids'] ?? DB::table('user_skill')
             ->where('user_id', $user->id)
             ->where('status', 'refused')
             ->pluck('skill_id')
             ->toArray();
             
-        $allJobSkills = $jobOffer->skills;
-        foreach ($allJobSkills as $skill) {
-            if (in_array($skill->id, $refusedSkillIds)) {
-                $vetoPenalty += 5; // -5 points par compétence refusée présente dans l'offre
-            }
+        $refusedSkillsInJob = $jobOffer->skills->whereIn('id', $refusedSkillIds);
+        if ($refusedSkillsInJob->isNotEmpty()) {
+            $penalty = $refusedSkillsInJob->count() * $config['handicaps']['refused_skill'];
+            $attractivity -= $penalty;
+            $details['penalties'][] = ['label' => 'Compétences refusées (' . $refusedSkillsInJob->count() . ')', 'value' => -$penalty];
         }
 
-        $score = 0;
-
-        // 3. Score Métier (Rome & Détail) (20 pts max / -40 handicap)
-        $userMetiers = $context['preferred_metiers'] ?? $user->preferredMetiers;
-        $userFamilies = $context['preferred_families'] ?? $user->preferredReferentielMetiers;
+        // C. Permis Requis Manquant
+        $userPermitIds = $context['permit_ids'] ?? $user->permits()->pluck('permits.id')->toArray();
+        $missingRequiredPermits = $jobOffer->permits()->wherePivot('is_required', true)->get()->whereNotIn('id', $userPermitIds);
         
-        $jobMetierId = $jobOffer->metier_id;
-        $jobRomeCode = $jobOffer->metier ? $jobOffer->metier->code : null;
-
-        $isFavorite = false;
-        $isRefused = false;
-
-        // Vérification dans les Préférences (Pivot status)
-        // Priorité au Détail (Métier spécifique)
-        $specific = $userMetiers->firstWhere('id', $jobMetierId);
-        if ($specific) {
-            if ($specific->pivot->status === 'favorite') $isFavorite = true;
-            elseif ($specific->pivot->status === 'refused') $isRefused = true;
+        if ($missingRequiredPermits->isNotEmpty()) {
+            $penalty = $config['handicaps']['missing_permit'];
+            $attractivity -= $penalty;
+            $details['penalties'][] = ['label' => 'Permis requis manquant', 'value' => -$penalty];
         }
 
-        // Si pas de détail, on regarde la Famille (ROME)
-        if (!$isFavorite && !$isRefused && $jobRomeCode) {
-            foreach ($userFamilies as $family) {
-                if (str_starts_with($jobRomeCode, $family->code)) {
-                    if ($family->pivot->status === 'favorite') $isFavorite = true;
-                    elseif ($family->pivot->status === 'refused') $isRefused = true;
-                    break;
-                }
-            }
-        }
-
-        if ($isFavorite) {
-            $score += 20;
-        } elseif ($isRefused) {
-            $score -= 40; // Handicap lourd pour les métiers écartés
-        }
-
-        // 4. Compétences (40% max)
-        $allJobSkills = $jobOffer->skills;
-        $missingSkills = collect();
-        if ($allJobSkills->count() > 0) {
-            $userSkillIds = $context['skill_ids'] ?? $user->validatedSkills()->pluck('skills.id')->toArray();
-            $matchedSkills = $allJobSkills->whereIn('id', $userSkillIds);
-            
-            $baseSkillScore = ($matchedSkills->count() / $allJobSkills->count()) * 40;
-            
-            // On collecte TOUTES les compétences manquantes pour l'affichage
-            $missingSkills = $allJobSkills->whereNotIn('id', $userSkillIds);
-
-            // Pénalité si des compétences REQUISES manquent
-            $requiredSkills = $allJobSkills->where('pivot.is_required', true);
-            $missingRequired = $requiredSkills->whereNotIn('id', $userSkillIds);
-            if ($missingRequired->count() > 0) {
-                $baseSkillScore *= 0.7; // Réduction de 30%
-            }
-            
-            $score += $baseSkillScore;
-        } else {
-            // Si aucune compétence n'est mentionnée, on considère que c'est acquis
-            $baseSkillScore = 40;
-            $score += $baseSkillScore;
-        }
-
-        // 5. Langues (5%)
+        // D. Langue Requise Manquante
         $userLangIds = $context['language_ids'] ?? $user->languages()->pluck('languages.id')->toArray();
-        $requiredLangs = $jobOffer->languages;
-        if ($requiredLangs->count() > 0) {
-            $matchedLangs = $requiredLangs->whereIn('id', $userLangIds)->count();
-            $score += ($matchedLangs / $requiredLangs->count()) * 5;
+        $missingRequiredLangs = $jobOffer->languages()->wherePivot('is_required', true)->get()->whereNotIn('id', $userLangIds);
+        
+        if ($missingRequiredLangs->isNotEmpty()) {
+            $penalty = $config['handicaps']['missing_language'];
+            $attractivity -= $penalty;
+            $details['penalties'][] = ['label' => 'Langue requise manquante', 'value' => -$penalty];
         }
 
-        // 6. Permis (5%)
-        $allJobPermits = $jobOffer->permits;
-        if ($allJobPermits->count() > 0) {
-            $matchedPermits = $allJobPermits->whereIn('id', $userPermitIds)->count();
-            $score += ($matchedPermits / $allJobPermits->count()) * 5;
-        }
-
-        // 5. Localisation (30 pts)
-        $locationScore = 0;
+        // --- 2. LOCALISATION (FRICTION) ---
         $distance = null;
-
         if ($user->zip_code) {
-            // Coordonnées utilisateur
             $userZip = $context['user_zip'] ?? ZipCode::where('zip_code', $user->zip_code)->first();
+            $jobCoords = $this->getJobCoords($jobOffer);
             
-            if ($userZip) {
-                // Tentative de trouver les coordonnées de l'offre
-                $jobCoords = $this->getJobCoords($jobOffer);
+            if ($userZip && $jobCoords) {
+                $distance = $this->calculateDistance($userZip->latitude, $userZip->longitude, $jobCoords['lat'], $jobCoords['lon']);
+                $radius = $user->radius ?? $config['location']['default_radius'];
                 
-                if ($jobCoords) {
-                    $distance = $this->calculateDistance(
-                        $userZip->latitude, $userZip->longitude,
-                        $jobCoords['lat'], $jobCoords['lon']
-                    );
-
-                    $radius = $user->radius ?? 30;
-
-                    // Formule "Rayon Pivot" : 
-                    // - 30 pts à 0km
-                    // - 20 pts à Distance = Rayon
-                    // - Décroissance fluide au-delà sans élimination
-                    $locationScore = round(30 * ($radius / ($radius + ($distance / 2))));
-                    
-                    // On s'assure de rester dans les clous (0-30)
-                    $locationScore = max(0, min(30, $locationScore));
-                } else {
-                    // Fallback sur correspondance de texte si pas de coordonnées
-                    if (str_contains($jobOffer->location ?? '', $user->zip_code)) {
-                        $locationScore = 30;
-                    }
+                // Formule de friction
+                $penalty = $config['location']['max_penalty'] * ($distance / ($distance + $radius));
+                
+                // Bonus Télétravail (Détection sommaire)
+                if (preg_match('/télétravail|remote|home-office/i', $jobOffer->description)) {
+                    $penalty /= 2;
                 }
+
+                $attractivity -= $penalty;
+                $details['penalties'][] = ['label' => 'Friction distance (' . round($distance, 1) . 'km)', 'value' => -round($penalty, 1)];
             }
         }
 
-        $finalScore = max(0, $score + $locationScore - $vetoPenalty);
-        
-        // Calcul des scores par catégorie avec gestion des "non-requis"
-        $metierCategoryScore = 0;
-        if ($isFavorite) $metierCategoryScore = 20;
-        elseif ($isRefused) $metierCategoryScore = -40;
+        // --- 3. VÉTUSTÉ ---
+        $daysOld = $jobOffer->published_at ? $jobOffer->published_at->diffInDays(now()) : 0;
+        if ($daysOld > $config['freshness']['start_after_days']) {
+            $penalty = min($config['freshness']['max_malus'], ($daysOld - $config['freshness']['start_after_days']) * $config['freshness']['malus_per_day']);
+            $attractivity -= $penalty;
+            $details['penalties'][] = ['label' => 'Ancienneté de l\'offre', 'value' => -round($penalty, 1)];
+        }
 
-        $catScores = [
-            'metier' => $metierCategoryScore,
-            'skills' => isset($baseSkillScore) ? round($baseSkillScore) : 0,
-            'languages' => ($requiredLangs->count() > 0) ? round(($matchedLangs / $requiredLangs->count()) * 5) : 5,
-            'permits' => ($allJobPermits->count() > 0) ? round(($matchedPermits / $allJobPermits->count()) * 5) : 5,
-            'location' => $locationScore,
-        ];
+        // --- 4. BONUSES (AFFINITÉ) ---
 
-        // On recalcule le score final basé sur ces ajustements
-        $adjustedScore = array_sum($catScores) - $vetoPenalty;
+        // A. Métier Favori
+        $isFavoriteMetier = $userMetiers->where('id', $jobMetierId)->where('pivot.status', 'favorite')->isNotEmpty();
+        if ($isFavoriteMetier) {
+            $bonus = $config['bonuses']['favorite_metier'];
+            $attractivity += $bonus;
+            $details['bonuses'][] = ['label' => 'Métier favori', 'value' => $bonus];
+        }
+
+        // B. Compétences Validées (Active)
+        $userSkillIds = $context['skill_ids'] ?? $user->validatedSkills()->pluck('skills.id')->toArray();
+        $matchedSkills = $jobOffer->skills->whereIn('id', $userSkillIds);
+        if ($matchedSkills->isNotEmpty()) {
+            $bonus = $matchedSkills->count() * $config['bonuses']['active_skill'];
+            $attractivity += $bonus;
+            $details['bonuses'][] = ['label' => 'Compétences maîtrisées (' . $matchedSkills->count() . ')', 'value' => $bonus];
+        }
+
+        // Clamp final (0-100)
+        $finalAttractivity = (int) max(0, min(100, $attractivity));
 
         return [
-            'score' => (int) max(0, min(100, $adjustedScore)),
+            'score' => $finalAttractivity,
             'details' => [
-                'categories' => [
-                    'metier' => [
-                        'score' => $catScores['metier'],
-                        'max' => 20,
-                        'label' => 'Métier (ROME)',
-                        'is_missing' => !$isFavorite,
-                        'is_refused' => $isRefused,
-                        'status_label' => $isRefused ? 'MÉTIER EXCLU' : ($isFavorite ? 'FAVORI' : 'HORS FAVORIS')
-                    ],
-                    'skills' => [
-                        'score' => $catScores['skills'],
-                        'max' => 40,
-                        'label' => 'Compétences',
-                        'is_not_required' => $allJobSkills->count() === 0,
-                        'missing' => $missingSkills->pluck('label')->toArray()
-                    ],
-                    'languages' => [
-                        'score' => $catScores['languages'],
-                        'max' => 5,
-                        'label' => 'Langues',
-                        'is_not_required' => $requiredLangs->count() === 0,
-                        'missing' => $requiredLangs->whereNotIn('id', $userLangIds)->pluck('label')->toArray()
-                    ],
-                    'permits' => [
-                        'score' => $catScores['permits'],
-                        'max' => 5,
-                        'label' => 'Permis',
-                        'is_not_required' => $allJobPermits->count() === 0,
-                        'missing' => $allJobPermits->whereNotIn('id', $userPermitIds)->pluck('label')->toArray()
-                    ],
-                    'location' => [
-                        'score' => $catScores['location'],
-                        'max' => 30,
-                        'label' => 'Localisation',
-                        'distance' => $distance ? round($distance, 1) : null,
-                        'is_missing' => $distance > ($user->radius ?? 30)
-                    ],
-                ],
-                'vetoes' => $vetoPenalty,
+                'base' => $config['base_score'],
+                'penalties' => $details['penalties'],
+                'bonuses' => $details['bonuses'],
+                'distance' => $distance ? round($distance, 1) : null,
             ]
         ];
     }
+
 
     /**
      * Effectue l'analyse sémantique avec Gemini.
