@@ -68,10 +68,7 @@ class MatchingService
         // - On force l'analyse (demande manuelle)
         // - OU (Le pre-score est élevé >= 70 ET pas encore d'analyse faite ET trigger autorisé ET utilisateur en ligne ET quota dispo)
         if ($forceAi) {
-            // Manuel : On déduit un point si possible
-            if ($user->useAiPoint()) {
-                $this->performAiAnalysis($user, $jobOffer, $match, $preMatchData['details']['distance'] ?? null);
-            }
+            $this->performAiAnalysis($user, $jobOffer, $match, $preMatchData['details']['distance'] ?? null);
         }
         //} elseif ($triggerAi && $preScore >= 70 && !$match->analyzed_at) { // && $user->isOnline()) {
             // Auto : On ne le fait que si l'utilisateur est en ligne et a du quota
@@ -247,7 +244,7 @@ class MatchingService
     {
         $prompt = $this->buildPrompt($user, $jobOffer, $distance);
         Log::info("Sending request to Gemini for JobOffer #{$jobOffer->forem_id}");
-        $result = $this->gemini->analyzeMatch($prompt);
+        $result = $this->gemini->forUser($user)->analyzeMatch($prompt);
 
         if ($result) {
             $match->update([

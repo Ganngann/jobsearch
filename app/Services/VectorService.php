@@ -55,7 +55,7 @@ class VectorService
     public function updateUserVector(User $user): bool
     {
         $text = $this->buildUserString($user);
-        $vector = $this->gemini->embed($text, 'RETRIEVAL_QUERY');
+        $vector = $this->gemini->forUser($user)->embed($text, 'RETRIEVAL_QUERY');
 
         if ($vector) {
             $normalized = $this->normalize($vector);

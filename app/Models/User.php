@@ -261,15 +261,23 @@ class User extends Authenticatable
     {
         // Reset du compteur si on a changé de jour
         if ($this->last_ai_usage_at && !$this->last_ai_usage_at->isToday()) {
-            $this->update(['daily_ai_usage' => 0]);
+            $this->update([
+                'daily_ai_usage' => 0,
+                'last_ai_usage_at' => now()
+            ]);
         }
 
         if ($this->daily_ai_usage >= $this->daily_ai_limit) {
+            \Illuminate\Support\Facades\Log::warning("User #{$this->id} reached AI limit ({$this->daily_ai_usage}/{$this->daily_ai_limit})");
             return false;
         }
 
-        $this->increment('daily_ai_usage');
-        $this->update(['last_ai_usage_at' => now()]);
+        // Incrémentation atomique en DB + mise à jour du modèle local
+        $this->increment('daily_ai_usage', 1, [
+            'last_ai_usage_at' => now()
+        ]);
+
+        \Illuminate\Support\Facades\Log::info("User #{$this->id} AI Point consumed. New usage: {$this->daily_ai_usage}");
 
         return true;
     }

@@ -176,7 +176,6 @@ class AIProfileService
             'required' => ['reply']
         ];
 
-        // Test : On ne garde que les 2 derniers messages (La question de l'IA + la réponse de l'utilisateur)
         $messages = [];
         $lastTwo = array_slice($history, -2);
         foreach ($lastTwo as $msg) {
@@ -186,7 +185,7 @@ class AIProfileService
             ];
         }
 
-        $response = $this->gemini->chat($messages, $systemInstruction, $schema);
+        $response = $this->gemini->forUser($user)->chat($messages, $systemInstruction, $schema);
         
         if ($response) {
             $this->gemini->log('chat', $user->id);

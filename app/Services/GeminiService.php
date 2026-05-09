@@ -11,6 +11,7 @@ class GeminiService
     protected string $model;
     protected array $configModels;
     protected ?array $lastUsage = null;
+    protected ?\App\Models\User $contextUser = null;
 
     public function __construct()
     {
@@ -49,12 +50,35 @@ class GeminiService
         return $this->model;
     }
 
+    /**
+     * Définit l'utilisateur pour lequel l'appel est effectué (utile en background).
+     */
+    public function forUser(\App\Models\User $user): self
+    {
+        $this->contextUser = $user;
+        return $this;
+    }
+
+    /**
+     * Vérifie et consomme un point de quota IA.
+     * @throws \Exception si le quota est épuisé.
+     */
+    protected function ensureQuota(): void
+    {
+        $user = $this->contextUser ?? auth()->user();
+        
+        // Si pas d'utilisateur explicite ni connecté, on fallback sur le premier admin pour les tâches système.
+        if ($user && !$user->useAiPoint()) {
+            throw new \RuntimeException("Quota IA journalier atteint pour l'utilisateur #{$user->id}");
+        }
+    }
+
     public function log(string $category, ?int $userId = null, ?array $manualUsage = null): void
     {
-        $userId = $userId ?? auth()->id();
+        $userId = $userId ?? ($this->contextUser->id ?? auth()->id());
         
         // Fallback pour les tâches d'arrière-plan (ex: vectorisation d'offres en file d'attente)
-        // On attribue l'appel au premier administrateur trouvé si aucun utilisateur n'est connecté.
+        // On attribue l'appel au premier administrateur trouvé si aucun utilisateur n'est identifié.
         if (!$userId) {
             $userId = \App\Models\User::where('is_admin', true)->first()?->id;
         }
@@ -83,6 +107,8 @@ class GeminiService
      */
     public function ask(string $prompt): ?string
     {
+        $this->ensureQuota();
+
         $payload = [
             'contents' => [
                 ['role' => 'user', 'parts' => [['text' => $prompt]]]
@@ -194,6 +220,8 @@ class GeminiService
 
     protected function executeRequest(array $messages, ?string $systemInstruction = null, ?array $responseSchema = null): ?array
     {
+        $this->ensureQuota();
+
         if (empty($this->apiKey)) {
             Log::warning('Gemini API key is missing.');
             return null;
@@ -259,6 +287,8 @@ class GeminiService
      */
     public function ocr(string $filePath, string $mimeType): ?string
     {
+        $this->ensureQuota();
+
         $payload = [
             'contents' => [
                 [
@@ -313,6 +343,8 @@ class GeminiService
      */
     public function embed(string $text, string $taskType = 'RETRIEVAL_DOCUMENT'): ?array
     {
+        $this->ensureQuota();
+
         if (empty($this->apiKey)) {
             Log::warning('Gemini API key is missing.');
             return null;
