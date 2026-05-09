@@ -8,9 +8,17 @@ use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 
-class RecalculateMatchesJob implements ShouldQueue
+class RecalculateMatchesJob implements ShouldQueue, ShouldBeUnique
 {
     use Queueable;
+
+    /**
+     * The unique ID of the job.
+     */
+    public function uniqueId(): string
+    {
+        return (string) $this->user->id;
+    }
 
     /**
      * Create a new job instance.

@@ -261,20 +261,7 @@
                     <div class="flex items-center gap-3">
                         <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Document</span>
                         
-                        @if(Auth::user()->isProfileDirty())
-                            <div class="h-4 w-[1px] bg-slate-100 mx-1"></div>
-                            <form action="{{ route('profile.publish') }}" method="POST">
-                                @csrf
-                                <button 
-                                    type="submit"
-                                    class="flex items-center gap-2 px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-[9px] font-black uppercase tracking-widest shadow-lg shadow-amber-500/20 transition-all transform hover:scale-105 animate-pulse-update"
-                                    title="Stabiliser le profil et mettre à jour le matching"
-                                >
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                                    Enregistrer le profil pour les analyses
-                                </button>
-                            </form>
-                        @endif
+                        <x-profile-publish-button label="Enregistrer le profil pour les analyses" size="sm" />
                     </div>
 
                     <!-- Notification de suggestions en attente -->

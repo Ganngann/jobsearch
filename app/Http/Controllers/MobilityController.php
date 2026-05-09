@@ -45,8 +45,9 @@ class MobilityController extends Controller
         // Synchronisation des permis
         $user->permits()->sync($request->permits ?? []);
 
-        // Déclenchement du recalcul des matchs
-        \App\Jobs\RecalculateMatchesJob::dispatch($user);
+        // Le recalcul automatique est désactivé pour éviter de saturer la file d'attente.
+        // L'utilisateur doit publier ses modifications pour déclencher un nouveau matching global.
+        // \App\Jobs\RecalculateMatchesJob::dispatch($user);
 
         return response()->json([
             'status' => 'success',

@@ -3,9 +3,13 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             
             <!-- Header -->
-            <div class="mb-12">
-                <h1 class="text-4xl font-black text-slate-900 mb-2">Ma Zone de Confort</h1>
-                <p class="text-lg text-slate-500 font-medium mb-8">Définissez vos critères administratifs et votre périmètre de recherche.</p>
+            <div class="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div>
+                    <h1 class="text-4xl font-black text-slate-900 mb-2">Ma Zone de Confort</h1>
+                    <p class="text-lg text-slate-500 font-medium">Définissez vos critères administratifs et votre périmètre de recherche.</p>
+                </div>
+
+                <x-profile-publish-button label="Mettre à jour mes opportunités" size="lg" />
             </div>
 
             <!-- Main Content Grid -->

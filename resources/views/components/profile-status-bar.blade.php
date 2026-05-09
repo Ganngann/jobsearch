@@ -200,7 +200,7 @@
 
     <!-- MOBILITY PROGRESS -->
     <a href="{{ route('profile.mobility.index') }}" class="flex items-center gap-3 group/nav hover:bg-white/50 px-2 py-1 rounded-xl transition-all">
-        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest group-hover/nav:text-blue-600 transition-colors">Mobilité</span>
+        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest group-hover/nav:text-blue-600 transition-colors">Mobilité et contrats</span>
         <div class="flex items-center gap-2 group relative">
             <div class="w-20 h-1.5 bg-gray-200 rounded-full overflow-hidden group-hover/nav:ring-4 group-hover/nav:ring-blue-100 transition-all">
                 <div class="bg-blue-500 h-full transition-all duration-1000" :style="`width: ${mobilityProgress}%`"></div>

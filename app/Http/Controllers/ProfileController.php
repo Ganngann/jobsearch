@@ -195,8 +195,7 @@ class ProfileController extends Controller
 
         $request->user()->languages()->sync($syncData);
 
-        // Recalcul (Asynchrone)
-        \App\Jobs\RecalculateMatchesJob::dispatch($request->user());
+        // \App\Jobs\RecalculateMatchesJob::dispatch($request->user());
 
         if ($request->wantsJson()) {
             return response()->json(['status' => 'success', 'message' => 'Langues mises à jour']);
@@ -245,8 +244,7 @@ class ProfileController extends Controller
             }
         }
 
-        // 2. On lance le recalcul global en arrière-plan (Debounced/Unique)
-        \App\Jobs\RecalculateMatchesJob::dispatch(Auth::user());
+        // \App\Jobs\RecalculateMatchesJob::dispatch(Auth::user());
 
         session()->flash('status', "Compétence '{$skill->label}' ajoutée à votre profil");
 
@@ -268,8 +266,7 @@ class ProfileController extends Controller
             }
         }
 
-        // 2. Le reste en arrière-plan
-        \App\Jobs\RecalculateMatchesJob::dispatch(Auth::user());
+        // \App\Jobs\RecalculateMatchesJob::dispatch(Auth::user());
 
         session()->flash('status', "Compétence '{$skill->label}' retirée de votre profil");
 
