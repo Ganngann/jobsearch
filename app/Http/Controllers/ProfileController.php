@@ -127,46 +127,7 @@ class ProfileController extends Controller
         return redirect()->route('profile.builder', ['session' => $sessionId]);
     }
 
-    /**
-     * Analyse un texte brut pour générer un profil.
-     */
-    public function analyze(Request $request)
-    {
-        $request->validate(['text' => 'required|string|min:50']);
 
-        $suggestion = $this->gemini->analyzeProfile($request->text);
-
-        if (!$suggestion) {
-            return response()->json(['error' => 'Échec de l\'analyse IA'], 500);
-        }
-
-        $this->gemini->log('profile');
-
-        return response()->json($suggestion);
-    }
-
-    /**
-     * Auto-complète le profil à partir des faits validés.
-     */
-    public function magicFill(Request $request)
-    {
-        $user = $request->user();
-        $facts = $user->facts()->get();
-
-        if ($facts->isEmpty()) {
-            return response()->json(['error' => 'Aucun récit trouvé. Discutez avec l\'Assistant pour en ajouter.'], 400);
-        }
-
-        $suggestion = $this->gemini->generateProfileFromFacts($facts->toArray());
-
-        if (!$suggestion) {
-            return response()->json(['error' => 'Échec de la génération IA'], 500);
-        }
-
-        $this->gemini->log('profile');
-
-        return response()->json($suggestion);
-    }
     /**
      * Display the user's profile.
      */

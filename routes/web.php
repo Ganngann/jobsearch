@@ -52,8 +52,6 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile/permits', [ProfileController::class, 'updatePermits'])->name('profile.permits.update');
     Route::get('/profile/mobility', [\App\Http\Controllers\MobilityController::class, 'index'])->name('profile.mobility.index');
     Route::patch('/profile/mobility', [\App\Http\Controllers\MobilityController::class, 'update'])->name('profile.mobility.update');
-    Route::post('/profile/magic-fill', [ProfileController::class, 'magicFill'])->name('profile.magic-fill');
-    Route::post('/profile/analyze', [ProfileController::class, 'analyze'])->name('profile.analyze');
     Route::post('/profile/upload-resume', [ProfileController::class, 'uploadResume'])->name('profile.upload-resume');
     Route::get('/profile/skills', [\App\Http\Controllers\ProfileSkillController::class, 'index'])->name('profile.skills.index');
     Route::post('/profile/skills/suggest', [\App\Http\Controllers\ProfileSkillController::class, 'suggest'])->name('profile.skills.suggest');
