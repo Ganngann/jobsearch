@@ -26,7 +26,9 @@ class MatchChunkJob implements ShouldQueue, ShouldBeUnique
     public function __construct(
         public \App\Models\User $user,
         public array $jobOfferIds
-    ) {}
+    ) {
+        $this->onQueue('low');
+    }
 
     /**
      * Execute the job.

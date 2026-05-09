@@ -511,17 +511,9 @@
     </div>
 
     <!-- Footer -->
-    <div class="p-6 border-t border-slate-100 bg-white flex items-center justify-between">
+     <div class="p-6 border-t border-slate-100 bg-white flex items-center justify-between">
         <a href="{{ route('jobs.show', $jobOffer) }}" class="text-indigo-600 text-sm font-black uppercase tracking-widest hover:text-indigo-800 transition-colors">
             Voir la fiche complète
         </a>
-        <div class="flex items-center gap-4">
-            <button class="p-3 rounded-xl border border-slate-200 hover:bg-slate-50 transition-all text-slate-400">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-            </button>
-            <a href="{{ $jobOffer->apply_url ?? '#' }}" target="_blank" class="px-8 py-3 bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200">
-                Postuler
-            </a>
-        </div>
     </div>
 </div>
