@@ -13,35 +13,21 @@
         data-pre-score="{{ $match?->pre_score ?? 0 }}"
         data-ai-score="{{ $match?->final_score ?? '' }}"
         data-vector-score="{{ ($match?->vector_score !== null) ? round($match->vector_score) : '' }}"
+        data-final-score="{{ $match?->final_score ?? 0 }}"
         :class="selectedId == '{{ $offer->forem_id }}' ? 'border-indigo-500 ring-2 ring-indigo-500/10 bg-white' : 'border-slate-100 hover:border-slate-300 bg-white'"
         class="p-5 rounded-2xl border cursor-pointer transition-all duration-300 shadow-sm hover:shadow-md group relative overflow-hidden {{ $isOfferBlacklisted ? 'opacity-50 grayscale-[0.5]' : '' }}"
     >
-        <!-- Scores Section -->
-        <div class="absolute top-0 right-0 p-3 flex gap-4">
-            <!-- Indice de Confort (Level 2) -->
+        <!-- Score Section -->
+        <div class="absolute top-0 right-0 p-3">
             <div class="text-right">
-                <p class="text-lg font-black leading-none score-confort" 
-                   :class="(scores['{{ $offer->forem_id }}']?.data >= 70) ? 'text-emerald-500' : ((scores['{{ $offer->forem_id }}']?.data >= 40) ? 'text-amber-500' : 'text-slate-400')">
-                    <span x-text="scores['{{ $offer->forem_id }}']?.data ?? '{{ $match?->pre_score ?? 0 }}'"></span><span class="text-[9px]">%</span>
+                @php
+                    $displayScore = $match?->final_score ?? 0;
+                    $scoreColorClass = $displayScore >= 70 ? 'text-emerald-500' : ($displayScore >= 40 ? 'text-amber-500' : 'text-slate-400');
+                @endphp
+                <p class="text-xl font-black leading-none {{ $scoreColorClass }} score-confort">
+                    <span x-text="scores['{{ $offer->forem_id }}']?.ia || scores['{{ $offer->forem_id }}']?.final || '{{ $displayScore }}'"></span><span class="text-[9px]">%</span>
                 </p>
-                <p class="text-[7px] font-black uppercase text-emerald-500 tracking-tighter">Conditions</p>
-            </div>
-
-            <!-- Potentiel Métier (Level 1) -->
-            <div class="text-right pl-4 border-l border-slate-100">
-                <p class="text-lg font-black leading-none" 
-                   :class="(scores['{{ $offer->forem_id }}']?.vector >= 70) ? 'text-blue-600' : ((scores['{{ $offer->forem_id }}']?.vector >= 40) ? 'text-blue-400' : 'text-slate-200')">
-                    <span x-text="scores['{{ $offer->forem_id }}']?.vector ?? '--'"></span><span class="text-[9px]">%</span>
-                </p>
-                <p class="text-[7px] font-black uppercase text-blue-400 tracking-tighter">Similarité</p>
-            </div>
-
-            <!-- IA Match (Level 3) -->
-            <div class="text-right pl-4 border-l border-slate-100">
-                <p class="text-lg font-black leading-none" :class="scores['{{ $offer->forem_id }}']?.ia ? 'text-indigo-600' : 'text-slate-200'">
-                    <span x-text="scores['{{ $offer->forem_id }}']?.ia ?? '--'"></span><span class="text-[9px]">%</span>
-                </p>
-                <p class="text-[7px] font-black uppercase text-indigo-300 tracking-tighter">Analyse IA</p>
+                <p class="text-[7px] font-black uppercase text-slate-400 tracking-tighter">{{ $match?->ai_status === 'completed' ? 'IA Match' : 'Score' }}</p>
             </div>
         </div>
 

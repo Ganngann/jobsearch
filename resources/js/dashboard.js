@@ -34,7 +34,8 @@ export default function dashboardApp(config = {}) {
                 this.scores[id] = {
                     data: el.dataset.preScore,
                     ia: el.dataset.aiScore === '' || el.dataset.aiScore === undefined ? null : el.dataset.aiScore,
-                    vector: el.dataset.vectorScore === '' || el.dataset.vectorScore === undefined ? null : el.dataset.vectorScore
+                    vector: el.dataset.vectorScore === '' || el.dataset.vectorScore === undefined ? null : el.dataset.vectorScore,
+                    final: el.dataset.finalScore || 0
                 };
             });
         },

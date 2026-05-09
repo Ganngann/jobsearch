@@ -30,9 +30,18 @@ class VectorController extends Controller
             $user = auth()->user();
             if ($user && $user->vector_embedding) {
                 $score = $this->vectorService->calculateSemanticScore($user->vector_embedding, $jobOffer->vector_embedding);
+                
+                // On récupère le pre_score existant pour mettre à jour le final_score cohérent
+                $existingMatch = $user->matches()->where('job_offer_id', $jobOffer->id)->first();
+                $preScore = $existingMatch ? $existingMatch->pre_score : 100;
+                $finalScore = round($score * ($preScore / 100));
+
                 $user->matches()->updateOrCreate(
                     ['job_offer_id' => $jobOffer->id],
-                    ['vector_score' => $score]
+                    [
+                        'vector_score' => $score,
+                        'final_score' => $finalScore
+                    ]
                 );
             }
 
@@ -119,6 +128,12 @@ class VectorController extends Controller
         if (!empty($upsertData)) {
             UserMatch::upsert($upsertData, ['user_id', 'job_offer_id'], ['vector_score']);
         }
+
+        // Mise à jour massive des final_score pour la cohérence
+        UserMatch::where('user_id', $user->id)
+            ->update([
+                'final_score' => \Illuminate\Support\Facades\DB::raw('ROUND(vector_score * (pre_score / 100))')
+            ]);
 
         $msg = "Similitude calculée pour {$count} offres.";
         return request()->expectsJson() 

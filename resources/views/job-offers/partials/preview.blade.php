@@ -119,126 +119,96 @@
             </div>
             
             <div class="flex flex-col items-end gap-4">
-                <div class="flex items-center gap-4">
-                    <!-- Score Confort avec Tooltip -->
+                    @php
+                        $displayScore = $match->final_score ?? 0;
+                        $scoreColorClass = $displayScore >= 70 ? 'text-emerald-500' : ($displayScore >= 40 ? 'text-amber-500' : 'text-slate-400');
+                        $isAiStale = $match && $match->ai_status === 'processing' && $match->updated_at->lt(now()->subMinutes(10));
+                    @endphp
+                    <!-- Score Unique avec Ventilation dans le Tooltip -->
                     <div class="relative group cursor-help">
-                        <div class="text-center p-4 bg-white rounded-2xl border border-slate-100 shadow-sm min-w-[120px] hover:border-emerald-200 transition-all">
+                        
+                        <div class="text-center p-4 bg-white rounded-2xl border-2 border-slate-100 shadow-xl min-w-[140px] hover:border-indigo-400 transition-all duration-300 transform group-hover:-translate-y-1">
                             @if($match->exists)
-                                <p class="text-3xl font-black {{ ($match->pre_score ?? 0) >= 70 ? 'text-emerald-500' : (($match->pre_score ?? 0) >= 40 ? 'text-amber-500' : 'text-slate-400') }}">
-                                    {{ $match->pre_score ?? 0 }}<span class="text-xs">%</span>
+                                <p class="text-4xl font-black {{ $scoreColorClass }} leading-none">
+                                    {{ $displayScore }}<span class="text-sm">%</span>
                                 </p>
                             @else
                                 <p class="text-3xl font-black text-slate-300">...</p>
                             @endif
-                            <p class="text-[8px] font-black uppercase tracking-widest text-slate-400 mt-1">{{ $match->exists ? 'Score Global' : 'Calcul...' }}</p>
+                            <p class="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400 mt-2">{{ $match->ai_status === 'completed' ? 'IA Score Match' : 'Score de Match' }}</p>
                         </div>
 
-                        <!-- Tooltip Detail Riche -->
+                        <!-- Tooltip Detail Riche (Ventilé) -->
                         @if($match && $match->pre_score_details)
-                        <div class="absolute right-full top-0 mr-4 w-80 p-5 bg-slate-900 text-white rounded-2xl shadow-2xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all z-[100] transform translate-y-0">
-                            <h4 class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 pb-2 border-b border-white/10">Pourquoi ce score ?</h4>
+                        <div class="absolute right-full top-0 mr-6 w-80 p-6 bg-slate-900 text-white rounded-[2.5rem] shadow-[0_35px_60px_-15px_rgba(0,0,0,0.6)] opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-500 z-[100] transform translate-x-4 group-hover:translate-x-0">
+                            <h4 class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-6 pb-2 border-b border-white/5">Ventilation du Score</h4>
                             
+                            <!-- Section Ventilation -->
+                            <div class="grid grid-cols-2 gap-4 mb-8">
+                                <div class="text-center p-3 bg-blue-500/10 rounded-2xl border border-blue-500/20">
+                                    <p class="text-xl font-black text-blue-400">{{ round($match->vector_score) }}%</p>
+                                    <p class="text-[7px] font-black uppercase tracking-widest text-blue-300/60 mt-1">Le Fond<br>(Sémantique)</p>
+                                </div>
+                                <div class="text-center p-3 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
+                                    <p class="text-xl font-black text-emerald-400">{{ $match->pre_score }}%</p>
+                                    <p class="text-[7px] font-black uppercase tracking-widest text-emerald-300/60 mt-1">La Forme<br>(Critères)</p>
+                                </div>
+                            </div>
+
                             <div class="space-y-4">
-                                <div class="flex justify-between items-center">
-                                    <span class="text-[10px] font-bold text-slate-300 uppercase tracking-tight">Base de départ</span>
-                                    <span class="text-[11px] font-black text-emerald-400">+{{ $match->pre_score_details['base'] ?? 100 }}</span>
+                                <div class="flex justify-between items-center text-slate-400 px-1">
+                                    <span class="text-[9px] font-black uppercase tracking-widest">Détail des frictions</span>
+                                    <span class="text-[9px] font-black uppercase tracking-widest">Impact</span>
                                 </div>
 
                                 @if(!empty($match->pre_score_details['penalties']))
-                                    <div class="space-y-4">
+                                    <div class="space-y-2">
                                         @foreach($match->pre_score_details['penalties'] as $penalty)
-                                            <div class="p-3 bg-white/5 rounded-xl border border-white/10">
+                                            <div class="p-3 bg-white/5 rounded-2xl border border-white/10 hover:bg-white/[0.08] transition-colors">
                                                 <div class="flex items-center justify-between mb-1">
-                                                    <span class="text-[9px] font-black text-rose-400 uppercase tracking-widest">DÉDUCTION</span>
-                                                    <span class="text-[11px] font-black text-rose-400">-{{ abs($penalty['value']) }}</span>
+                                                    <span class="text-[10px] font-bold text-slate-300">{{ $penalty['label'] }}</span>
+                                                    <span class="text-[11px] font-black text-rose-400">-{{ abs($penalty['value']) }}%</span>
                                                 </div>
-                                                <p class="text-[11px] font-bold text-slate-200 leading-snug">
+                                                <p class="text-[9px] text-slate-500 leading-snug">
                                                     @if(($penalty['type'] ?? '') === 'distance')
-                                                        Mobilité : Distance de {{ round($penalty['meta']['distance'] ?? 0, 1) }} km (Rayon max : {{ $user->radius ?? 30 }}km).
-                                                    @elseif(($penalty['type'] ?? '') === 'permit_missing')
-                                                        Légal : Permis de conduire manquant.
-                                                    @elseif(($penalty['type'] ?? '') === 'language_missing')
-                                                        Linguistique : Langue requise non maîtrisée.
-                                                     @elseif(($penalty['type'] ?? '') === 'freshness')
-                                                        Vétusté : Offre de plus de 15 jours.
-                                                    @else
-                                                        {{ $penalty['label'] }}
-                                                     @endif
+                                                        Mobilité : {{ round($penalty['meta']['distance'] ?? 0, 1) }} km vs {{ $user->radius ?? 30 }}km max.
+                                                    @endif
                                                 </p>
                                             </div>
                                         @endforeach
                                     </div>
-                                @elseif($match->pre_score < 100)
-                                    <div class="p-4 bg-amber-900/20 rounded-xl border border-amber-500/20 text-center">
-                                        <p class="text-[10px] font-bold text-amber-300">Détails du score indisponibles.</p>
-                                        <p class="text-[9px] text-amber-400/60 mt-1 uppercase font-black">Un recalcul est nécessaire pour afficher les facteurs de friction.</p>
-                                    </div>
                                 @else
-                                    <div class="p-4 bg-white/5 rounded-xl border border-white/10 text-center">
-                                        <p class="text-[10px] font-bold text-slate-400 italic">Aucune friction détectée sur vos critères.</p>
+                                    <div class="p-4 bg-white/5 rounded-2xl border border-white/10 text-center">
+                                        <p class="text-[9px] font-bold text-slate-500 italic">Aucun point de friction identifié.</p>
                                     </div>
                                 @endif
 
                                 @if(!empty($match->pre_score_details['bonuses']))
-                                    <div class="mt-4 pt-4 border-t border-white/10 space-y-3">
+                                    <div class="mt-6 pt-4 border-t border-white/5 space-y-2">
                                         @foreach($match->pre_score_details['bonuses'] as $bonus)
-                                            <div class="flex items-center justify-between">
-                                                <span class="text-[10px] font-bold text-emerald-300 uppercase">{{ $bonus['label'] }}</span>
-                                                <span class="text-[11px] font-black text-emerald-400">+{{ $bonus['value'] }}</span>
+                                            <div class="flex items-center justify-between px-1">
+                                                <span class="text-[10px] font-bold text-emerald-400/80">{{ $bonus['label'] }}</span>
+                                                <span class="text-[11px] font-black text-emerald-400">+{{ $bonus['value'] }}%</span>
                                             </div>
                                         @endforeach
                                     </div>
                                 @endif
-
-                                <div class="mt-6 pt-4 border-t border-white/10 flex items-center justify-between opacity-40">
-                                    <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Fiabilité du Calcul</span>
-                                    <span class="text-[10px] font-black text-slate-300">Précision : {{ $user->profile_completion }}%</span>
-                                </div>
-
                             </div>
                             
-                            <!-- Flèche vers la droite -->
-                            <div class="absolute left-full top-8 -translate-y-1/2 border-8 border-transparent border-l-slate-900"></div>
-                        </div>
-                        @else
-                        <div class="absolute right-full top-0 mr-4 w-48 p-3 bg-slate-900 text-white rounded-xl shadow-2xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all z-[100] text-center">
-                             <span class="text-[10px] font-bold italic">Calcul des détails...</span>
-                             <div class="absolute left-full top-8 -translate-y-1/2 border-8 border-transparent border-l-slate-900"></div>
+                            <!-- Flèche -->
+                            <div class="absolute left-full top-8 -translate-y-1/2 border-[12px] border-transparent border-l-slate-900"></div>
                         </div>
                         @endif
                     </div>
 
-                    <!-- Potentiel Métier (Sémantique) -->
-                    @if($match && $match->vector_score !== null)
-                        <div class="text-center p-4 bg-blue-600 rounded-2xl shadow-lg shadow-blue-100 min-w-[120px]">
-                            <p class="text-3xl font-black text-white">
-                                {{ round($match->vector_score) }}<span class="text-xs">%</span>
-                            </p>
-                            <p class="text-[8px] font-black uppercase tracking-widest text-blue-200 mt-1">Potentiel Métier</p>
-                        </div>
-                    @endif
 
-
-                    @php
-                        $isAiStale = $match && $match->ai_status === 'processing' && $match->updated_at->lt(now()->subMinutes(10));
-                    @endphp
-
-                    @if($match && ($match->ai_status === 'completed' || ($match->final_score > 0 && !$isAiStale)))
-                        <div id="ai-result-ready" data-score="{{ $match->final_score }}" class="hidden"></div>
-                        <!-- Score IA -->
-                        <div class="text-center p-4 bg-indigo-600 rounded-2xl shadow-lg shadow-indigo-100 min-w-[100px]">
-                            <p class="text-3xl font-black text-white">
-                                {{ $match->final_score }}<span class="text-xs">%</span>
-                            </p>
-                            <p class="text-[8px] font-black uppercase tracking-widest text-indigo-200 mt-1">IA Match</p>
-                        </div>
-                    @elseif($match && $match->ai_status === 'processing')
+                    @if($match && $match->ai_status === 'processing')
                         <!-- État en cours -->
                         <div class="text-center p-4 bg-indigo-50 rounded-2xl border border-indigo-100 min-w-[100px] animate-pulse">
                             <div class="flex justify-center mb-1">
                                 <svg class="w-6 h-6 text-indigo-500 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                             </div>
-                            <p class="text-[8px] font-black uppercase tracking-widest text-indigo-400">Analyse IA...</p>
+                            <p class="text-[8px] font-black uppercase tracking-widest text-indigo-400">IA en cours...</p>
                         </div>
                     @elseif($match && $match->ai_status === 'failed')
                         <div id="ai-result-failed" class="hidden"></div>
@@ -250,8 +220,7 @@
                             <p class="text-[8px] font-black uppercase tracking-widest text-rose-400">Échec IA</p>
                         </div>
                     @endif
-                </div>
-
+                
                 <div class="w-full flex gap-2">
                     <button 
                         @click="startAiAnalysis('{{ $jobOffer->forem_id }}')" 
