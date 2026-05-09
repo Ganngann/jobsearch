@@ -62,8 +62,16 @@
             :class="filters.sort === 'vector_desc' ? 'bg-white text-violet-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'"
             class="flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex flex-col items-center justify-center gap-0.5"
         >
-            <span>Potentiel IA</span>
-            <span class="text-[8px] opacity-60 font-bold">Similarité Sémantique</span>
+            <span>Score Sémantique</span>
+            <span class="text-[8px] opacity-60 font-bold">Similarité pure</span>
+        </button>
+        <button 
+            @click="filters.sort = 'ai_desc'; refreshList()"
+            :class="filters.sort === 'ai_desc' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'"
+            class="flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex flex-col items-center justify-center gap-0.5"
+        >
+            <span>Score IA</span>
+            <span class="text-[8px] opacity-60 font-bold">Analyse Narrative AI</span>
         </button>
     </div>
 </div>

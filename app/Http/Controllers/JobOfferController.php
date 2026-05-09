@@ -109,13 +109,22 @@ class JobOfferController extends Controller
                 $query->orderBy('published_at', 'desc');
                 break;
             case 'vector_desc':
-                $query->leftJoin('user_matches', function($join) use ($user) {
+                $query->join('user_matches', function($join) use ($user) {
                     $join->on('job_offers.id', '=', 'user_matches.job_offer_id')
                          ->where('user_matches.user_id', '=', $user->id);
                 })
-                ->select('job_offers.*', 'user_matches.pre_score', 'user_matches.final_score', 'user_matches.vector_score', 'user_matches.pre_score_details')
-                ->orderBy('user_matches.vector_score', 'desc')
-                ->orderBy('user_matches.pre_score', 'desc');
+                ->select('job_offers.*', 'user_matches.pre_score', 'user_matches.final_score', 'user_matches.vector_score', 'user_matches.ai_score', 'user_matches.pre_score_details')
+                ->whereNotNull('user_matches.vector_score')
+                ->orderBy('user_matches.vector_score', 'desc');
+                break;
+            case 'ai_desc':
+                $query->join('user_matches', function($join) use ($user) {
+                    $join->on('job_offers.id', '=', 'user_matches.job_offer_id')
+                         ->where('user_matches.user_id', '=', $user->id);
+                })
+                ->select('job_offers.*', 'user_matches.pre_score', 'user_matches.final_score', 'user_matches.vector_score', 'user_matches.ai_score', 'user_matches.pre_score_details')
+                ->whereNotNull('user_matches.ai_score')
+                ->orderBy('user_matches.ai_score', 'desc');
                 break;
             case 'score_desc':
             default:
@@ -124,7 +133,7 @@ class JobOfferController extends Controller
                     $join->on('job_offers.id', '=', 'user_matches.job_offer_id')
                          ->where('user_matches.user_id', '=', $user->id);
                 })
-                ->select('job_offers.*', 'user_matches.pre_score', 'user_matches.final_score', 'user_matches.vector_score', 'user_matches.pre_score_details')
+                ->select('job_offers.*', 'user_matches.pre_score', 'user_matches.final_score', 'user_matches.vector_score', 'user_matches.ai_score', 'user_matches.pre_score_details')
                 ->orderBy('user_matches.final_score', 'desc')
                 ->orderBy('user_matches.pre_score', 'desc');
                 break;

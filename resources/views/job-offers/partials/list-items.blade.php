@@ -1,17 +1,42 @@
 @foreach($jobOffers as $offer)
     @php
         $match = $offer->userMatch;
-        $score = $match ? ($match->final_score ?? $match->pre_score) : null;
+        $sort = request('sort', 'score_desc');
+        
+        // Calcul du score à afficher initialement (SSR)
+        $displayScore = 0;
+        $secondaryScore = null;
+        $scoreLabel = 'Score';
+        
+        if ($match) {
+            $compositeScore = round(($match->vector_score ?? 0) * ($match->pre_score / 100));
+
+            if ($sort === 'vector_desc') {
+                $displayScore = round($match->vector_score ?? 0);
+                $secondaryScore = $compositeScore;
+                $scoreLabel = 'Sémantique';
+            } elseif ($sort === 'ai_desc') {
+                $displayScore = $match->ai_score ?? 0;
+                $secondaryScore = $compositeScore;
+                $scoreLabel = 'IA Match';
+            } else {
+                $displayScore = $match->final_score ?? $match->pre_score;
+                $scoreLabel = $match->ai_status === 'completed' ? 'IA Match' : 'Score';
+                // Si IA active, le score "secondaire" barré est le score combiné (Sémantique * Critères)
+                if ($match->ai_score) {
+                    $secondaryScore = $compositeScore;
+                }
+            }
+        }
     @endphp
     @php
         $isOfferBlacklisted = $match?->is_blacklisted ?? false;
-        // Optionnel: check réel si on veut être ultra-précis dans la liste aussi
     @endphp
     <div 
         @click="selectOffer('{{ $offer->forem_id }}')"
         data-offer-id="{{ $offer->forem_id }}"
         data-pre-score="{{ $match?->pre_score ?? 0 }}"
-        data-ai-score="{{ $match?->final_score ?? '' }}"
+        data-ai-score="{{ $match?->ai_score ?? '' }}"
         data-vector-score="{{ ($match?->vector_score !== null) ? round($match->vector_score) : '' }}"
         data-final-score="{{ $match?->final_score ?? 0 }}"
         :class="selectedId == '{{ $offer->forem_id }}' ? 'border-indigo-500 ring-2 ring-indigo-500/10 bg-white' : 'border-slate-100 hover:border-slate-300 bg-white'"
@@ -19,15 +44,22 @@
     >
         <!-- Score Section -->
         <div class="absolute top-0 right-0 p-3">
-            <div class="text-right">
+            <div class="text-right flex flex-col items-end">
+                <template x-if="shouldShowSecondaryScore('{{ $offer->forem_id }}')">
+                    <span 
+                        class="text-[9px] text-slate-400 font-bold leading-none mb-1"
+                        :class="isScoreSuperseded('{{ $offer->forem_id }}') ? 'line-through opacity-50' : ''"
+                    >
+                        <span x-text="getSecondaryScore('{{ $offer->forem_id }}') || '{{ $secondaryScore }}'"></span><span class="text-[9px]">%</span>
+                    </span>
+                </template>
                 @php
-                    $displayScore = $match?->final_score ?? 0;
                     $scoreColorClass = $displayScore >= 70 ? 'text-emerald-500' : ($displayScore >= 40 ? 'text-amber-500' : 'text-slate-400');
                 @endphp
                 <p class="text-xl font-black leading-none {{ $scoreColorClass }} score-confort">
-                    <span x-text="scores['{{ $offer->forem_id }}']?.ia || scores['{{ $offer->forem_id }}']?.final || '{{ $displayScore }}'"></span><span class="text-[9px]">%</span>
+                    <span x-text="getDisplayScore('{{ $offer->forem_id }}') || '{{ $displayScore }}'"></span><span class="text-[9px]">%</span>
                 </p>
-                <p class="text-[7px] font-black uppercase text-slate-400 tracking-tighter">{{ $match?->ai_status === 'completed' ? 'IA Match' : 'Score' }}</p>
+                <p class="text-[7px] font-black uppercase text-slate-400 tracking-tighter" x-text="getScoreLabel('{{ $offer->forem_id }}') || '{{ $scoreLabel }}'"></p>
             </div>
         </div>
 

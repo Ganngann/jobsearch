@@ -192,7 +192,7 @@ export default function dashboardApp(config = {}) {
 
         updateOfferScore(offerId, score, isBlacklisted) {
             if (!this.scores[offerId]) {
-                this.scores[offerId] = { data: score, ia: null };
+                this.scores[offerId] = { data: score, ia: null, vector: null, final: score };
             } else {
                 this.scores[offerId].data = score;
             }
@@ -208,6 +208,58 @@ export default function dashboardApp(config = {}) {
                     scoreDisplay.classList.add('animate-score-change');
                 }
             }
+        },
+
+        getDisplayScore(offerId) {
+            const scoreObj = this.scores[offerId];
+            if (!scoreObj) return '...';
+            
+            if (this.filters.sort === 'vector_desc') return Math.round(scoreObj.vector || 0);
+            if (this.filters.sort === 'ai_desc') return Math.round(scoreObj.ia || 0);
+            return Math.round(scoreObj.final || scoreObj.data || 0);
+        },
+
+        getScoreLabel(offerId) {
+            const scoreObj = this.scores[offerId];
+            if (this.filters.sort === 'vector_desc') return 'Sémantique';
+            if (this.filters.sort === 'ai_desc') return 'IA Match';
+            return (scoreObj && scoreObj.ia) ? 'IA Match' : 'Score';
+        },
+
+        shouldShowSecondaryScore(offerId) {
+            const scoreObj = this.scores[offerId];
+            if (!scoreObj) return false;
+            
+            // 1. En mode sémantique ou IA, on montre toujours le pré-score (Critères)
+            if (this.filters.sort === 'vector_desc' || this.filters.sort === 'ai_desc') {
+                return scoreObj.data > 0;
+            }
+            
+            // 2. En mode Global, on montre le score "Pre-IA" si l'IA a tourné
+            if (this.filters.sort === 'score_desc' && scoreObj.ia) {
+                return true;
+            }
+            
+            return false;
+        },
+
+        getSecondaryScore(offerId) {
+            const scoreObj = this.scores[offerId];
+            if (!scoreObj) return 0;
+
+            // Le "score de référence" est toujours le produit Sémantique * Critères
+            const vector = scoreObj.vector || 0;
+            const criteria = scoreObj.data || 0;
+            return Math.round(vector * (criteria / 100));
+        },
+
+        isScoreSuperseded(offerId) {
+            const scoreObj = this.scores[offerId];
+            if (!scoreObj) return false;
+
+            // Le score global est considéré comme "remplacé" dès qu'on affiche une vue spécialisée (IA ou Sémantique)
+            // ou qu'on est en Global avec une expertise IA qui a pris le dessus.
+            return this.shouldShowSecondaryScore(offerId);
         },
 
         showToast(message, type = 'success') {

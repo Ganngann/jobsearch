@@ -144,17 +144,33 @@
                             <h4 class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-6 pb-2 border-b border-white/5">Ventilation du Score</h4>
                             
                             <!-- Section Ventilation -->
-                            <div class="grid {{ $match->ai_score ? 'grid-cols-3' : 'grid-cols-2' }} gap-3 mb-8">
-                                <div class="text-center p-3 bg-blue-500/10 rounded-2xl border border-blue-500/20">
-                                    <p class="text-xl font-black text-blue-400 leading-none">{{ round($match->vector_score) }}%</p>
-                                    <p class="text-[7px] font-black uppercase tracking-widest text-blue-300/60 mt-2">Le Fond<br>(Vecteur)</p>
+                            <div class="flex gap-3 mb-10">
+                                <div class="flex-[2] flex flex-col gap-2">
+                                    <div class="flex gap-3">
+                                        <div class="flex-1 text-center p-3 bg-blue-500/10 rounded-2xl border border-blue-500/20">
+                                            <p class="text-xl font-black text-blue-400 leading-none">{{ round($match->vector_score) }}%</p>
+                                            <p class="text-[7px] font-black uppercase tracking-widest text-blue-300/60 mt-2">Le Fond<br>(Vecteur)</p>
+                                        </div>
+                                        <div class="flex-1 text-center p-3 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
+                                            <p class="text-xl font-black text-emerald-400 leading-none">{{ $match->pre_score }}%</p>
+                                            <p class="text-[7px] font-black uppercase tracking-widest text-emerald-300/60 mt-2">La Forme<br>(Critères)</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Crochet et Score Global Pre-IA -->
+                                    <div class="flex flex-col items-center">
+                                        <svg class="w-full h-3 text-white/20 -mt-1" viewBox="0 0 100 20" preserveAspectRatio="none">
+                                            <path d="M10 0 L10 10 L45 10 L50 20 L55 10 L90 10 L90 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                        </svg>
+                                        <div class="px-3 py-1 bg-white/5 border border-white/10 rounded-full -mt-1.5 shadow-xl backdrop-blur-sm">
+                                            <span class="text-[11px] font-black text-slate-200">{{ round($match->vector_score * ($match->pre_score / 100)) }}%</span>
+                                            <span class="text-[7px] font-black uppercase tracking-widest text-slate-500 ml-1">Score Global Pre-IA</span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="text-center p-3 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
-                                    <p class="text-xl font-black text-emerald-400 leading-none">{{ $match->pre_score }}%</p>
-                                    <p class="text-[7px] font-black uppercase tracking-widest text-emerald-300/60 mt-2">La Forme<br>(Critères)</p>
-                                </div>
+
                                 @if($match->ai_score)
-                                    <div class="text-center p-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/20 shadow-[0_0_15px_rgba(99,102,241,0.1)]">
+                                    <div class="flex-1 text-center p-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/20 shadow-[0_0_15px_rgba(99,102,241,0.1)] flex flex-col justify-center">
                                         <p class="text-xl font-black text-indigo-400 leading-none">{{ $match->ai_score }}%</p>
                                         <p class="text-[7px] font-black uppercase tracking-widest text-indigo-300/60 mt-2">Expertise<br>(L'IA)</p>
                                     </div>
