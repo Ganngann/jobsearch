@@ -144,15 +144,21 @@
                             <h4 class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-6 pb-2 border-b border-white/5">Ventilation du Score</h4>
                             
                             <!-- Section Ventilation -->
-                            <div class="grid grid-cols-2 gap-4 mb-8">
+                            <div class="grid {{ $match->ai_score ? 'grid-cols-3' : 'grid-cols-2' }} gap-3 mb-8">
                                 <div class="text-center p-3 bg-blue-500/10 rounded-2xl border border-blue-500/20">
-                                    <p class="text-xl font-black text-blue-400">{{ round($match->vector_score) }}%</p>
-                                    <p class="text-[7px] font-black uppercase tracking-widest text-blue-300/60 mt-1">Le Fond<br>(Sémantique)</p>
+                                    <p class="text-xl font-black text-blue-400 leading-none">{{ round($match->vector_score) }}%</p>
+                                    <p class="text-[7px] font-black uppercase tracking-widest text-blue-300/60 mt-2">Le Fond<br>(Vecteur)</p>
                                 </div>
                                 <div class="text-center p-3 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
-                                    <p class="text-xl font-black text-emerald-400">{{ $match->pre_score }}%</p>
-                                    <p class="text-[7px] font-black uppercase tracking-widest text-emerald-300/60 mt-1">La Forme<br>(Critères)</p>
+                                    <p class="text-xl font-black text-emerald-400 leading-none">{{ $match->pre_score }}%</p>
+                                    <p class="text-[7px] font-black uppercase tracking-widest text-emerald-300/60 mt-2">La Forme<br>(Critères)</p>
                                 </div>
+                                @if($match->ai_score)
+                                    <div class="text-center p-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/20 shadow-[0_0_15px_rgba(99,102,241,0.1)]">
+                                        <p class="text-xl font-black text-indigo-400 leading-none">{{ $match->ai_score }}%</p>
+                                        <p class="text-[7px] font-black uppercase tracking-widest text-indigo-300/60 mt-2">Expertise<br>(L'IA)</p>
+                                    </div>
+                                @endif
                             </div>
 
                             <div class="space-y-4">

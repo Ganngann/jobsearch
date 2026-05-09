@@ -95,12 +95,22 @@ class VectorService
             Log::warning("Anomalie Cosinus : {$cosine}. Vérifiez la normalisation des vecteurs.");
         }
 
-        $threshold = config('matching.semantic.min_threshold', 0.6);
+        /**
+         * LOGIQUE DE SCORING SÉMANTIQUE (REVISITÉE)
+         * ----------------------------------------
+         * Les embeddings Gemini se situent souvent entre 0.4 et 0.85 pour des textes pertinents.
+         * On utilise une échelle linéaire plus généreuse :
+         * 0.3 (Bruit/Non pertinent) -> 0%
+         * 0.6 (Minimum métier acceptable) -> 50%
+         * 0.8 (Excellent match) -> 83%
+         * 0.9 (Match parfait en pratique) -> 100%
+         */
+        $min = 0;
+        $max = 1;
         
-        // Remappage (threshold -> 0 | 1.0 -> 100)
-        $score = max(0, ($cosine - $threshold) / (1 - $threshold)) * 100;
+        $score = (($cosine - $min) / ($max - $min)) * 100;
         
-        return (float) min(100, $score);
+        return (float) max(0, min(100, $score));
     }
 
     /**

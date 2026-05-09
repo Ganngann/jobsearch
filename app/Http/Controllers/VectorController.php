@@ -34,7 +34,11 @@ class VectorController extends Controller
                 // On récupère le pre_score existant pour mettre à jour le final_score cohérent
                 $existingMatch = $user->matches()->where('job_offer_id', $jobOffer->id)->first();
                 $preScore = $existingMatch ? $existingMatch->pre_score : 100;
-                $finalScore = round($score * ($preScore / 100));
+                
+                // Si l'IA a déjà donné son expertise, c'est le score maître
+                $finalScore = ($existingMatch && $existingMatch->ai_score) 
+                    ? $existingMatch->ai_score 
+                    : round($score * ($preScore / 100));
 
                 $user->matches()->updateOrCreate(
                     ['job_offer_id' => $jobOffer->id],
@@ -129,10 +133,10 @@ class VectorController extends Controller
             UserMatch::upsert($upsertData, ['user_id', 'job_offer_id'], ['vector_score']);
         }
 
-        // Mise à jour massive des final_score pour la cohérence
+        // Mise à jour massive des final_score pour la cohérence (Priorité IA > Vecteur)
         UserMatch::where('user_id', $user->id)
             ->update([
-                'final_score' => \Illuminate\Support\Facades\DB::raw('ROUND(vector_score * (pre_score / 100))')
+                'final_score' => \Illuminate\Support\Facades\DB::raw('COALESCE(ai_score, ROUND(vector_score * (pre_score / 100)))')
             ]);
 
         $msg = "Similitude calculée pour {$count} offres.";

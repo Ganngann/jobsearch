@@ -42,10 +42,15 @@ class MatchingService
         $preMatchData = $this->calculatePreScore($user, $jobOffer, $context);
         $attractivityScore = $preMatchData['score'];
 
-        // 3. Score Final (Multiplicatif)
-        $finalScore = round($semanticScore * ($attractivityScore / 100));
-
+        // 3. Score Final (Hiérarchie : Expertise IA > Produit Sémantique)
         $match = UserMatch::firstOrNew(['user_id' => $user->id, 'job_offer_id' => $jobOffer->id]);
+        
+        // Si l'IA a déjà donné son expertise, elle devient le score maître.
+        // Sinon, on calcule le produit Sémantique * Attractivité.
+        $finalScore = ($match->ai_score) 
+            ? $match->ai_score 
+            : round($semanticScore * ($attractivityScore / 100));
+
         $match->fill([
             'vector_score' => $semanticScore,
             'pre_score' => $attractivityScore,
