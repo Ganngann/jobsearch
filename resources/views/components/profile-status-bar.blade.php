@@ -80,25 +80,6 @@
             </div>
             <span class="text-[10px] font-black text-indigo-500 w-8" x-text="narrativeProgress + '%'"></span>
         
-            <!-- 100% SUCCESS BUBBLE (ONLY IF NOT ON SKILLS PAGE) -->
-            <template x-if="narrativeProgress >= 100 && skillsProgress < 100 && '{{ Route::currentRouteName() }}' !== 'profile.skills.index'">
-                <div x-transition:enter="transition ease-out duration-500"
-                     x-transition:enter-start="opacity-0 translate-y-4 scale-90"
-                     x-transition:enter-end="opacity-100 translate-y-0 scale-100"
-                     class="absolute -bottom-12 left-0 z-[110] whitespace-nowrap">
-                    <div class="bg-indigo-600 text-white text-[10px] font-black px-3 py-1.5 rounded-full shadow-xl shadow-indigo-200 flex items-center gap-2 border border-indigo-500">
-                        <span class="flex h-2 w-2">
-                            <span class="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-white opacity-75"></span>
-                            <span class="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
-                        </span>
-                        Récit complet !
-                        <span class="bg-white text-indigo-600 px-2 py-0.5 rounded-md">
-                            Passer aux Compétences →
-                        </span>
-                    </div>
-                    <div class="absolute -top-1 left-6 w-2 h-2 bg-indigo-600 rotate-45 border-l border-t border-indigo-500"></div>
-                </div>
-            </template>
             
             <div class="cursor-help text-gray-300 hover:text-indigo-400 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -154,25 +135,6 @@
             </div>
             <span class="text-[10px] font-black text-purple-500 w-8" x-text="skillsProgress + '%'"></span>
         
-            <!-- 100% SKILLS SUCCESS BUBBLE -->
-            <template x-if="skillsProgress >= 100 && romeProgress < 100 && '{{ Route::currentRouteName() }}' !== 'discovery.index'">
-                <div x-transition:enter="transition ease-out duration-500"
-                     x-transition:enter-start="opacity-0 translate-y-4 scale-90"
-                     x-transition:enter-end="opacity-100 translate-y-0 scale-100"
-                     class="absolute -bottom-12 left-0 z-[110] whitespace-nowrap">
-                    <div class="bg-purple-600 text-white text-[10px] font-black px-3 py-1.5 rounded-full shadow-xl shadow-purple-200 flex items-center gap-2 border border-purple-500">
-                        <span class="flex h-2 w-2">
-                            <span class="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-white opacity-75"></span>
-                            <span class="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
-                        </span>
-                        Compétences OK !
-                        <span class="bg-white text-purple-600 px-2 py-0.5 rounded-md">
-                            Choisir mes métiers ROME →
-                        </span>
-                    </div>
-                    <div class="absolute -top-1 left-6 w-2 h-2 bg-purple-600 rotate-45 border-l border-t border-purple-500"></div>
-                </div>
-            </template>
 
             <div class="cursor-help text-gray-300 hover:text-purple-400 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -209,25 +171,6 @@
             </div>
             <span class="text-[10px] font-black text-rose-500 w-8" x-text="romeProgress + '%'"></span>
 
-            <!-- 100% ROME SUCCESS BUBBLE -->
-            <template x-if="romeProgress >= 100 && mobilityProgress < 100 && '{{ Route::currentRouteName() }}' !== 'profile.mobility.index'">
-                <div x-transition:enter="transition ease-out duration-500"
-                     x-transition:enter-start="opacity-0 translate-y-4 scale-90"
-                     x-transition:enter-end="opacity-100 translate-y-0 scale-100"
-                     class="absolute -bottom-12 left-0 z-[110] whitespace-nowrap">
-                    <div class="bg-rose-600 text-white text-[10px] font-black px-3 py-1.5 rounded-full shadow-xl shadow-rose-200 flex items-center gap-2 border border-rose-500">
-                        <span class="flex h-2 w-2">
-                            <span class="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-white opacity-75"></span>
-                            <span class="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
-                        </span>
-                        Ciblage OK !
-                        <span class="bg-white text-rose-600 px-2 py-0.5 rounded-md">
-                            Où cherchez-vous ? →
-                        </span>
-                    </div>
-                    <div class="absolute -top-1 left-6 w-2 h-2 bg-rose-600 rotate-45 border-l border-t border-rose-500"></div>
-                </div>
-            </template>
 
             <div class="cursor-help text-gray-300 hover:text-rose-400 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -264,27 +207,6 @@
             </div>
             <span class="text-[10px] font-black text-blue-500 w-8" x-text="mobilityProgress + '%'"></span>
 
-            <!-- 100% MOBILITY SUCCESS BUBBLE -->
-            <template x-if="mobilityProgress >= 100 && !hasSeenReadyBubble && '{{ Route::currentRouteName() }}' !== 'dashboard'">
-                <div x-transition:enter="transition ease-out duration-500"
-                     x-transition:enter-start="opacity-0 translate-y-4 scale-90"
-                     x-transition:enter-end="opacity-100 translate-y-0 scale-100"
-                     class="absolute -bottom-12 left-0 z-[110] whitespace-nowrap">
-                    <a href="{{ route('dashboard') }}" 
-                       @click="dismissBubble()"
-                       class="bg-blue-600 text-white text-[10px] font-black px-3 py-1.5 rounded-full shadow-xl shadow-blue-200 flex items-center gap-2 border border-blue-500 hover:bg-blue-700 transition-colors">
-                        <span class="flex h-2 w-2">
-                            <span class="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-white opacity-75"></span>
-                            <span class="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
-                        </span>
-                        Profil Prêt !
-                        <span class="bg-white text-blue-600 px-2 py-0.5 rounded-md">
-                            Voir mes offres matchées →
-                        </span>
-                    </a>
-                    <div class="absolute -top-1 left-6 w-2 h-2 bg-blue-600 rotate-45 border-l border-t border-blue-500"></div>
-                </div>
-            </template>
 
             <div class="cursor-help text-gray-300 hover:text-blue-400 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">

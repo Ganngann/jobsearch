@@ -171,35 +171,6 @@ class ProfileController extends Controller
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
 
-    /**
-     * Update the user's skills.
-     */
-    public function updateSkills(Request $request)
-    {
-        $request->validate([
-            'skills' => ['nullable', 'array'],
-            'skills.*' => ['exists:skills,id'],
-            'levels' => ['nullable', 'array'],
-        ]);
-
-        $syncData = [];
-        if ($request->has('skills')) {
-            foreach ($request->skills as $skillId) {
-                $syncData[$skillId] = ['level' => $request->levels[$skillId] ?? 'beginner'];
-            }
-        }
-
-        $request->user()->skills()->sync($syncData);
-
-        // Démarrage à froid (Asynchrone)
-        \App\Jobs\RecalculateMatchesJob::dispatch($request->user());
-
-        if ($request->wantsJson()) {
-            return response()->json(['status' => 'success', 'message' => 'Compétences mises à jour']);
-        }
-
-        return Redirect::route('profile.edit')->with('status', 'skills-updated');
-    }
 
     /**
      * Update the user's languages.
@@ -231,27 +202,6 @@ class ProfileController extends Controller
         return Redirect::route('profile.edit')->with('status', 'languages-updated');
     }
 
-    /**
-     * Update the user's permits.
-     */
-    public function updatePermits(Request $request)
-    {
-        $request->validate([
-            'permits' => ['nullable', 'array'],
-            'permits.*' => ['exists:permits,id'],
-        ]);
-
-        $request->user()->permits()->sync($request->permits ?? []);
-
-        // Recalcul (Asynchrone)
-        \App\Jobs\RecalculateMatchesJob::dispatch($request->user());
-
-        if ($request->wantsJson()) {
-            return response()->json(['status' => 'success', 'message' => 'Permis mis à jour']);
-        }
-
-        return Redirect::route('profile.edit')->with('status', 'permits-updated');
-    }
 
     /**
      * Delete the user's account.

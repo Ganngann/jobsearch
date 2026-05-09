@@ -47,9 +47,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::patch('/profile/skills', [ProfileController::class, 'updateSkills'])->name('profile.skills.update');
     Route::patch('/profile/languages', [ProfileController::class, 'updateLanguages'])->name('profile.languages.update');
-    Route::patch('/profile/permits', [ProfileController::class, 'updatePermits'])->name('profile.permits.update');
     Route::get('/profile/mobility', [\App\Http\Controllers\MobilityController::class, 'index'])->name('profile.mobility.index');
     Route::patch('/profile/mobility', [\App\Http\Controllers\MobilityController::class, 'update'])->name('profile.mobility.update');
     Route::post('/profile/upload-resume', [ProfileController::class, 'uploadResume'])->name('profile.upload-resume');

@@ -21,9 +21,9 @@
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                     Identité
                 </button>
-                <button @click="tab = 'mobility'" :class="tab === 'mobility' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-600 hover:text-gray-900'" class="px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center">
+                <button @click="tab = 'languages'" :class="tab === 'languages' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-600 hover:text-gray-900'" class="px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    Mobilité & Langues
+                    Langues
                 </button>
                 <button @click="tab = 'security'" :class="tab === 'security' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-600 hover:text-gray-900'" class="px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
@@ -41,26 +41,15 @@
 
 
 
-
-                {{-- Tab 3: Mobility, Languages & Permits --}}
-                <div x-show="tab === 'mobility'" x-transition class="space-y-8 max-w-5xl mx-auto">
-                    {{-- Section Mobilité --}}
-                    <div class="p-6 sm:p-10 bg-white shadow-xl shadow-indigo-100/20 sm:rounded-3xl border border-gray-100">
-                        @include('profile.partials.update-mobility-form')
-                    </div>
-
+                {{-- Tab 2: Langues --}}
+                <div x-show="tab === 'languages'" x-transition class="space-y-8">
                     {{-- Section Langues --}}
                     <div class="p-6 sm:p-10 bg-white shadow-xl shadow-indigo-100/20 sm:rounded-3xl border border-gray-100">
                         @include('profile.partials.update-languages-form')
                     </div>
-
-                    {{-- Section Permis --}}
-                    <div class="p-6 sm:p-10 bg-white shadow-xl shadow-indigo-100/20 sm:rounded-3xl border border-gray-100">
-                        @include('profile.partials.update-permits-form')
-                    </div>
                 </div>
 
-                {{-- Tab 4: Security & Account --}}
+                {{-- Tab 3: Security & Account --}}
                 <div x-show="tab === 'security'" x-transition class="space-y-8">
                     <div class="p-4 sm:p-8 bg-white shadow sm:rounded-xl">
                         <div class="max-w-xl">
