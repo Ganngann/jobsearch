@@ -26,6 +26,7 @@ class ForemScanCommand extends Command
     public function handle()
     {
         $mode = $this->option('mode');
+        \App\Models\Setting::set("heartbeat_scan_{$mode}", now()->toDateTimeString());
         
         if ($mode === 'flash') {
             $this->runFlashScan();

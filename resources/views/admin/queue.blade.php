@@ -25,11 +25,19 @@
 
     <div class="space-y-8">
         <!-- Statistiques Rapides -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="bg-indigo-600 p-6 rounded-3xl border border-indigo-500 shadow-lg shadow-indigo-100">
+                <p class="text-[10px] font-black text-indigo-100 uppercase tracking-[0.2em] mb-1">En cours d'exécution</p>
+                <div class="flex items-end gap-2">
+                    <span class="text-4xl font-black text-white tabular-nums">{{ number_format($activeCount) }}</span>
+                    <span class="text-xs font-bold text-indigo-200 mb-1">actifs</span>
+                </div>
+            </div>
+
             <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
                 <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Tâches en attente</p>
                 <div class="flex items-end gap-2">
-                    <span class="text-4xl font-black text-indigo-600 tabular-nums">{{ number_format($pendingCount) }}</span>
+                    <span class="text-4xl font-black text-slate-900 tabular-nums">{{ number_format($pendingCount) }}</span>
                     <span class="text-xs font-bold text-slate-400 mb-1">jobs</span>
                 </div>
             </div>
@@ -53,7 +61,72 @@
             </div>
         </div>
 
-        <!-- Liste des Jobs en cours -->
+        <!-- Jobs en cours -->
+        @if($activeJobs->isNotEmpty())
+        <div class="bg-indigo-50/50 rounded-[2rem] border border-indigo-100 shadow-xl shadow-indigo-100/20 overflow-hidden">
+            <div class="px-8 py-6 border-b border-indigo-100 flex justify-between items-center bg-indigo-100/20">
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center">
+                        <div class="flex gap-0.5">
+                            <div class="w-1 h-3 bg-white animate-bounce" style="animation-delay: 0s"></div>
+                            <div class="w-1 h-4 bg-white animate-bounce" style="animation-delay: 0.1s"></div>
+                            <div class="w-1 h-3 bg-white animate-bounce" style="animation-delay: 0.2s"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-black text-indigo-900 uppercase tracking-widest text-sm">Jobs Actifs</h3>
+                        <p class="text-[10px] text-indigo-400 font-bold uppercase tracking-widest">En cours de traitement par un worker</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] bg-indigo-50/30">
+                            <th class="px-4 py-4 w-20">ID</th>
+                            <th class="px-4 py-4">Tâche</th>
+                            <th class="px-4 py-4 text-center">Tentative</th>
+                            <th class="px-4 py-4 text-right">Depuis</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-indigo-100/50">
+                        @foreach($activeJobs as $job)
+                            @php 
+                                $payload = json_decode($job->payload, true);
+                                $rawName = $payload['displayName'] ?? 'UnknownJob';
+                                $displayName = str_replace('App\\Jobs\\', '', $rawName);
+                            @endphp
+                            <tr class="bg-white/50">
+                                <td class="px-4 py-4">
+                                    <span class="text-[10px] font-black text-indigo-300 tabular-nums">#{{ $job->id }}</span>
+                                </td>
+                                <td class="px-4 py-4">
+                                    <div class="flex items-center gap-2">
+                                        <span class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest bg-indigo-600 text-white shadow-sm">
+                                            {{ $displayName }}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-4 text-center">
+                                    <span class="text-[10px] font-black text-indigo-400">
+                                        {{ $job->attempts }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-4 text-right">
+                                    <span class="text-[9px] font-bold text-indigo-400 tabular-nums">
+                                        {{ \Carbon\Carbon::createFromTimestamp($job->reserved_at)->diffForHumans(null, true) }}
+                                    </span>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @endif
+
+        <!-- Liste des Jobs en attente -->
         <div class="bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
             <div class="px-8 py-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
                 <div class="flex items-center gap-4">
@@ -191,5 +264,151 @@
             @endif
         </div>
         @endif
+        <!-- Tâches Planifiées (Crons) -->
+        <div class="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden mt-8">
+            <div class="px-8 py-6 border-b border-slate-50 flex items-center gap-4 bg-slate-50/50">
+                <div class="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center">
+                    <svg class="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <div>
+                    <h3 class="font-black text-slate-800 uppercase tracking-widest text-sm">Tâches Planifiées</h3>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Configuration du planificateur (Schedule)</p>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] bg-slate-50/30">
+                            <th class="px-8 py-4">Commande</th>
+                            <th class="px-4 py-4">Fréquence</th>
+                            <th class="px-4 py-4 text-center">Activité réelle</th>
+                            <th class="px-4 py-4 text-right">Prochaine exécution</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-50">
+                        @foreach($scheduledTasks as $task)
+                            <tr class="hover:bg-slate-50/30 transition-colors">
+                                <td class="px-8 py-4">
+                                    <code class="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded">php artisan {{ trim($task['command']) }}</code>
+                                </td>
+                                <td class="px-4 py-4">
+                                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-tight">{{ $task['expression'] }}</span>
+                                </td>
+                                <td class="px-4 py-4 text-center">
+                                    @if($task['last_activity'])
+                                        <div class="flex flex-col items-center">
+                                            <span class="text-[10px] font-black {{ \Carbon\Carbon::parse($task['last_activity'])->gt(now()->subMinutes(5)) ? 'text-emerald-500' : 'text-slate-400' }} tabular-nums">
+                                                {{ \Carbon\Carbon::parse($task['last_activity'])->diffForHumans() }}
+                                            </span>
+                                            <div class="flex gap-0.5 mt-1">
+                                                <div class="w-1 h-1 rounded-full {{ \Carbon\Carbon::parse($task['last_activity'])->gt(now()->subMinutes(5)) ? 'bg-emerald-500 animate-ping' : 'bg-slate-300' }}"></div>
+                                            </div>
+                                        </div>
+                                    @else
+                                        <div class="flex flex-col items-center">
+                                            <span class="text-[10px] font-bold text-slate-300 uppercase tracking-widest italic">Aucune activité récente</span>
+                                        </div>
+                                    @endif
+                                </td>
+                                <td class="px-4 py-4 text-right">
+                                    <span class="text-[10px] font-black text-slate-500 tabular-nums">{{ \Carbon\Carbon::parse($task['next_run'])->diffForHumans() }}</span>
+                                    <p class="text-[9px] text-slate-300 font-bold tabular-nums">{{ $task['next_run'] }}</p>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Guide Technique des Processus -->
+        <div class="mt-12 bg-slate-900 rounded-[2rem] p-10 text-white shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-8 opacity-10">
+                <svg class="w-32 h-32" fill="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+            </div>
+            
+            <div class="relative z-10">
+                <h3 class="text-2xl font-black uppercase tracking-tighter mb-10 flex items-center gap-3">
+                    <span class="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center text-sm">i</span>
+                    Documentation du Système de Fond
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                    <!-- Tâches Planifiées -->
+                    <div class="space-y-8">
+                        <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 pb-2 border-b border-slate-800">Tâches Planifiées (Cron)</h4>
+                        
+                        <div class="space-y-6">
+                            <div>
+                                <div class="flex items-center gap-2 mb-2">
+                                    <code class="text-[10px] font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded">forem:scan --mode=flash</code>
+                                </div>
+                                <p class="text-xs text-slate-400 leading-relaxed">
+                                    Scanne uniquement la première page de l'API Forem (100 dernières offres). Identifie les nouveaux IDs et crée des enregistrements partiels en base de données. Fréquence : toutes les 5 minutes.
+                                </p>
+                            </div>
+
+                            <div>
+                                <div class="flex items-center gap-2 mb-2">
+                                    <code class="text-[10px] font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded">forem:scan --mode=cycle</code>
+                                </div>
+                                <p class="text-xs text-slate-400 leading-relaxed">
+                                    Parcourt l'intégralité du catalogue Forem de manière séquentielle (pagination). Met à jour le statut des offres existantes et synchronise les dates de publication. Fréquence : toutes les 15 minutes.
+                                </p>
+                            </div>
+
+                            <div>
+                                <div class="flex items-center gap-2 mb-2">
+                                    <code class="text-[10px] font-bold text-indigo-400 bg-indigo-400/10 px-2 py-0.5 rounded">forem:pull-worker</code>
+                                </div>
+                                <p class="text-xs text-slate-400 leading-relaxed">
+                                    Récupère le détail complet (description HTML, compétences ROME, langues, permis) pour chaque offre dont le champ <span class="text-white italic">is_detailed</span> est faux. Une fois les détails obtenus, il déclenche automatiquement le calcul du matching technique.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Jobs de File -->
+                    <div class="space-y-8">
+                        <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400 pb-2 border-b border-slate-800">Files d'attente (Asynchrones)</h4>
+                        
+                        <div class="space-y-6">
+                            <div>
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="text-[10px] font-bold text-white uppercase tracking-wider">BatchMatchJobOffer</span>
+                                </div>
+                                <p class="text-xs text-slate-400 leading-relaxed">
+                                    Calcule les scores de friction pour un utilisateur (distance géographique, conformité légale, compétences requises, vétusté). S'exécute dès qu'une offre est complétée par le pull-worker.
+                                </p>
+                            </div>
+
+                            <div>
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="text-[10px] font-bold text-white uppercase tracking-wider">VectorizeJobOffer</span>
+                                </div>
+                                <p class="text-xs text-slate-400 leading-relaxed">
+                                    Génère les embeddings vectoriels via l'API Google Gemini. Requis pour le calcul de la similarité sémantique (compréhension contextuelle du poste).
+                                </p>
+                            </div>
+
+                            <div>
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="text-[10px] font-bold text-white uppercase tracking-wider">AnalyzeJobOffer</span>
+                                </div>
+                                <p class="text-xs text-slate-400 leading-relaxed">
+                                    Analyse narrative profonde effectuée par Gemini. Compare le récit d'expérience du candidat avec les exigences implicites du poste. Génère les points forts, points faibles et recommandations.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-12 pt-8 border-t border-slate-800 text-center">
+                    <p class="text-[10px] text-slate-500 uppercase tracking-widest font-black">
+                        Système d'ingestion et d'analyse automatisé — JobSearch Core v1.0
+                    </p>
+                </div>
+            </div>
+        </div>
     </div>
 </x-admin-layout>

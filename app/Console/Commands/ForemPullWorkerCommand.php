@@ -51,6 +51,7 @@ class ForemPullWorkerCommand extends Command
             $this->line("[" . now()->format('H:i:s') . "] Traitement de #{$jobOffer->forem_id} : {$jobOffer->title}");
             
             try {
+                \App\Models\Setting::set('heartbeat_pull-worker', now()->toDateTimeString());
                 $success = $this->jobOfferService->syncFullDetails($jobOffer);
                 if ($success) {
                     $this->info("  --> Succès");

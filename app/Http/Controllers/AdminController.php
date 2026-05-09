@@ -178,7 +178,13 @@ class AdminController extends Controller
      */
     public function queueMonitor()
     {
+        $activeJobs = \Illuminate\Support\Facades\DB::connection('queue')->table('jobs')
+            ->whereNotNull('reserved_at')
+            ->orderBy('reserved_at', 'desc')
+            ->get();
+
         $pendingJobs = \Illuminate\Support\Facades\DB::connection('queue')->table('jobs')
+            ->whereNull('reserved_at')
             ->orderBy('id', 'desc')
             ->paginate(50, ['*'], 'pending_page');
 
@@ -186,10 +192,42 @@ class AdminController extends Controller
             ->orderBy('id', 'desc')
             ->paginate(10, ['*'], 'failed_page');
 
-        $pendingCount = \Illuminate\Support\Facades\DB::connection('queue')->table('jobs')->count();
+        $pendingCount = \Illuminate\Support\Facades\DB::connection('queue')->table('jobs')->whereNull('reserved_at')->count();
+        $activeCount = $activeJobs->count();
         $failedCount = \Illuminate\Support\Facades\DB::connection('queue')->table('failed_jobs')->count();
         
-        return view('admin.queue', compact('pendingJobs', 'failedJobs', 'pendingCount', 'failedCount'));
+        // Liste en dur des tâches critiques à surveiller (le Schedule auto-détecté ne passe pas toujours sur le web)
+        $scheduledTasks = collect([
+            [
+                'command' => 'forem:scan --mode=flash',
+                'expression' => '*/5 * * * *',
+                'description' => 'Scan rapide (Nouveautés)',
+                'key' => 'scan_flash'
+            ],
+            [
+                'command' => 'forem:scan --mode=cycle',
+                'expression' => '*/15 * * * *',
+                'description' => 'Scan complet (Catalogue)',
+                'key' => 'scan_cycle'
+            ],
+            [
+                'command' => 'forem:pull-worker',
+                'expression' => '* * * * *',
+                'description' => 'Récupération des détails (Lazy Loading)',
+                'key' => 'pull-worker'
+            ],
+        ])->map(function($task) {
+            return [
+                'command' => $task['command'],
+                'expression' => $task['expression'],
+                'next_run' => \Cron\CronExpression::factory($task['expression'])->getNextRunDate()->format('Y-m-d H:i:s'),
+                'description' => $task['description'],
+                'last_activity' => \App\Models\Setting::get("heartbeat_{$task['key']}"),
+                'debug_key' => $task['key'],
+            ];
+        });
+
+        return view('admin.queue', compact('activeJobs', 'pendingJobs', 'failedJobs', 'pendingCount', 'activeCount', 'failedCount', 'scheduledTasks'));
     }
 
     /**
