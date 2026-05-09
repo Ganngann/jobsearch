@@ -41,6 +41,7 @@ return [
             'match' => env('GEMINI_MATCH_MODEL', 'gemini-2.5-flash-lite'),
             'chat' => env('GEMINI_CHAT_MODEL', 'gemini-3.1-flash-lite-preview'),
             'ocr' => env('GEMINI_OCR_MODEL', 'gemini-2.5-flash-lite'),
+            'embedding' => env('GEMINI_EMBEDDING_MODEL', 'gemini-embedding-001'),
         ],
     ],
 

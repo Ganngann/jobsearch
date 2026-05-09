@@ -21,6 +21,7 @@ class UserMatch extends Model
         'ai_raw_response',
         'ai_status',
         'analyzed_at',
+        'ai_at_pre_score',
         'vector_score',
     ];
 

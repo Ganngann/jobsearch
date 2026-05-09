@@ -40,6 +40,7 @@ class User extends Authenticatable
         'daily_ai_usage',
         'last_seen_at',
         'last_ai_usage_at',
+        'profile_published_at',
         'vector_embedding',
         'daily_ai_limits',
         'daily_ai_usage_breakdown',
@@ -70,6 +71,7 @@ class User extends Authenticatable
             'birth_date' => 'date',
             'last_seen_at' => 'datetime',
             'last_ai_usage_at' => 'datetime',
+            'profile_published_at' => 'datetime',
             'vector_embedding' => 'array',
             'daily_ai_limits' => 'array',
             'daily_ai_usage_breakdown' => 'array',
@@ -364,6 +366,18 @@ class User extends Authenticatable
         $maxTimestamp = collect($timestamps)->filter()->max();
 
         return $maxTimestamp ? \Illuminate\Support\Carbon::parse($maxTimestamp) : $this->updated_at;
+    }
+
+    /**
+     * Détermine si le profil contient des modifications non publiées.
+     */
+    public function isProfileDirty(): bool
+    {
+        if (!$this->profile_published_at) {
+            return true;
+        }
+
+        return $this->profileUpdatedAt()->gt($this->profile_published_at);
     }
 
     public function aiLogs(): \Illuminate\Database\Eloquent\Relations\HasMany

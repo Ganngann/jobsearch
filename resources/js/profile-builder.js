@@ -493,31 +493,6 @@ export default (initialData) => ({
         }
     },
 
-    async embedProfile() {
-        this.isTyping = true;
-        try {
-            const response = await fetch('/profile/embed', {
-                method: 'POST',
-                headers: {
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                }
-            });
-            const data = await response.json();
-            
-            if (!response.ok) {
-                throw new Error(data.error || 'Erreur serveur');
-            }
-
-            // Succès
-        } catch (error) {
-            console.error('Embedding failed', error);
-            // Erreur silencieuse
-        } finally {
-            this.isTyping = false;
-        }
-    },
-
     async acceptProposal(fact) {
         this.acceptFact(fact.id);
     },

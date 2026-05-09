@@ -156,11 +156,16 @@
                                     La Dimension Humaine
                                 </h3>
                                 <div class="flex items-center gap-3">
-                                    @if($match->analyzed_at->lt(Auth::user()->profileUpdatedAt()))
                                     @php 
                                         $matchModel = config('services.gemini.models.match');
                                         $remainingMatch = Auth::user()->getAiRemainingPoints($matchModel);
+                                        $profilePublished = Auth::user()->profile_published_at;
+                                        $preScoreDelta = abs(($match->pre_score ?? 0) - ($match->ai_at_pre_score ?? 0));
+                                        $showRelancer = !$match->analyzed_at 
+                                            || ($profilePublished && $match->analyzed_at->lt($profilePublished)) 
+                                            || $preScoreDelta > 2;
                                     @endphp
+                                    @if($showRelancer)
                                     <form action="{{ route('jobs.match', $jobOffer) }}" method="POST">
                                         @csrf
                                         <button type="submit" 

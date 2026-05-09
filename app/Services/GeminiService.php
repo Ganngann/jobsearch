@@ -286,7 +286,7 @@ class GeminiService
      */
     public function ocr(string $filePath, string $mimeType): ?string
     {
-        $this->ensureQuota();
+        $this->withConfigModel('ocr')->ensureQuota();
 
         $payload = [
             'contents' => [
@@ -307,7 +307,6 @@ class GeminiService
             ]
         ];
 
-        $this->withConfigModel('ocr');
         $originalModel = $this->model;
 
         Log::info('Gemini OCR Request:', ['mime' => $mimeType, 'path' => $filePath, 'model' => $originalModel]);
@@ -342,7 +341,7 @@ class GeminiService
      */
     public function embed(string $text, string $taskType = 'RETRIEVAL_DOCUMENT'): ?array
     {
-        $this->ensureQuota();
+        $this->withConfigModel('embedding')->ensureQuota();
 
         if (empty($this->apiKey)) {
             Log::warning('Gemini API key is missing.');
@@ -356,7 +355,7 @@ class GeminiService
         }
 
         $payload = [
-            'model' => 'models/gemini-embedding-001',
+            'model' => "models/{$this->model}",
             'taskType' => $taskType,
             'content' => [
                 'parts' => [['text' => $text]]
@@ -367,14 +366,15 @@ class GeminiService
         Log::info('GEMINI EMBED REQUEST', [
             'task' => $taskType,
             'text' => $text,
-            'char_count' => strlen($text)
+            'char_count' => strlen($text),
+            'model' => $this->model
         ]);
 
         $response = Http::withoutVerifying()
             ->withHeaders(['Content-Type' => 'application/json'])
             ->timeout(30)
             ->retry(3, 1000) // 3 tentatives, 1s d'intervalle entre chaque
-            ->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key={$this->apiKey}", $payload);
+            ->post("https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:embedContent?key={$this->apiKey}", $payload);
 
         if ($response->failed()) {
             Log::error('GEMINI EMBED FAILED', [
@@ -390,7 +390,7 @@ class GeminiService
         if ($embedding) {
             // Log de l'appel vectoriel (estimation des tokens car non fournis par l'API embedContent)
             $this->log('vector', null, [
-                'model' => 'gemini-embedding-001',
+                'model' => $this->model,
                 'promptTokenCount' => ceil(strlen($text) / 4),
                 'candidatesTokenCount' => 0
             ]);

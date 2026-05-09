@@ -19,17 +19,20 @@ class ProfileController extends Controller
     protected $matchingService;
     protected $resumeParser;
     protected $aiService;
+    protected $vectorService;
 
     public function __construct(
         \App\Services\GeminiService $gemini, 
         \App\Services\MatchingService $matchingService,
         \App\Services\ResumeParserService $resumeParser,
-        \App\Services\AIProfileService $aiService
+        \App\Services\AIProfileService $aiService,
+        \App\Services\VectorService $vectorService
     ) {
         $this->gemini = $gemini;
         $this->matchingService = $matchingService;
         $this->resumeParser = $resumeParser;
         $this->aiService = $aiService;
+        $this->vectorService = $vectorService;
     }
 
     /**
@@ -308,5 +311,27 @@ class ProfileController extends Controller
             ->get(['id', 'label']);
 
         return response()->json($skills);
+    }
+
+    /**
+     * Publie les modifications du profil.
+     * Déclenche la re-vectorisation et le recalcul global.
+     */
+    public function publish(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+
+        // 1. Marquer comme publié
+        $user->update([
+            'profile_published_at' => now()
+        ]);
+
+        // 2. Mettre à jour le vecteur sémantique (Important pour le fond)
+        $this->vectorService->updateUserVector($user);
+
+        // 3. Déclencher un recalcul massif (Pour la forme / pre-score)
+        $this->matchingService->triggerMassMatch($user);
+
+        return Redirect::back()->with('status', 'profile-published');
     }
 }

@@ -249,6 +249,7 @@ class MatchingService
         if ($result) {
             $match->update([
                 'ai_score' => $result['score'] ?? null,
+                'ai_at_pre_score' => $match->pre_score, // On mémorise le pre_score lors de l'analyse
                 'final_score' => $result['score'] ?? $match->pre_score,
                 'strengths' => $result['points_forts'] ?? [],
                 'weaknesses' => $result['points_faibles'] ?? [],
@@ -343,18 +344,7 @@ class MatchingService
      */
     public function triggerMassMatch(User $user): void
     {
-        JobOffer::where('status', 'active')
-            ->where('is_detailed', true)
-            ->where(function($q) {
-                $q->whereNull('expires_at')
-                  ->orWhere('expires_at', '>=', now());
-            })
-            ->chunkById(100, function($offers, $index) use ($user) {
-                // On espace les calculs de 2 secondes par lot
-                // Lot 1 : 0s, Lot 2 : 2s, Lot 3 : 4s...
-                \App\Jobs\MatchChunkJob::dispatch($user, $offers->pluck('id')->toArray())
-                    ->delay(now()->addSeconds(($index - 1) * 2));
-            });
+        \App\Jobs\MatchUserJob::dispatch($user);
     }
 
     /**

@@ -247,8 +247,12 @@
                     @php 
                         $matchModel = config('services.gemini.models.match');
                         $remainingMatch = Auth::user()->getAiRemainingPoints($matchModel);
-                        $profileUpdated = Auth::user()->profileUpdatedAt();
-                        $showRelancer = !$match->analyzed_at || $match->analyzed_at->lt($profileUpdated) || $isAiStale;
+                        $profilePublished = Auth::user()->profile_published_at;
+                        $preScoreDelta = abs(($match->pre_score ?? 0) - ($match->ai_at_pre_score ?? 0));
+                        $showRelancer = !$match->analyzed_at 
+                            || ($profilePublished && $match->analyzed_at->lt($profilePublished)) 
+                            || $preScoreDelta > 2 
+                            || $isAiStale;
                     @endphp
 
                     @if($showRelancer)

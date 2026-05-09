@@ -37,7 +37,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Vector Testing
     Route::post('/jobs/{jobOffer}/embed', [\App\Http\Controllers\VectorController::class, 'embedJob'])->name('jobs.embed');
-    Route::post('/profile/embed', [\App\Http\Controllers\VectorController::class, 'embedProfile'])->name('profile.embed');
     Route::post('/matching/top-ai-sync', [JobOfferController::class, 'triggerTopAi'])->name('matching.top-ai-sync');
 });
 
@@ -58,6 +57,7 @@ Route::middleware('auth')->group(function () {
     // Route de synchronisation (accessible sans 'verified')
     Route::match(['get', 'post'], '/vector-sync', [\App\Http\Controllers\VectorController::class, 'syncSimilarities'])->name('matching.vector-sync');
 
+    Route::post('/profile/publish', [ProfileController::class, 'publish'])->name('profile.publish');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // AI Profile Builder

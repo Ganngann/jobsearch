@@ -18,6 +18,8 @@
                     <x-nav-link :href="route('profile.show')" :active="request()->routeIs('profile.show')">
                         {{ __('Mon Profil') }}
                     </x-nav-link>
+
+
                 </div>
             </div>
 

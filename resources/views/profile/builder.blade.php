@@ -67,13 +67,13 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        @keyframes pulse-indigo {
-            0% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(79, 70, 229, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
+        @keyframes pulse-amber {
+            0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
         }
         .animate-pulse-update {
-            animation: pulse-indigo 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            animation: pulse-amber 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
         .diff-added {
             background-color: #dcfce7;
@@ -127,24 +127,6 @@
                 <div class="p-6 border-b border-slate-50 flex items-center justify-between">
                     <h2 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Historique</h2>
                     <div class="flex items-center gap-2">
-                        @php 
-                            $vectorModel = 'gemini-embedding-001';
-                            $remainingVector = Auth::user()->getAiRemainingPoints($vectorModel);
-                        @endphp
-                        <button 
-                            @click="embedProfile()" 
-                            class="p-2 {{ $remainingVector > 0 ? 'text-indigo-600 hover:bg-indigo-50' : 'text-slate-300 cursor-not-allowed' }} rounded-xl transition-all shadow-sm shadow-indigo-50/50 relative group" 
-                            title="{{ $remainingVector > 0 ? 'Envoyer pour analyse' : 'Quota atteint' }}"
-                            :disabled="isTyping || {{ $remainingVector > 0 ? 'false' : 'true' }}"
-                        >
-                            <svg class="w-4 h-4" :class="isTyping ? 'animate-pulse' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                            @if($remainingVector > 0)
-                            <span class="absolute -top-1 -right-1 flex h-3 w-3">
-                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                                <span class="relative inline-flex rounded-full h-3 w-3 bg-indigo-500 flex items-center justify-center text-[7px] text-white font-black">{{ $remainingVector }}</span>
-                            </span>
-                            @endif
-                        </button>
                         <a href="{{ route('profile.builder.reset') }}" class="p-2 text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all shadow-sm shadow-indigo-50/50" title="Nouvelle discussion">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" />
@@ -278,6 +260,21 @@
                 <div class="p-4 bg-white border-b border-slate-100 flex items-center justify-between sticky top-0 z-20">
                     <div class="flex items-center gap-3">
                         <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Document</span>
+                        
+                        @if(Auth::user()->isProfileDirty())
+                            <div class="h-4 w-[1px] bg-slate-100 mx-1"></div>
+                            <form action="{{ route('profile.publish') }}" method="POST">
+                                @csrf
+                                <button 
+                                    type="submit"
+                                    class="flex items-center gap-2 px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-[9px] font-black uppercase tracking-widest shadow-lg shadow-amber-500/20 transition-all transform hover:scale-105 animate-pulse-update"
+                                    title="Stabiliser le profil et mettre à jour le matching"
+                                >
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                                    Enregistrer le profil pour les analyses
+                                </button>
+                            </form>
+                        @endif
                     </div>
 
                     <!-- Notification de suggestions en attente -->
