@@ -18,12 +18,6 @@
                     <x-nav-link :href="route('profile.show')" :active="request()->routeIs('profile.show')">
                         {{ __('Mon Profil') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('profile.builder')" :active="request()->routeIs('profile.builder')">
-                        {{ __('Assistant Profil') }}
-                    </x-nav-link>
-                    <x-nav-link :href="route('profile.skills.index')" :active="request()->routeIs('profile.skills.index')">
-                        {{ __('Atelier Compétences') }}
-                    </x-nav-link>
                 </div>
             </div>
 
@@ -90,12 +84,6 @@
         <div class="pt-2 pb-3 space-y-1">
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('profile.builder')" :active="request()->routeIs('profile.builder')">
-                {{ __('Assistant Profil') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('profile.skills.index')" :active="request()->routeIs('profile.skills.index')">
-                {{ __('Atelier Compétences') }}
             </x-responsive-nav-link>
         </div>
 
