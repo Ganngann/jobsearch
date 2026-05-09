@@ -28,48 +28,83 @@
                             <div class="space-y-10">
                                 <!-- Contract Preferences -->
                                 <div>
-                                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">
-                                        💼 Types de Contrat Souhaités
-                                    </label>
+                                    <div class="flex items-center justify-between mb-4">
+                                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                            💼 Mes Préférences de Contrat
+                                        </label>
+                                        <template x-if="contract_preferences.length === 0">
+                                            <span class="text-[9px] font-black text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full uppercase tracking-tighter animate-pulse">
+                                                Tous acceptés par défaut
+                                            </span>
+                                        </template>
+                                    </div>
                                     <div class="flex flex-col gap-2">
                                         @foreach($allContractTypes as $type)
                                             <button 
                                                 type="button"
                                                 @click="toggleContract('{{ $type }}')"
                                                 :class="{
-                                                    'bg-indigo-600 text-white shadow-lg shadow-indigo-100 border-indigo-600': contract_preferences.includes('{{ $type }}'),
-                                                    'bg-white text-slate-600 border-slate-100 hover:border-indigo-200': !contract_preferences.includes('{{ $type }}')
+                                                    'bg-indigo-600 text-white shadow-lg shadow-indigo-100 border-indigo-600 ring-2 ring-indigo-600 ring-offset-2': contract_preferences.includes('{{ $type }}'),
+                                                    'bg-indigo-50 border-indigo-200 text-indigo-700': contract_preferences.length === 0,
+                                                    'bg-white text-slate-600 border-slate-100 hover:border-indigo-200': contract_preferences.length > 0 && !contract_preferences.includes('{{ $type }}')
                                                 }"
-                                                class="px-4 py-3 rounded-xl border-2 text-[11px] font-black transition-all flex items-center gap-3 text-left"
+                                                class="px-4 py-3 rounded-xl border-2 text-[11px] font-black transition-all flex items-center justify-between text-left group"
                                             >
-                                                <span class="opacity-50 shrink-0">#</span>
-                                                <span>{{ $type }}</span>
+                                                <div class="flex items-center gap-3">
+                                                    <span class="opacity-50 shrink-0 group-hover:scale-110 transition-transform">#</span>
+                                                    <span>{{ $type }}</span>
+                                                </div>
+                                                
+                                                <!-- Checkmark Indicator -->
+                                                <div 
+                                                    class="w-5 h-5 rounded-full flex items-center justify-center transition-all"
+                                                    :class="{
+                                                        'bg-white text-indigo-600': contract_preferences.includes('{{ $type }}'),
+                                                        'bg-slate-100 text-transparent': !contract_preferences.includes('{{ $type }}') && contract_preferences.length > 0,
+                                                        'bg-indigo-200 text-indigo-600': contract_preferences.length === 0
+                                                    }"
+                                                >
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                                </div>
                                             </button>
                                         @endforeach
                                     </div>
-                                    <p class="mt-3 text-[10px] text-slate-400 font-bold italic uppercase tracking-tighter">
-                                        Laissez vide pour tout accepter.
-                                    </p>
                                 </div>
 
                                 <!-- Driving Licenses -->
                                 <div>
-                                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">
-                                        🪪 Permis de Conduire
-                                    </label>
+                                    <div class="mb-4">
+                                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                            🪪 Mes Permis de Conduire
+                                        </label>
+                                        <p class="text-[9px] text-slate-400 font-medium mt-1">Sélectionnez les permis que vous possédez actuellement.</p>
+                                    </div>
                                     <div class="flex flex-col gap-2">
                                         @foreach($allPermits as $permit)
                                             <button 
                                                 type="button"
                                                 @click="togglePermit({{ $permit->id }})"
                                                 :class="{
-                                                    'bg-blue-600 text-white shadow-lg shadow-blue-100 border-blue-600': permits.includes({{ $permit->id }}),
-                                                    'bg-white text-slate-600 border-slate-100 hover:border-blue-200': !permits.includes({{ $permit->id }})
+                                                    'bg-indigo-600 text-white shadow-lg shadow-indigo-100 border-indigo-600 ring-2 ring-indigo-600 ring-offset-2': permits.includes({{ $permit->id }}),
+                                                    'bg-white text-slate-600 border-slate-100 hover:border-indigo-200': !permits.includes({{ $permit->id }})
                                                 }"
-                                                class="px-4 py-3 rounded-xl border-2 text-[11px] font-black transition-all flex items-center gap-3 text-left"
+                                                class="px-4 py-3 rounded-xl border-2 text-[11px] font-black transition-all flex items-center justify-between text-left group"
                                             >
-                                                <span class="opacity-50 shrink-0">#</span>
-                                                <span>{{ $permit->label }}</span>
+                                                <div class="flex items-center gap-3">
+                                                    <span class="opacity-50 shrink-0 group-hover:scale-110 transition-transform">#</span>
+                                                    <span>{{ $permit->label }}</span>
+                                                </div>
+
+                                                <!-- Checkmark Indicator -->
+                                                <div 
+                                                    class="w-5 h-5 rounded-full flex items-center justify-center transition-all"
+                                                    :class="{
+                                                        'bg-white text-indigo-600': permits.includes({{ $permit->id }}),
+                                                        'bg-slate-100 text-transparent': !permits.includes({{ $permit->id }})
+                                                    }"
+                                                >
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                                </div>
                                             </button>
                                         @endforeach
                                     </div>
@@ -79,8 +114,8 @@
                             <!-- Save Feedback -->
                             <div class="mt-8 h-8 flex items-center justify-center">
                                 <template x-if="isSaving">
-                                    <div class="flex items-center gap-2 text-blue-500 animate-pulse">
-                                        <div class="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                                    <div class="flex items-center gap-2 text-indigo-500 animate-pulse">
+                                        <div class="w-1.5 h-1.5 bg-indigo-500 rounded-full"></div>
                                         <span class="text-[10px] font-black uppercase tracking-widest">Synchronisation...</span>
                                     </div>
                                 </template>
@@ -110,7 +145,7 @@
                                             id="zip_code"
                                             x-model="zip_code"
                                             @input.debounce.500ms="save()"
-                                            class="block w-full px-6 py-5 bg-slate-50 border-2 border-slate-50 rounded-2xl text-2xl font-black text-slate-800 placeholder-slate-300 focus:bg-white focus:border-blue-500 focus:ring-0 transition-all outline-none"
+                                            class="block w-full px-6 py-5 bg-slate-50 border-2 border-slate-50 rounded-2xl text-2xl font-black text-slate-800 placeholder-slate-300 focus:bg-white focus:border-indigo-500 focus:ring-0 transition-all outline-none"
                                             placeholder="ex: 5000"
                                         >
                                     </div>
@@ -123,8 +158,8 @@
                                             🚗 Rayon de Mobilité
                                         </label>
                                         <div class="flex items-baseline gap-1">
-                                            <span class="text-4xl font-black text-blue-600 tracking-tighter" x-text="radius"></span>
-                                            <span class="text-sm font-black text-blue-400">km</span>
+                                            <span class="text-4xl font-black text-indigo-600 tracking-tighter" x-text="radius"></span>
+                                            <span class="text-sm font-black text-indigo-400">km</span>
                                         </div>
                                     </div>
                                     
@@ -136,7 +171,7 @@
                                             step="5" 
                                             x-model="radius"
                                             @change="save()"
-                                            class="w-full h-3 bg-slate-100 rounded-full appearance-none cursor-pointer accent-blue-600"
+                                            class="w-full h-3 bg-slate-100 rounded-full appearance-none cursor-pointer accent-indigo-600"
                                         >
                                     </div>
                                 </div>
@@ -155,10 +190,10 @@
                                     <div class="space-y-8">
                                         <div class="relative w-full aspect-square bg-slate-50 rounded-full border-4 border-dashed border-slate-100 flex items-center justify-center overflow-hidden">
                                             <!-- Center Dot -->
-                                            <div class="w-4 h-4 bg-blue-600 rounded-full shadow-lg shadow-blue-200 z-30"></div>
+                                            <div class="w-4 h-4 bg-indigo-600 rounded-full shadow-lg shadow-indigo-200 z-30"></div>
                                             <!-- Pulsing Radius -->
                                             <div 
-                                                class="absolute bg-blue-500/10 border-2 border-blue-500/30 rounded-full transition-all duration-500 ease-out"
+                                                class="absolute bg-indigo-500/10 border-2 border-indigo-500/30 rounded-full transition-all duration-500 ease-out"
                                                 :style="`width: ${Math.max(10, radius/2)}%; height: ${Math.max(10, radius/2)}%`"
                                             ></div>
                                             <!-- Labels -->
@@ -183,10 +218,10 @@
                                             <div class="space-y-2">
                                                 <div class="flex justify-between text-[10px] font-black uppercase tracking-tighter">
                                                     <span class="text-slate-500" x-text="'Limite (' + radius + 'km)'"></span>
-                                                    <span class="text-blue-500">+20 pts</span>
+                                                    <span class="text-indigo-500">+20 pts</span>
                                                 </div>
                                                 <div class="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                                    <div class="h-full bg-blue-500 w-2/3"></div>
+                                                    <div class="h-full bg-indigo-500 w-2/3"></div>
                                                 </div>
                                             </div>
 
@@ -225,72 +260,4 @@
             </div>
         </div>
     </div>
-    <script>
-        function mobilityApp(config) {
-            return {
-                zip_code: config.zip_code,
-                radius: config.radius,
-                permits: config.permits,
-                contract_preferences: config.contract_preferences || [],
-                isSaving: false,
-                showSuccess: false,
-
-                togglePermit(id) {
-                    if (id === config.nonePermitId) {
-                        this.permits = [id];
-                    } else {
-                        if (this.permits.includes(config.nonePermitId)) {
-                            this.permits = this.permits.filter(p => p !== config.nonePermitId);
-                        }
-                        
-                        if (this.permits.includes(id)) {
-                            this.permits = this.permits.filter(p => p !== id);
-                        } else {
-                            this.permits.push(id);
-                        }
-                    }
-                    this.save();
-                },
-
-                toggleContract(type) {
-                    if (this.contract_preferences.includes(type)) {
-                        this.contract_preferences = this.contract_preferences.filter(t => t !== type);
-                    } else {
-                        this.contract_preferences.push(type);
-                    }
-                    this.save();
-                },
-
-                async save() {
-                    this.isSaving = true;
-                    this.showSuccess = false;
-
-                    try {
-                        const response = await fetch(config.routes.update, {
-                            method: 'PATCH',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': config.csrfToken
-                            },
-                            body: JSON.stringify({
-                                zip_code: this.zip_code,
-                                radius: this.radius,
-                                permits: this.permits,
-                                contract_preferences: this.contract_preferences
-                            })
-                        });
-
-                        if (response.ok) {
-                            this.showSuccess = true;
-                            setTimeout(() => this.showSuccess = false, 3000);
-                        }
-                    } catch (error) {
-                        console.error('Save failed:', error);
-                    } finally {
-                        this.isSaving = false;
-                    }
-                }
-            }
-        }
-    </script>
 </x-app-layout>

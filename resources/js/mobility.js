@@ -2,6 +2,7 @@ export default (initialData) => ({
     zip_code: initialData.zip_code || '',
     radius: initialData.radius || 20,
     permits: initialData.permits || [],
+    contract_preferences: initialData.contract_preferences || [],
     nonePermitId: initialData.nonePermitId || 0,
     routes: initialData.routes || {},
     csrfToken: initialData.csrfToken || '',
@@ -16,14 +17,24 @@ export default (initialData) => ({
                 this.permits = this.permits.filter(p => p !== id);
             } else {
                 this.permits = this.permits.filter(p => p !== this.nonePermitId);
-                this.permits.push(id);
+                this.permits = [...this.permits, id];
             }
+        }
+        this.save();
+    },
+
+    toggleContract(type) {
+        if (this.contract_preferences.includes(type)) {
+            this.contract_preferences = this.contract_preferences.filter(t => t !== type);
+        } else {
+            this.contract_preferences = [...this.contract_preferences, type];
         }
         this.save();
     },
 
     async save() {
         this.isSaving = true;
+        this.showSuccess = false;
         try {
             const response = await fetch(this.routes.update, {
                 method: 'POST',
@@ -36,7 +47,8 @@ export default (initialData) => ({
                     _method: 'PATCH',
                     zip_code: this.zip_code,
                     radius: this.radius,
-                    permits: this.permits
+                    permits: this.permits,
+                    contract_preferences: this.contract_preferences
                 })
             });
             if (!response.ok) throw new Error('Erreur');
@@ -45,9 +57,9 @@ export default (initialData) => ({
             this.showSuccess = true;
             setTimeout(() => { this.showSuccess = false; }, 3000);
         } catch (e) {
-            console.error(e);
+            console.error('Save failed:', e);
         } finally {
-            setTimeout(() => { this.isSaving = false; }, 600);
+            this.isSaving = false;
         }
     }
 });
