@@ -18,44 +18,30 @@
         <!-- SIDEBAR: Filtres & Exploration -->
         <aside class="w-80 border-r border-slate-200 bg-white flex flex-col shrink-0 overflow-y-auto custom-scrollbar">
             <div class="p-6 space-y-10">
-                
-                <!-- Section: Tri & Vue -->
-                <div>
-                    <div class="flex items-center gap-2 mb-4">
-                        <svg class="w-3 h-3 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"></path></svg>
-                        <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Trier les offres</h3>
-                    </div>
-                    <div class="space-y-2">
-                        <div class="relative">
-                            <select 
-                                x-model="filters.sort" 
-                                @change="refreshList()"
-                                class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-4 py-3.5 text-sm font-black text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all appearance-none cursor-pointer"
-                            >
-                                <option value="score_desc">🏆 Meilleur Match (Data)</option>
-                                <option value="vector_desc">✨ Similitude Sémantique</option>
-                                <option value="recent">📅 Plus récents</option>
-                            </select>
-                            <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Section: Score Minimum -->
+                <!-- Section: Maturité (Gamification) -->
                 <div>
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Score Minimum</h3>
-                        <span class="text-xs font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-lg" x-text="filters.min_score + '%'"></span>
+                        <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Confiance Algo</h3>
+                        <span class="text-[10px] font-black {{ $user->profile_completion >= 70 ? 'text-emerald-500' : ($user->profile_completion >= 30 ? 'text-amber-500' : 'text-slate-400') }}">
+                            Niveau {{ $user->profile_completion >= 70 ? '3' : ($user->profile_completion >= 30 ? '2' : '1') }}
+                        </span>
                     </div>
-                    <input 
-                        type="range" 
-                        x-model="filters.min_score" 
-                        @change="refreshList()"
-                        min="0" max="90" step="10"
-                        class="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-                    >
+                    <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div 
+                            class="h-full transition-all duration-1000 {{ $user->profile_completion >= 70 ? 'bg-emerald-500' : ($user->profile_completion >= 30 ? 'bg-amber-500' : 'bg-indigo-500') }}" 
+                            style="width: {{ $user->profile_completion }}%"
+                        ></div>
+                    </div>
+                    <p class="mt-2 text-[9px] font-bold text-slate-400">
+                        @if($user->profile_completion >= 70)
+                            Précision optimale : Tous les critères de friction et sémantiques sont actifs.
+                        @elseif($user->profile_completion >= 30)
+                            Précision intermédiaire : Filtrage basé sur les compétences et la mobilité uniquement.
+                        @else
+                            Précision limitée : Matching basé principalement sur les intitulés de métiers.
+                        @endif
+                    </p>
                 </div>
 
                 <!-- Section: Top Métiers -->
@@ -169,35 +155,76 @@
         <!-- MIDDLE: Liste des offres -->
         <main class="flex-1 flex flex-col border-r border-slate-200 min-w-[450px]">
             <!-- Header de liste -->
-            <div class="p-6 bg-white border-b border-slate-100 flex items-center justify-between">
-                <div>
-                    <h1 class="text-xl font-black text-slate-900">Offres Emploi</h1>
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Exploration en temps réel</p>
-                </div>
-                <div class="flex items-center gap-4">
-                    <div class="relative group">
-                        <input 
-                            type="text" 
-                            x-model="filters.q" 
-                            @input.debounce.500ms="refreshList()"
-                            placeholder="Rechercher un poste, une entreprise..." 
-                            class="w-64 bg-slate-100 border-0 rounded-xl px-4 py-2 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 transition-all pl-10"
-                        >
-                        <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            <div class="p-6 bg-white border-b border-slate-100">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h1 class="text-xl font-black text-slate-900">Offres Emploi</h1>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Exploration en temps réel</p>
                     </div>
-                    <span class="text-[10px] font-black text-slate-400 px-3 py-1 bg-slate-100 rounded-full">
-                        {{ $jobOffers->total() }} résultats
-                    </span>
+                    <div class="flex items-center gap-3">
+                        <div class="relative group">
+                            <input 
+                                type="text" 
+                                x-model="filters.q" 
+                                @input.debounce.500ms="refreshList()"
+                                placeholder="Rechercher..." 
+                                class="w-48 bg-slate-100 border-0 rounded-xl px-4 py-2 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 transition-all pl-10"
+                            >
+                            <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </div>
+                        
+                        <button 
+                            @click="triggerTopAi()" 
+                            class="p-2 bg-amber-50 text-amber-600 rounded-xl hover:bg-amber-100 transition-all shadow-sm flex items-center gap-2 border border-amber-100 relative group"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                            <span class="text-[10px] font-black uppercase tracking-widest">Analyse IA (Top 20)</span>
+                            
+                            <!-- Tooltip technique sans langue de bois -->
+                            <div class="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-64 p-3 bg-slate-900 text-white text-[10px] font-bold rounded-xl opacity-0 group-hover:opacity-100 transition-all pointer-events-none z-[100] text-left shadow-2xl border border-white/10">
+                                <div class="absolute bottom-full left-1/2 -translate-x-1/2 border-8 border-transparent border-b-slate-900"></div>
+                                <p class="text-indigo-400 uppercase tracking-widest text-[8px] mb-2 font-black">Audit Sémantique Profond</p>
+                                <ul class="space-y-2 list-none p-0">
+                                    <li class="flex gap-2">
+                                        <span class="text-indigo-500">▹</span>
+                                        <span>Confronte vos <strong>récits d'expérience</strong> aux exigences réelles du poste.</span>
+                                    </li>
+                                    <li class="flex gap-2">
+                                        <span class="text-indigo-500">▹</span>
+                                        <span>Détecte les <strong>soft-skills invisibles</strong> (résilience, adaptabilité) dans votre ton et vos faits.</span>
+                                    </li>
+                                    <li class="flex gap-2">
+                                        <span class="text-indigo-500">▹</span>
+                                        <span>Valide l'<strong>adéquation culturelle</strong> et la faisabilité contextuelle (hors simples mots-clés).</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </button>
+                    </div>
+
+                </div>
+
+                <!-- Onglets (Level 5 doc) -->
+                <div class="flex p-1 bg-slate-100 rounded-2xl">
                     <button 
-                        @click="syncSimilarities()" 
-                        class="p-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-all shadow-sm flex items-center gap-2"
-                        title="Calculer les similitudes vectorielles"
+                        @click="filters.sort = 'score_desc'; refreshList()"
+                        :class="filters.sort === 'score_desc' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'"
+                        class="flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex flex-col items-center justify-center gap-0.5"
                     >
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                        <span class="text-[10px] font-black uppercase tracking-widest">Vector Match</span>
+                        <span>Score Global</span>
+                        <span class="text-[8px] opacity-60 font-bold">Critères & Conditions</span>
+                    </button>
+                    <button 
+                        @click="filters.sort = 'vector_desc'; refreshList()"
+                        :class="filters.sort === 'vector_desc' ? 'bg-white text-violet-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'"
+                        class="flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex flex-col items-center justify-center gap-0.5"
+                    >
+                        <span>Potentiel IA</span>
+                        <span class="text-[8px] opacity-60 font-bold">Similarité Sémantique</span>
                     </button>
                 </div>
             </div>
+
 
             <!-- Miroir des Possibles Button -->
             <div class="px-4 py-4">
@@ -260,6 +287,12 @@
             </div>
         </section>
 
+        <!-- TOAST CONTAINER (JIT Feedback) -->
+        <div 
+            id="toast-container" 
+            class="fixed bottom-8 right-8 z-[200] flex flex-col gap-3 pointer-events-none"
+        ></div>
+
     </div>
 
     <script>
@@ -271,5 +304,23 @@
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+
+        @keyframes score-bounce {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); filter: brightness(1.2); }
+            100% { transform: scale(1); }
+        }
+        .animate-score-change {
+            animation: score-bounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes toast-in {
+            0% { transform: translateX(100%) scale(0.9); opacity: 0; }
+            100% { transform: translateX(0) scale(1); opacity: 1; }
+        }
+        .animate-toast-in {
+            animation: toast-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
     </style>
 </x-app-layout>
+

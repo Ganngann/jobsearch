@@ -73,91 +73,79 @@
                             </div>
                         </div>
 
-                        <!-- Analyse de Compatibilité Déterministe (Hard Match) -->
+                        <!-- Indice de Confort (Matching Soustractif) -->
                         <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden mb-6">
-                            <div class="px-8 py-5 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between">
-                                <h3 class="text-lg font-bold text-slate-800">Analyse de Compatibilité (Données)</h3>
+                            <div class="px-8 py-5 bg-emerald-50/50 border-b border-emerald-100 flex items-center justify-between">
+                                <h3 class="text-lg font-bold text-emerald-900">Indice de Confort</h3>
                                 <div class="flex items-center gap-2">
-                                    <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Score de données :</span>
-                                    <span class="px-3 py-1 bg-indigo-600 text-white rounded-full text-xs font-black">{{ $hardScore['total_score'] }}%</span>
+                                    <span class="text-[10px] font-black uppercase tracking-widest text-emerald-600/50">Score d'attractivité :</span>
+                                    <span class="px-3 py-1 bg-emerald-600 text-white rounded-full text-xs font-black">{{ $match->pre_score }}%</span>
                                 </div>
                             </div>
                             <div class="p-8">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {{-- Compétences --}}
-                                    <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100">
-                                        <div class="flex items-center justify-between mb-4">
-                                            <h4 class="text-xs font-black uppercase tracking-widest text-slate-500">Compétences</h4>
-                                            <span class="text-sm font-black {{ $hardScore['details']['skills']['score'] >= 70 ? 'text-green-600' : 'text-amber-600' }}">
-                                                {{ round($hardScore['details']['skills']['score']) }}%
-                                            </span>
-                                        </div>
-                                        <div class="space-y-3">
-                                            @foreach($hardScore['details']['skills']['matched'] as $skill)
-                                                <div class="flex items-center justify-between group/skill">
-                                                    <div class="flex items-center gap-2 text-xs font-bold text-slate-700">
-                                                        <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
-                                                        {{ $skill['label'] }}
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                    {{-- Colonne des Frictions --}}
+                                    <div>
+                                        <h4 class="text-[10px] font-black uppercase tracking-widest text-rose-400 mb-6 flex items-center gap-2">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M20 12H4"></path></svg>
+                                            Frictions & Handicaps
+                                        </h4>
+                                        <div class="space-y-4">
+                                            @forelse($match->pre_score_details['penalties'] ?? [] as $penalty)
+                                                <div class="flex flex-col gap-1.5 p-4 bg-rose-50/30 rounded-2xl border border-rose-100/50">
+                                                    <div class="flex justify-between items-center">
+                                                        <span class="text-xs font-bold text-slate-700">{{ $penalty['label'] }}</span>
+                                                        <span class="text-xs font-black text-rose-600">{{ $penalty['value'] }}</span>
                                                     </div>
-                                                    <div class="flex items-center gap-1 opacity-0 group-hover/skill:opacity-100 transition-opacity">
-                                                        <button @click="handleSkill({{ $skill['id'] }}, 'neutral')" class="p-1.5 text-slate-400 hover:text-amber-500 hover:bg-amber-50 rounded-lg transition-all" title="Ignorer">
-                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"></path></svg>
-                                                        </button>
-                                                        <button @click="handleSkill({{ $skill['id'] }}, 'refused')" class="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all" title="Écarter">
-                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                                                        </button>
-                                                    </div>
+                                                    @if(!empty($penalty['items']))
+                                                        <div class="flex flex-wrap gap-1">
+                                                            @foreach($penalty['items'] as $item)
+                                                                <span class="text-[9px] bg-white/80 text-rose-500 px-2 py-0.5 rounded-lg border border-rose-100 font-bold uppercase">{{ $item }}</span>
+                                                            @endforeach
+                                                        </div>
+                                                    @endif
                                                 </div>
-                                            @endforeach
-                                            @foreach($hardScore['details']['skills']['missing'] as $skill)
-                                                <div class="flex items-center justify-between group/skill">
-                                                    <div class="flex items-center gap-2 text-xs font-bold text-slate-400">
-                                                        <svg class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
-                                                        {{ $skill['label'] }}
-                                                    </div>
-                                                    <div class="flex items-center gap-1 opacity-0 group-hover/skill:opacity-100 transition-opacity">
-                                                        <button @click="handleSkill({{ $skill['id'] }}, 'active')" class="p-1.5 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all" title="Ajouter à mon profil">
-                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                                        </button>
-                                                        <button @click="handleSkill({{ $skill['id'] }}, 'refused')" class="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all" title="Écarter">
-                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                                                        </button>
-                                                    </div>
+                                            @empty
+                                                <div class="flex items-center gap-3 p-4 bg-emerald-50/30 rounded-2xl border border-emerald-100/50">
+                                                    <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                                                    <span class="text-xs font-bold text-emerald-700">Aucune friction détectée</span>
                                                 </div>
-                                            @endforeach
+                                            @endforelse
                                         </div>
                                     </div>
 
-                                    {{-- Langues & Permis --}}
-                                    <div class="space-y-6">
-                                        <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100">
-                                            <div class="flex items-center justify-between mb-4">
-                                                <h4 class="text-xs font-black uppercase tracking-widest text-slate-500">Langues</h4>
-                                                <span class="text-sm font-black text-slate-700">{{ round($hardScore['details']['languages']['score']) }}%</span>
+                                    {{-- Colonne des Bonus --}}
+                                    <div>
+                                        <h4 class="text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-6 flex items-center gap-2">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
+                                            Bonus & Affinités
+                                        </h4>
+                                        <div class="space-y-4">
+                                            <div class="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                                <span class="text-xs font-bold text-slate-500">Base de départ</span>
+                                                <span class="text-xs font-black text-slate-400">+{{ $match->pre_score_details['base'] ?? 100 }}</span>
                                             </div>
-                                            <div class="flex flex-wrap gap-2">
-                                                @foreach($hardScore['details']['languages']['matched'] as $lang)
-                                                    <span class="px-3 py-1 bg-green-50 text-green-700 rounded-lg text-[10px] font-black border border-green-100 uppercase">{{ $lang['label'] }}</span>
-                                                @endforeach
-                                                @foreach($hardScore['details']['languages']['missing'] as $lang)
-                                                    <span class="px-3 py-1 bg-slate-100 text-slate-400 rounded-lg text-[10px] font-black border border-slate-200 uppercase">{{ $lang['label'] }}</span>
-                                                @endforeach
-                                            </div>
-                                        </div>
-
-                                        <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100">
-                                            <div class="flex items-center justify-between mb-4">
-                                                <h4 class="text-xs font-black uppercase tracking-widest text-slate-500">Mobilité</h4>
-                                                <span class="text-xs font-black text-indigo-600">{{ $hardScore['details']['location']['message'] }}</span>
-                                            </div>
-                                            <div class="h-2 bg-slate-200 rounded-full overflow-hidden">
-                                                <div class="h-full bg-indigo-500" style="width: {{ $hardScore['details']['location']['score'] }}%"></div>
-                                            </div>
+                                            @foreach($match->pre_score_details['bonuses'] ?? [] as $bonus)
+                                                <div class="flex flex-col gap-1.5 p-4 bg-emerald-50/30 rounded-2xl border border-emerald-100/50">
+                                                    <div class="flex justify-between items-center">
+                                                        <span class="text-xs font-bold text-slate-700">{{ $bonus['label'] }}</span>
+                                                        <span class="text-xs font-black text-emerald-600">+{{ $bonus['value'] }}</span>
+                                                    </div>
+                                                    @if(!empty($bonus['items']))
+                                                        <div class="flex flex-wrap gap-1">
+                                                            @foreach($bonus['items'] as $item)
+                                                                <span class="text-[9px] bg-white/80 text-emerald-500 px-2 py-0.5 rounded-lg border border-emerald-100 font-bold uppercase">{{ $item }}</span>
+                                                            @endforeach
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            @endforeach
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
+
 
                         <!-- 1. Section: La Dimension Humaine (Analyse IA) -->
                         @if($match->analyzed_at)

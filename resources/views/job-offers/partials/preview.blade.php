@@ -120,9 +120,9 @@
             
             <div class="flex flex-col items-end gap-4">
                 <div class="flex items-center gap-4">
-                    <!-- Score Data avec Tooltip -->
+                    <!-- Score Confort avec Tooltip -->
                     <div class="relative group cursor-help">
-                        <div class="text-center p-4 bg-white rounded-2xl border border-slate-100 shadow-sm min-w-[100px] hover:border-indigo-200 transition-all">
+                        <div class="text-center p-4 bg-white rounded-2xl border border-slate-100 shadow-sm min-w-[120px] hover:border-emerald-200 transition-all">
                             @if($match->exists)
                                 <p class="text-3xl font-black {{ ($match->pre_score ?? 0) >= 70 ? 'text-emerald-500' : (($match->pre_score ?? 0) >= 40 ? 'text-amber-500' : 'text-slate-400') }}">
                                     {{ $match->pre_score ?? 0 }}<span class="text-xs">%</span>
@@ -130,93 +130,94 @@
                             @else
                                 <p class="text-3xl font-black text-slate-300">...</p>
                             @endif
-                            <p class="text-[8px] font-black uppercase tracking-widest text-slate-400 mt-1">{{ $match->exists ? 'Data Match' : 'Calcul...' }}</p>
+                            <p class="text-[8px] font-black uppercase tracking-widest text-slate-400 mt-1">{{ $match->exists ? 'Score Global' : 'Calcul...' }}</p>
                         </div>
 
-                        <!-- Tooltip Detail Riche (Positionné à GAUCHE pour ne rien couvrir) -->
-                        @if($match && $match->pre_score_details && isset($match->pre_score_details['categories']))
+                        <!-- Tooltip Detail Riche -->
+                        @if($match && $match->pre_score_details)
                         <div class="absolute right-full top-0 mr-4 w-80 p-5 bg-slate-900 text-white rounded-2xl shadow-2xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all z-[100] transform translate-y-0">
-                            <h4 class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 pb-2 border-b border-white/10">Détail du calcul (Pondération)</h4>
+                            <h4 class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 pb-2 border-b border-white/10">Pourquoi ce score ?</h4>
                             
                             <div class="space-y-4">
-                                @foreach($match->pre_score_details['categories'] as $key => $cat)
-                                    <div>
-                                        <div class="flex justify-between items-center mb-1.5">
-                                            <span class="text-[10px] font-bold text-slate-300 uppercase tracking-tight">
-                                                {{ $cat['label'] }}
-                                                @if(isset($cat['distance']))
-                                                    <span class="ml-1 text-[9px] text-slate-500 normal-case font-medium">({{ $cat['distance'] }} km)</span>
-                                                @endif
-                                            </span>
-                                            @if($cat['is_not_required'] ?? false)
-                                                <span class="text-[9px] font-black text-slate-500 uppercase italic">Non requis</span>
-                                            @else
-                                                <span class="text-[11px] font-black {{ ($cat['is_refused'] ?? false) || $cat['score'] < 0 ? 'text-rose-400' : ($cat['score'] == $cat['max'] ? 'text-emerald-400' : ($cat['score'] > 0 ? 'text-amber-400' : 'text-slate-500')) }}">
-                                                    {{ $cat['score'] }} / {{ $cat['max'] }}
-                                                </span>
-                                            @endif
-                                        </div>
-                                        <div class="h-1 w-full bg-white/10 rounded-full overflow-hidden">
-                                            <div class="h-full {{ ($cat['is_refused'] ?? false) || $cat['score'] < 0 ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]' : 'bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]' }} rounded-full transition-all duration-700" style="width: {{ $cat['max'] > 0 ? max(0, ($cat['score'] / $cat['max']) * 100) : 0 }}%"></div>
-                                        </div>
-                                        
-                                        <!-- Liste des éléments manquants -->
-                                        @if(!empty($cat['missing']))
-                                            <div class="mt-2 flex flex-wrap gap-1">
-                                                @foreach($cat['missing'] as $m)
-                                                    <span class="text-[8px] bg-rose-500/20 text-rose-300 px-1.5 py-0.5 rounded border border-rose-500/30 font-black tracking-tight leading-none">
-                                                        - {{ $m }}
-                                                    </span>
-                                                @endforeach
-                                            </div>
-                                        @elseif(($cat['is_missing'] ?? false) || ($cat['is_refused'] ?? false))
-                                            <div class="mt-2">
-                                                <span class="text-[8px] {{ ($cat['is_refused'] ?? false) ? 'bg-rose-600 text-white' : 'bg-rose-500/20 text-rose-300' }} px-1.5 py-0.5 rounded border border-rose-500/30 font-black tracking-tight leading-none uppercase">
-                                                    @if(isset($cat['status_label']))
-                                                        {{ $cat['status_label'] }}
-                                                    @elseif($key === 'location')
-                                                        {{ isset($cat['distance']) ? 'Hors Rayon' : 'Localisation Inconnue' }}
-                                                    @elseif($key === 'metier')
-                                                        Hors Favoris
+                                <div class="flex justify-between items-center">
+                                    <span class="text-[10px] font-bold text-slate-300 uppercase tracking-tight">Base de départ</span>
+                                    <span class="text-[11px] font-black text-emerald-400">+{{ $match->pre_score_details['base'] ?? 100 }}</span>
+                                </div>
+
+                                @if(!empty($match->pre_score_details['penalties']))
+                                    <div class="space-y-4">
+                                        @foreach($match->pre_score_details['penalties'] as $penalty)
+                                            <div class="p-3 bg-white/5 rounded-xl border border-white/10">
+                                                <div class="flex items-center justify-between mb-1">
+                                                    <span class="text-[9px] font-black text-rose-400 uppercase tracking-widest">DÉDUCTION</span>
+                                                    <span class="text-[11px] font-black text-rose-400">-{{ abs($penalty['value']) }}</span>
+                                                </div>
+                                                <p class="text-[11px] font-bold text-slate-200 leading-snug">
+                                                    @if(($penalty['type'] ?? '') === 'distance')
+                                                        Mobilité : Distance de {{ round($penalty['meta']['distance'] ?? 0, 1) }} km (Rayon max : {{ $user->radius ?? 30 }}km).
+                                                    @elseif(($penalty['type'] ?? '') === 'permit_missing')
+                                                        Légal : Permis de conduire manquant.
+                                                    @elseif(($penalty['type'] ?? '') === 'language_missing')
+                                                        Linguistique : Langue requise non maîtrisée.
+                                                     @elseif(($penalty['type'] ?? '') === 'freshness')
+                                                        Vétusté : Offre de plus de 15 jours.
                                                     @else
-                                                        Non trouvé / Incomplet
-                                                    @endif
-                                                </span>
+                                                        {{ $penalty['label'] }}
+                                                     @endif
+                                                </p>
                                             </div>
-                                        @endif
+                                        @endforeach
                                     </div>
-                                @endforeach
-                                
-                                @if(($match->pre_score_details['vetoes'] ?? 0) > 0)
-                                    <div class="pt-3 mt-3 border-t border-white/10 flex justify-between items-center bg-rose-500/10 -mx-5 px-5 py-2">
-                                        <div class="flex flex-col">
-                                            <span class="text-[10px] font-black text-rose-400 uppercase">Pénalités (Vetos)</span>
-                                            <span class="text-[8px] text-rose-300/50 italic leading-tight">Critères obligatoires manqués</span>
-                                        </div>
-                                        <span class="text-[11px] font-black text-rose-400">-{{ $match->pre_score_details['vetoes'] }} pts</span>
+                                @elseif($match->pre_score < 100)
+                                    <div class="p-4 bg-amber-900/20 rounded-xl border border-amber-500/20 text-center">
+                                        <p class="text-[10px] font-bold text-amber-300">Détails du score indisponibles.</p>
+                                        <p class="text-[9px] text-amber-400/60 mt-1 uppercase font-black">Un recalcul est nécessaire pour afficher les facteurs de friction.</p>
+                                    </div>
+                                @else
+                                    <div class="p-4 bg-white/5 rounded-xl border border-white/10 text-center">
+                                        <p class="text-[10px] font-bold text-slate-400 italic">Aucune friction détectée sur vos critères.</p>
                                     </div>
                                 @endif
+
+                                @if(!empty($match->pre_score_details['bonuses']))
+                                    <div class="mt-4 pt-4 border-t border-white/10 space-y-3">
+                                        @foreach($match->pre_score_details['bonuses'] as $bonus)
+                                            <div class="flex items-center justify-between">
+                                                <span class="text-[10px] font-bold text-emerald-300 uppercase">{{ $bonus['label'] }}</span>
+                                                <span class="text-[11px] font-black text-emerald-400">+{{ $bonus['value'] }}</span>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @endif
+
+                                <div class="mt-6 pt-4 border-t border-white/10 flex items-center justify-between opacity-40">
+                                    <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Fiabilité du Calcul</span>
+                                    <span class="text-[10px] font-black text-slate-300">Précision : {{ $user->profile_completion }}%</span>
+                                </div>
+
                             </div>
+                            
                             <!-- Flèche vers la droite -->
                             <div class="absolute left-full top-8 -translate-y-1/2 border-8 border-transparent border-l-slate-900"></div>
                         </div>
                         @else
                         <div class="absolute right-full top-0 mr-4 w-48 p-3 bg-slate-900 text-white rounded-xl shadow-2xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all z-[100] text-center">
-                             <span class="text-[10px] font-bold italic">Recalcul des détails...</span>
+                             <span class="text-[10px] font-bold italic">Calcul des détails...</span>
                              <div class="absolute left-full top-8 -translate-y-1/2 border-8 border-transparent border-l-slate-900"></div>
                         </div>
                         @endif
                     </div>
 
-                    <!-- Vector Match -->
+                    <!-- Potentiel Métier (Sémantique) -->
                     @if($match && $match->vector_score !== null)
-                        <div class="text-center p-4 bg-violet-600 rounded-2xl shadow-lg shadow-violet-100 min-w-[100px]">
+                        <div class="text-center p-4 bg-blue-600 rounded-2xl shadow-lg shadow-blue-100 min-w-[120px]">
                             <p class="text-3xl font-black text-white">
                                 {{ round($match->vector_score * 100) }}<span class="text-xs">%</span>
                             </p>
-                            <p class="text-[8px] font-black uppercase tracking-widest text-violet-200 mt-1">Vector Match</p>
+                            <p class="text-[8px] font-black uppercase tracking-widest text-blue-200 mt-1">Potentiel Métier</p>
                         </div>
                     @endif
+
 
                     @php
                         $isAiStale = $match && $match->ai_status === 'processing' && $match->updated_at->lt(now()->subMinutes(10));
@@ -286,7 +287,7 @@
             </span>
             @if($match && $match->vector_score !== null)
                 <span class="text-[9px] font-black uppercase text-emerald-700 tracking-widest">
-                    Similitude : {{ number_format($match->vector_score * 100, 1) }}%
+                    Similitude vectorielle : {{ number_format($match->vector_score * 100, 1) }}%
                 </span>
             @endif
         </div>
@@ -365,18 +366,23 @@
             <!-- Profile Match Section -->
             <div class="space-y-8">
                 <div>
-                    <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Analyse des compétences</h3>
+                    <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Analyse des compétences (JIT)</h3>
                     <div class="space-y-3">
                         @foreach($jobOffer->skills as $skill)
                             @php
-                                $hasSkill = $user->skills->contains($skill->id);
+                                $userSkill = $user->skills->where('id', $skill->id)->first();
+                                $status = $userSkill ? $userSkill->pivot->status : 'none';
                             @endphp
                             <div x-data="{ 
-                                    hasSkill: {{ $hasSkill ? 'true' : 'false' }},
-                                    async toggleSkill() {
-                                        const url = '{{ route('profile.skills.status', $skill) }}';
-                                        const newStatus = this.hasSkill ? 'none' : 'active';
+                                    status: '{{ $status }}',
+                                    async cycleStatus() {
+                                        // Cycle: none (neutral) -> active (validé) -> refused (écarter) -> none
+                                        let nextStatus = 'none';
+                                        if (this.status === 'none') nextStatus = 'active';
+                                        else if (this.status === 'active') nextStatus = 'refused';
+                                        else if (this.status === 'refused') nextStatus = 'none';
                                         
+                                        const url = '{{ route('profile.skills.status', $skill) }}';
                                         const res = await fetch(url, {
                                             method: 'POST',
                                             headers: { 
@@ -384,34 +390,61 @@
                                                 'Accept': 'application/json',
                                                 'Content-Type': 'application/json'
                                             },
-                                            body: JSON.stringify({ status: newStatus })
+                                            body: JSON.stringify({ status: nextStatus })
                                         });
                                         if (res.ok) {
-                                            this.hasSkill = !this.hasSkill;
+                                            this.status = nextStatus;
                                             if(window.dashboard) {
+                                                const messages = {
+                                                     'active': 'Compétence ajoutée à votre profil !',
+                                                     'refused': 'Compétence écartée. Je pénaliserai ces offres.',
+                                                     'none': 'Préférence réinitialisée.'
+                                                 };
+                                                 window.dashboard.showToast(messages[nextStatus], 'success');
+                                                // On rafraîchit la liste pour mettre à jour les scores globaux
                                                 window.dashboard.refreshList();
-                                                // On force le rechargement de la prévisualisation pour voir le nouveau score
-                                                window.dashboard.selectOffer('{{ $jobOffer->forem_id }}');
+                                                // On rafraîchit la preview pour voir le détail du score mis à jour
+                                                setTimeout(() => window.dashboard.selectOffer('{{ $jobOffer->forem_id }}'), 100);
                                             }
                                         }
                                     }
                                  }" 
-                                 class="flex items-center justify-between p-3 rounded-xl border transition-all duration-300"
-                                 :class="hasSkill ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-slate-50 border-slate-100 text-slate-400'">
-                                <span class="text-xs font-bold">{{ $skill->label }}</span>
-                                <button @click="toggleSkill()" class="p-1.5 rounded-lg hover:bg-white/50 transition-all flex items-center justify-center">
-                                    <template x-if="hasSkill">
-                                        <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                                    </template>
-                                    <template x-if="!hasSkill">
-                                        <svg class="w-4 h-4 text-slate-300 hover:text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
-                                    </template>
-                                </button>
+                                 @click="cycleStatus()"
+                                 class="flex items-center justify-between p-3 rounded-xl border transition-all duration-300 cursor-pointer group"
+                                 :class="{
+                                    'bg-emerald-50 border-emerald-100 text-emerald-700 shadow-sm': status === 'active',
+                                    'bg-rose-50 border-rose-100 text-rose-700 shadow-sm': status === 'refused',
+                                    'bg-slate-50 border-slate-100 text-slate-400': status === 'none'
+                                 }">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-2 h-2 rounded-full" :class="{
+                                        'bg-emerald-500 animate-pulse': status === 'active',
+                                        'bg-rose-500': status === 'refused',
+                                        'bg-slate-300': status === 'none'
+                                    }"></div>
+                                    <span class="text-xs font-bold">{{ $skill->label }}</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-[9px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity" :class="{
+                                        'text-emerald-600': status === 'active',
+                                        'text-rose-600': status === 'refused',
+                                        'text-slate-400': status === 'none'
+                                    }">
+                                        <span x-show="status === 'none'">Inconnue (+0)</span>
+                                        <span x-show="status === 'active'">Maîtrisée (+1)</span>
+                                        <span x-show="status === 'refused'">Refusée (-5)</span>
+                                    </span>
+                                    <div class="p-1 rounded-lg bg-white/50 border border-transparent group-hover:border-slate-200">
+                                        <svg x-show="status === 'active'" class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                        <svg x-show="status === 'refused'" class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                        <svg x-show="status === 'none'" class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
+                                    </div>
+                                </div>
                             </div>
                         @endforeach
-
                     </div>
                 </div>
+
 
                 <div>
                     <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Prérequis & Permis</h3>

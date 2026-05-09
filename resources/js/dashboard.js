@@ -142,6 +142,28 @@ export default function dashboardApp(config = {}) {
             }
         },
 
+        async triggerTopAi() {
+            this.previewLoading = true;
+            try {
+                const res = await fetch(`/matching/top-ai-sync`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': this.csrfToken, 'Accept': 'application/json' }
+                });
+                const data = await res.json();
+                
+                this.showToast(data.message, 'success');
+                
+                // On peut rafraîchir la liste après un court délai pour voir les premiers résultats IA s'il y en a déjà
+                setTimeout(() => this.refreshList(), 5000);
+
+            } catch (e) {
+                console.error('Top AI trigger failed', e);
+                this.showToast('Erreur lors du lancement de l\'IA.', 'error');
+            } finally {
+                this.previewLoading = false;
+            }
+        },
+
         async syncSimilarities() {
             this.previewLoading = true;
             try {
@@ -175,7 +197,42 @@ export default function dashboardApp(config = {}) {
             }
             
             const el = document.querySelector(`[data-offer-id="${offerId}"]`);
-            if (el) el.dataset.preScore = score;
+            if (el) {
+                el.dataset.preScore = score;
+                // Déclencher l'animation (Level 8 doc)
+                const scoreDisplay = el.querySelector('.score-confort');
+                if (scoreDisplay) {
+                    scoreDisplay.classList.remove('animate-score-change');
+                    void scoreDisplay.offsetWidth; // Force reflow
+                    scoreDisplay.classList.add('animate-score-change');
+                }
+            }
+        },
+
+        showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            toast.className = `pointer-events-auto flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl border animate-toast-in ${
+                type === 'success' ? 'bg-emerald-900 border-emerald-500/30 text-emerald-100' : 'bg-slate-900 border-slate-700 text-slate-100'
+            }`;
+            
+            const icon = type === 'success' 
+                ? '<svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
+                : '<svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+
+            toast.innerHTML = `
+                ${icon}
+                <span class="text-xs font-black uppercase tracking-widest">${message}</span>
+            `;
+
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-x-10');
+                toast.style.transition = 'all 0.5s ease';
+                setTimeout(() => toast.remove(), 500);
+            }, 4000);
         },
 
         setMetier(id) {
@@ -184,6 +241,7 @@ export default function dashboardApp(config = {}) {
             this.filters.rome = null;
             this.refreshList();
         },
+
 
         setEmployer(id) {
             this.filters.employer_id = id;

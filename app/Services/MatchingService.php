@@ -49,15 +49,18 @@ class MatchingService
         // 3. Score Final (Multiplicatif)
         $finalScore = round($semanticScore * ($attractivityScore / 100));
 
-        $match = UserMatch::updateOrCreate(
-            ['user_id' => $user->id, 'job_offer_id' => $jobOffer->id],
-            [
-                'vector_score' => $semanticScore,
-                'pre_score' => $attractivityScore,
-                'pre_score_details' => $preMatchData['details'],
-                'final_score' => $finalScore,
-            ]
-        );
+        $match = UserMatch::firstOrNew(['user_id' => $user->id, 'job_offer_id' => $jobOffer->id]);
+        $match->fill([
+            'vector_score' => $semanticScore,
+            'pre_score' => $attractivityScore,
+            'pre_score_details' => $preMatchData['details'],
+            'final_score' => $finalScore,
+        ]);
+        
+        if (!$match->exists || !$match->ai_status) {
+            $match->ai_status = 'pending';
+        }
+        $match->save();
 
         // 2. Layer 2 — Analyse IA
         // On lance l'IA si :
@@ -66,14 +69,15 @@ class MatchingService
         if ($forceAi) {
             // Manuel : On déduit un point si possible
             if ($user->useAiPoint()) {
-                $this->performAiAnalysis($user, $jobOffer, $match, $preMatchData['details']['categories']['location']['distance'] ?? null);
+                $this->performAiAnalysis($user, $jobOffer, $match, $preMatchData['details']['distance'] ?? null);
             }
+        }
         //} elseif ($triggerAi && $preScore >= 70 && !$match->analyzed_at) { // && $user->isOnline()) {
             // Auto : On ne le fait que si l'utilisateur est en ligne et a du quota
             //if ($user->useAiPoint()) {
-            //    $this->performAiAnalysis($user, $jobOffer, $match, $preMatchData['details']['categories']['location']['distance'] ?? null);
+            //    $this->performAiAnalysis($user, $jobOffer, $match, $preMatchData['details']['distance'] ?? null);
             //}
-        }
+        //}
 
         return $match;
     }
@@ -88,6 +92,20 @@ class MatchingService
         $attractivity = $config['base_score'];
         $details = ['penalties' => [], 'bonuses' => []];
 
+        // --- 0. EXCEPTION DONNÉES PAUVRES (Level 4 doc) ---
+        // Si l'offre n'a pas de données techniques, on reste neutre (100)
+        if ($jobOffer->skills->isEmpty() && $jobOffer->languages->isEmpty() && $jobOffer->permits->isEmpty()) {
+            return [
+                'score' => 100,
+                'details' => [
+                    'base' => 100,
+                    'penalties' => [],
+                    'bonuses' => [],
+                    'is_poor_data' => true
+                ]
+            ];
+        }
+
         // --- 1. HANDICAPS (SOUSTRACTION) ---
 
         // A. Métier Refusé
@@ -98,7 +116,7 @@ class MatchingService
         if ($isRefusedMetier) {
             $penalty = $config['handicaps']['refused_metier'];
             $attractivity -= $penalty;
-            $details['penalties'][] = ['label' => 'Métier refusé', 'value' => -$penalty];
+            $details['penalties'][] = ['label' => 'Métier refusé', 'value' => -$penalty, 'type' => 'metier_refused'];
         }
 
         // B. Compétences Refusées (JIT)
@@ -112,7 +130,12 @@ class MatchingService
         if ($refusedSkillsInJob->isNotEmpty()) {
             $penalty = $refusedSkillsInJob->count() * $config['handicaps']['refused_skill'];
             $attractivity -= $penalty;
-            $details['penalties'][] = ['label' => 'Compétences refusées (' . $refusedSkillsInJob->count() . ')', 'value' => -$penalty];
+            $details['penalties'][] = [
+                'label' => 'Compétences refusées (' . $refusedSkillsInJob->count() . ')', 
+                'value' => -$penalty, 
+                'type' => 'skill_refused',
+                'items' => $refusedSkillsInJob->pluck('label')->toArray()
+            ];
         }
 
         // C. Permis Requis Manquant
@@ -122,7 +145,12 @@ class MatchingService
         if ($missingRequiredPermits->isNotEmpty()) {
             $penalty = $config['handicaps']['missing_permit'];
             $attractivity -= $penalty;
-            $details['penalties'][] = ['label' => 'Permis requis manquant', 'value' => -$penalty];
+            $details['penalties'][] = [
+                'label' => 'Permis requis manquant', 
+                'value' => -$penalty, 
+                'type' => 'permit_missing',
+                'items' => $missingRequiredPermits->pluck('label')->toArray()
+            ];
         }
 
         // D. Langue Requise Manquante
@@ -132,7 +160,12 @@ class MatchingService
         if ($missingRequiredLangs->isNotEmpty()) {
             $penalty = $config['handicaps']['missing_language'];
             $attractivity -= $penalty;
-            $details['penalties'][] = ['label' => 'Langue requise manquante', 'value' => -$penalty];
+            $details['penalties'][] = [
+                'label' => 'Langue requise manquante', 
+                'value' => -$penalty, 
+                'type' => 'language_missing',
+                'items' => $missingRequiredLangs->pluck('label')->toArray()
+            ];
         }
 
         // --- 2. LOCALISATION (FRICTION) ---
@@ -149,12 +182,20 @@ class MatchingService
                 $penalty = $config['location']['max_penalty'] * ($distance / ($distance + $radius));
                 
                 // Bonus Télétravail (Détection sommaire)
-                if (preg_match('/télétravail|remote|home-office/i', $jobOffer->description)) {
+                $isTelework = preg_match('/télétravail|remote|home-office/i', $jobOffer->description);
+                if ($isTelework) {
                     $penalty /= 2;
                 }
 
-                $attractivity -= $penalty;
-                $details['penalties'][] = ['label' => 'Friction distance (' . round($distance, 1) . 'km)', 'value' => -round($penalty, 1)];
+                if ($penalty > 0.5) { // On ne pénalise pas pour moins d'un demi-point
+                    $attractivity -= $penalty;
+                    $details['penalties'][] = [
+                        'label' => 'Friction distance (' . round($distance, 1) . 'km)', 
+                        'value' => -round($penalty, 1), 
+                        'type' => 'distance',
+                        'meta' => ['distance' => $distance, 'telework' => $isTelework]
+                    ];
+                }
             }
         }
 
@@ -163,7 +204,7 @@ class MatchingService
         if ($daysOld > $config['freshness']['start_after_days']) {
             $penalty = min($config['freshness']['max_malus'], ($daysOld - $config['freshness']['start_after_days']) * $config['freshness']['malus_per_day']);
             $attractivity -= $penalty;
-            $details['penalties'][] = ['label' => 'Ancienneté de l\'offre', 'value' => -round($penalty, 1)];
+            $details['penalties'][] = ['label' => 'Ancienneté de l\'offre', 'value' => -round($penalty, 1), 'type' => 'freshness'];
         }
 
         // --- 4. BONUSES (AFFINITÉ) ---
@@ -173,7 +214,7 @@ class MatchingService
         if ($isFavoriteMetier) {
             $bonus = $config['bonuses']['favorite_metier'];
             $attractivity += $bonus;
-            $details['bonuses'][] = ['label' => 'Métier favori', 'value' => $bonus];
+            $details['bonuses'][] = ['label' => 'Métier favori', 'value' => $bonus, 'type' => 'metier_favorite'];
         }
 
         // B. Compétences Validées (Active)
@@ -182,7 +223,12 @@ class MatchingService
         if ($matchedSkills->isNotEmpty()) {
             $bonus = $matchedSkills->count() * $config['bonuses']['active_skill'];
             $attractivity += $bonus;
-            $details['bonuses'][] = ['label' => 'Compétences maîtrisées (' . $matchedSkills->count() . ')', 'value' => $bonus];
+            $details['bonuses'][] = [
+                'label' => 'Compétences maîtrisées (' . $matchedSkills->count() . ')', 
+                'value' => $bonus, 
+                'type' => 'skill_matched',
+                'items' => $matchedSkills->pluck('label')->toArray()
+            ];
         }
 
         // Clamp final (0-100)
@@ -195,9 +241,11 @@ class MatchingService
                 'penalties' => $details['penalties'],
                 'bonuses' => $details['bonuses'],
                 'distance' => $distance ? round($distance, 1) : null,
+                'is_telework' => $isTelework ?? false,
             ]
         ];
     }
+
 
 
     /**
@@ -426,4 +474,26 @@ class MatchingService
                     ->delay(now()->addSeconds($index * 1));
             });
     }
+
+    /**
+     * Déclenche l'analyse IA pour les 20 meilleures offres d'un utilisateur.
+     */
+    public function triggerTopAiAnalysis(User $user): void
+    {
+        $topMatches = UserMatch::where('user_id', $user->id)
+            ->whereNull('analyzed_at')
+            ->where('ai_status', 'pending')
+            ->orderBy('final_score', 'desc')
+            ->orderBy('pre_score', 'desc')
+            ->limit(20)
+            ->get();
+
+        foreach ($topMatches as $match) {
+            $jobOffer = $match->jobOffer;
+            if ($jobOffer && $jobOffer->is_detailed) {
+                \App\Jobs\AnalyzeJobOffer::dispatch($user, $jobOffer, $match);
+            }
+        }
+    }
 }
+

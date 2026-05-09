@@ -4,9 +4,8 @@
         $score = $match ? ($match->final_score ?? $match->pre_score) : null;
     @endphp
     @php
-        $isOfferBlacklisted = $match->is_blacklisted ?? false;
+        $isOfferBlacklisted = $match?->is_blacklisted ?? false;
         // Optionnel: check réel si on veut être ultra-précis dans la liste aussi
-        // Mais is_blacklisted du join devrait suffire la plupart du temps après refresh
     @endphp
     <div 
         @click="selectOffer('{{ $offer->forem_id }}')"
@@ -19,32 +18,33 @@
     >
         <!-- Scores Section -->
         <div class="absolute top-0 right-0 p-3 flex gap-4">
-            <!-- Data Match -->
+            <!-- Indice de Confort (Level 2) -->
             <div class="text-right">
-                <p class="text-lg font-black leading-none" 
+                <p class="text-lg font-black leading-none score-confort" 
                    :class="(scores['{{ $offer->forem_id }}']?.data >= 70) ? 'text-emerald-500' : ((scores['{{ $offer->forem_id }}']?.data >= 40) ? 'text-amber-500' : 'text-slate-400')">
                     <span x-text="scores['{{ $offer->forem_id }}']?.data ?? '{{ $match?->pre_score ?? 0 }}'"></span><span class="text-[9px]">%</span>
                 </p>
-                <p class="text-[7px] font-black uppercase text-slate-300 tracking-tighter">Data</p>
+                <p class="text-[7px] font-black uppercase text-emerald-500 tracking-tighter">Conditions</p>
             </div>
 
-            <!-- Vector Match -->
+            <!-- Potentiel Métier (Level 1) -->
             <div class="text-right pl-4 border-l border-slate-100">
                 <p class="text-lg font-black leading-none" 
-                   :class="(scores['{{ $offer->forem_id }}']?.vector >= 70) ? 'text-violet-600' : ((scores['{{ $offer->forem_id }}']?.vector >= 40) ? 'text-violet-400' : 'text-slate-200')">
+                   :class="(scores['{{ $offer->forem_id }}']?.vector >= 70) ? 'text-blue-600' : ((scores['{{ $offer->forem_id }}']?.vector >= 40) ? 'text-blue-400' : 'text-slate-200')">
                     <span x-text="scores['{{ $offer->forem_id }}']?.vector ?? '--'"></span><span class="text-[9px]">%</span>
                 </p>
-                <p class="text-[7px] font-black uppercase text-violet-300 tracking-tighter">Vecteur</p>
+                <p class="text-[7px] font-black uppercase text-blue-400 tracking-tighter">Similarité</p>
             </div>
 
-            <!-- IA Match (Score ou Placeholder) -->
+            <!-- IA Match (Level 3) -->
             <div class="text-right pl-4 border-l border-slate-100">
                 <p class="text-lg font-black leading-none" :class="scores['{{ $offer->forem_id }}']?.ia ? 'text-indigo-600' : 'text-slate-200'">
                     <span x-text="scores['{{ $offer->forem_id }}']?.ia ?? '--'"></span><span class="text-[9px]">%</span>
                 </p>
-                <p class="text-[7px] font-black uppercase text-indigo-300 tracking-tighter">IA</p>
+                <p class="text-[7px] font-black uppercase text-indigo-300 tracking-tighter">Analyse IA</p>
             </div>
         </div>
+
 
         <div class="flex gap-4">
             <div class="shrink-0">

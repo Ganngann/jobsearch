@@ -113,8 +113,9 @@ class JobOfferController extends Controller
                     $join->on('job_offers.id', '=', 'user_matches.job_offer_id')
                          ->where('user_matches.user_id', '=', $user->id);
                 })
-                ->select('job_offers.*', 'user_matches.vector_score')
-                ->orderBy('user_matches.vector_score', 'desc');
+                ->select('job_offers.*', 'user_matches.pre_score', 'user_matches.final_score', 'user_matches.vector_score', 'user_matches.pre_score_details')
+                ->orderBy('user_matches.vector_score', 'desc')
+                ->orderBy('user_matches.pre_score', 'desc');
                 break;
             case 'score_desc':
             default:
@@ -123,7 +124,7 @@ class JobOfferController extends Controller
                     $join->on('job_offers.id', '=', 'user_matches.job_offer_id')
                          ->where('user_matches.user_id', '=', $user->id);
                 })
-                ->select('job_offers.*', 'user_matches.pre_score', 'user_matches.final_score', 'user_matches.vector_score')
+                ->select('job_offers.*', 'user_matches.pre_score', 'user_matches.final_score', 'user_matches.vector_score', 'user_matches.pre_score_details')
                 ->orderBy('user_matches.final_score', 'desc')
                 ->orderBy('user_matches.pre_score', 'desc');
                 break;
@@ -246,6 +247,12 @@ class JobOfferController extends Controller
         
         \Illuminate\Support\Facades\Log::info("Dispatching AnalyzeJobOffer for User #{$user->id} and JobOffer #{$jobOffer->forem_id}");
         
+        // Force recalculation of pre-score to ensure details are up-to-date
+        $scores = $this->matchingService->calculatePreScore($user, $jobOffer);
+        $match->pre_score = $scores['score'];
+        $match->pre_score_details = $scores['details'];
+        $match->save();
+
         \App\Jobs\AnalyzeJobOffer::dispatch($user, $jobOffer, $match);
 
         if ($request->ajax()) {
@@ -276,19 +283,19 @@ class JobOfferController extends Controller
             $match = $this->matchingService->match($user, $jobOffer, false, false);
         }
 
-        // Si toujours null (ex: sync échoué), on crée un objet vide pour éviter que la vue ne crashe
+        // Fallback pour éviter le crash de la vue si le matching échoue
         if (!$match) {
             $match = new \App\Models\UserMatch([
                 'pre_score' => 0,
                 'final_score' => 0,
+                'pre_score_details' => ['base' => 100, 'penalties' => [], 'bonuses' => []],
                 'strengths' => [],
                 'weaknesses' => []
             ]);
         }
 
-        $hardScore = $this->jobMatcherService->calculateHardScore($user, $jobOffer);
-
         $isParentFavorite = false;
+
         if ($jobOffer->metier && $jobOffer->metier->code) {
             $parentCode = substr($jobOffer->metier->code, 0, 5);
             $isParentFavorite = $user->preferredReferentielMetiers()->where('code', $parentCode)->exists();
@@ -311,7 +318,8 @@ class JobOfferController extends Controller
             }
         }
 
-        return view('job-offers.show', compact('jobOffer', 'match', 'user', 'hardScore', 'isParentFavorite', 'isOfferBlacklisted'));
+        return view('job-offers.show', compact('jobOffer', 'match', 'user', 'isParentFavorite', 'isOfferBlacklisted'));
+
     }
 
     /**
@@ -324,6 +332,8 @@ class JobOfferController extends Controller
         return back()->with('status', 'Utilisez la commande artisan app:reset-and-import pour synchroniser 1000 offres.');
     }
 
+    /**
+     * Sert le logo d'un employeur directement pour économiser de la mémoire.
     /**
      * Sert le logo d'un employeur directement pour économiser de la mémoire.
      */
@@ -339,4 +349,18 @@ class JobOfferController extends Controller
             ->header('Content-Type', $employer->logo_mime_type)
             ->header('Cache-Control', 'public, max-age=86400');
     }
+
+    /**
+     * Déclenche l'analyse IA pour les 20 meilleurs matches.
+     */
+    public function triggerTopAi(Request $request, MatchingService $matchingService): \Illuminate\Http\JsonResponse
+    {
+        $matchingService->triggerTopAiAnalysis(auth()->user());
+        
+        return response()->json([
+            'message' => 'L\'analyse du Top 20 a été lancée en arrière-plan. Les résultats apparaîtront progressivement.'
+        ]);
+    }
 }
+
+

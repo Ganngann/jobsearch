@@ -197,6 +197,19 @@ class User extends Authenticatable
     }
 
     /**
+     * Calcul global de complétion du profil (Moyenne des 4 piliers).
+     */
+    public function getProfileCompletionAttribute(): int
+    {
+        $narrative = $this->getNarrativeProgress();
+        $skills = $this->getSkillsProgress();
+        $rome = $this->getRomeProgress();
+        $mobility = $this->getMobilityProgress();
+        
+        return (int) round(($narrative + $skills + $rome + $mobility) / 4);
+    }
+
+    /**
      * Vérifie si le profil est prêt pour le matching.
      */
     public function isProfileMature(): bool

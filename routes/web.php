@@ -41,7 +41,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/jobs/{jobOffer}/embed', [\App\Http\Controllers\VectorController::class, 'embedJob'])->name('jobs.embed');
     Route::post('/profile/embed', [\App\Http\Controllers\VectorController::class, 'embedProfile'])->name('profile.embed');
     Route::post('/matching/vector-sync', [\App\Http\Controllers\VectorController::class, 'syncSimilarities'])->name('matching.vector-sync');
+    Route::post('/matching/top-ai-sync', [JobOfferController::class, 'triggerTopAi'])->name('matching.top-ai-sync');
 });
+
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
