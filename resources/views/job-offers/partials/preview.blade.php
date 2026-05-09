@@ -282,21 +282,6 @@
             </div>
         </div>
 
-    <!-- Embedding Status -->
-    @if($jobOffer->vector_embedding)
-        <div class="px-8 py-2 bg-emerald-50 border-y border-emerald-100 flex items-center justify-between">
-            <span class="text-[9px] font-black uppercase text-emerald-700 tracking-widest flex items-center gap-1">
-                <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
-                Vecteur disponible
-            </span>
-            @if($match && $match->vector_score !== null)
-                <span class="text-[9px] font-black uppercase text-emerald-700 tracking-widest">
-                    Similitude vectorielle : {{ number_format($match->vector_score, 1) }}%
-                </span>
-            @endif
-        </div>
-    @endif
-
     <!-- Content -->
     <div class="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar">
         @if($match && $match->ai_status === 'completed')

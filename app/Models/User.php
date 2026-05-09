@@ -45,6 +45,7 @@ class User extends Authenticatable
         'daily_ai_limits',
         'daily_ai_usage_breakdown',
         'is_admin',
+        'contract_preferences',
     ];
 
     /**
@@ -75,6 +76,7 @@ class User extends Authenticatable
             'vector_embedding' => 'array',
             'daily_ai_limits' => 'array',
             'daily_ai_usage_breakdown' => 'array',
+            'contract_preferences' => 'array',
         ];
     }
 

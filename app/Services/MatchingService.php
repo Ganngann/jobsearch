@@ -156,6 +156,21 @@ class MatchingService
             ];
         }
 
+        // E. Préférence de Contrat
+        if (!empty($user->contract_preferences)) {
+            $jobContract = $jobOffer->contract_type;
+            if (!in_array($jobContract, $user->contract_preferences)) {
+                $penalty = $config['handicaps']['contract_mismatch'];
+                $attractivity -= $penalty;
+                $details['penalties'][] = [
+                    'label' => 'Contrat non souhaité (' . $jobContract . ')',
+                    'value' => -$penalty,
+                    'type' => 'contract_mismatch',
+                    'meta' => ['current' => $jobContract, 'preferred' => $user->contract_preferences]
+                ];
+            }
+        }
+
         // --- 2. LOCALISATION (FRICTION) ---
         $distance = null;
         if ($user->zip_code) {
@@ -165,9 +180,25 @@ class MatchingService
             if ($userZip && $jobCoords) {
                 $distance = $this->calculateDistance($userZip->latitude, $userZip->longitude, $jobCoords['lat'], $jobCoords['lon']);
                 $radius = $user->radius ?? $config['location']['default_radius'];
+                $freeRadius = $config['location']['free_radius'] ?? 5;
                 
-                // Formule de friction
-                $penalty = $config['location']['max_penalty'] * ($distance / ($distance + $radius));
+                // Distance effective après immunité des premiers km
+                $effDistance = max(0, $distance - $freeRadius);
+                
+                // Formule de friction calibrée :
+                // 1. Pénalité nulle sous le free_radius.
+                // 2. Pénalité de exactement 1.0 à la limite du rayon (radius).
+                // 3. Tend vers max_penalty pour les distances extrêmes.
+                if ($effDistance > 0 && $radius > $freeRadius) {
+                    $maxP = (float) $config['location']['max_penalty'];
+                    $pAtR = (float) ($config['location']['penalty_at_radius'] ?? 1);
+                    
+                    // On calcule la constante K pour que la pénalité soit de $pAtR à la limite du $radius
+                    $k = (($maxP / $pAtR) - 1) * ($radius - $freeRadius);
+                    $penalty = $maxP * ($effDistance / ($effDistance + $k));
+                } else {
+                    $penalty = 0;
+                }
                 
                 // Bonus Télétravail (Détection sommaire)
                 $isTelework = preg_match('/télétravail|remote|home-office/i', $jobOffer->description);
@@ -303,6 +334,7 @@ class MatchingService
         - Soft Skills : {$userSoftSkills}
         - Langues : {$userLangs}
         - Mobilité : Rayon maximum de " . ($user->radius ?? 30) . " km autour de son domicile.
+        - Préférences de contrat : " . (empty($user->contract_preferences) ? "Aucune préférence particulière" : implode(', ', $user->contract_preferences)) . "
 
         ## 2. RÉCITS & EXPÉRIENCES CONCRÈTES (La preuve par le fait)
         Voici les éléments narratifs validés par le candidat qui prouvent ses compétences et sa résilience :
@@ -311,6 +343,7 @@ class MatchingService
         ## 3. L'OFFRE D'EMPLOI
         - Titre : {$jobOffer->title}
         - Métier : {$jobOffer->metier?->label}
+        - Type de contrat : {$jobOffer->contract_type}
         - Compétences requises : {$jobSkills}
         - Compétences souhaitées : {$jobOptionalSkills}
         - Langues requises : {$jobLangs}
@@ -324,7 +357,8 @@ class MatchingService
         2. Identifie les \"soft skills\" invisibles mais présents dans les récits (résilience, adaptabilité, etc.).
         3. Évalue si les aspirations du candidat sont en phase avec le poste.
         4. Analyse la faisabilité géographique : si la distance réelle dépasse le rayon souhaité, mentionne-le comme un point d'attention ou de vigilance, mais pondère-le en fonction de la distance.
-        5. Calcule un score global (0-100).
+        5. Vérifie si le type de contrat de l'offre correspond aux préférences du candidat. Si ce n'est pas le cas, cela doit impacter négativement le score et être mentionné comme point faible.
+        6. Calcule un score global (0-100).
 
         CONSIGNE DE STYLE : Sois EXTRÊMEMENT CONCIS. L'analyse narrative doit faire 3 lignes maximum, en allant droit au but. 
 

@@ -5,44 +5,7 @@
             <!-- Header -->
             <div class="mb-12">
                 <h1 class="text-4xl font-black text-slate-900 mb-2">Ma Zone de Confort</h1>
-                <p class="text-lg text-slate-500 font-medium mb-8">Définissez votre point de départ et votre périmètre de recherche.</p>
-
-                <!-- Info Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="bg-blue-600 rounded-3xl p-6 text-white shadow-xl shadow-blue-100 flex flex-col justify-between overflow-hidden relative">
-                        <div class="relative z-10">
-                            <h3 class="text-lg font-black mb-2 flex items-center gap-2">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                                Rayon Pivot
-                            </h3>
-                            <p class="text-blue-100 text-[11px] leading-relaxed font-medium">
-                                Notre algorithme ne vous exclut jamais brutalement. Plus vous êtes proche de votre centre, plus votre score de matching est élevé.
-                            </p>
-                        </div>
-                        <div class="absolute -bottom-4 -right-4 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
-                    </div>
-
-                    <div class="md:col-span-2 bg-white rounded-3xl p-6 border border-slate-100 shadow-sm grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <div class="space-y-2">
-                            <div class="flex items-center gap-2 text-slate-900 font-bold text-xs uppercase tracking-wider">
-                                <div class="w-6 h-6 rounded-lg bg-emerald-50 flex items-center justify-center text-[10px] text-emerald-500 font-black">1</div>
-                                Cœur de Cible
-                            </div>
-                            <p class="text-[11px] text-slate-400 leading-tight">
-                                <strong class="text-emerald-600 font-black">MAXIMUM (30 pts)</strong> : Les offres situées dans votre ville ou très proches reçoivent le score maximal.
-                            </p>
-                        </div>
-                        <div class="space-y-2">
-                            <div class="flex items-center gap-2 text-slate-900 font-bold text-xs uppercase tracking-wider">
-                                <div class="w-6 h-6 rounded-lg bg-blue-50 flex items-center justify-center text-[10px] text-blue-500 font-black">2</div>
-                                Zone Étendue
-                            </div>
-                            <p class="text-[11px] text-slate-400 leading-tight">
-                                <strong class="text-blue-600 font-black">DÉGRESSIF</strong> : Au-delà du rayon, le score diminue doucement pour laisser place aux opportunités exceptionnelles.
-                            </p>
-                        </div>
-                    </div>
-                </div>
+                <p class="text-lg text-slate-500 font-medium mb-8">Définissez vos critères administratifs et votre périmètre de recherche.</p>
             </div>
 
             <!-- Main Content Grid -->
@@ -50,6 +13,7 @@
                 zip_code: {{ Js::from($user->zip_code) }},
                 radius: {{ Js::from($user->radius ?? 20) }},
                 permits: {{ Js::from($userPermitIds) }},
+                contract_preferences: {{ Js::from($userContractPreferences) }},
                 nonePermitId: {{ Js::from(\App\Models\Permit::where('code', 'NONE')->first()?->id ?? 0) }},
                 csrfToken: {{ Js::from(csrf_token()) }},
                 routes: {
@@ -57,10 +21,84 @@
                 }
             })">
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    <!-- Left Column: Form -->
+                    
+                    <!-- LEFT COLUMN: Permits & Contracts -->
                     <div class="lg:col-span-5 space-y-6">
                         <div class="bg-white rounded-[2.5rem] p-8 shadow-xl border border-slate-100">
                             <div class="space-y-10">
+                                <!-- Contract Preferences -->
+                                <div>
+                                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">
+                                        💼 Types de Contrat Souhaités
+                                    </label>
+                                    <div class="flex flex-col gap-2">
+                                        @foreach($allContractTypes as $type)
+                                            <button 
+                                                type="button"
+                                                @click="toggleContract('{{ $type }}')"
+                                                :class="{
+                                                    'bg-indigo-600 text-white shadow-lg shadow-indigo-100 border-indigo-600': contract_preferences.includes('{{ $type }}'),
+                                                    'bg-white text-slate-600 border-slate-100 hover:border-indigo-200': !contract_preferences.includes('{{ $type }}')
+                                                }"
+                                                class="px-4 py-3 rounded-xl border-2 text-[11px] font-black transition-all flex items-center gap-3 text-left"
+                                            >
+                                                <span class="opacity-50 shrink-0">#</span>
+                                                <span>{{ $type }}</span>
+                                            </button>
+                                        @endforeach
+                                    </div>
+                                    <p class="mt-3 text-[10px] text-slate-400 font-bold italic uppercase tracking-tighter">
+                                        Laissez vide pour tout accepter.
+                                    </p>
+                                </div>
+
+                                <!-- Driving Licenses -->
+                                <div>
+                                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">
+                                        🪪 Permis de Conduire
+                                    </label>
+                                    <div class="flex flex-col gap-2">
+                                        @foreach($allPermits as $permit)
+                                            <button 
+                                                type="button"
+                                                @click="togglePermit({{ $permit->id }})"
+                                                :class="{
+                                                    'bg-blue-600 text-white shadow-lg shadow-blue-100 border-blue-600': permits.includes({{ $permit->id }}),
+                                                    'bg-white text-slate-600 border-slate-100 hover:border-blue-200': !permits.includes({{ $permit->id }})
+                                                }"
+                                                class="px-4 py-3 rounded-xl border-2 text-[11px] font-black transition-all flex items-center gap-3 text-left"
+                                            >
+                                                <span class="opacity-50 shrink-0">#</span>
+                                                <span>{{ $permit->label }}</span>
+                                            </button>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Save Feedback -->
+                            <div class="mt-8 h-8 flex items-center justify-center">
+                                <template x-if="isSaving">
+                                    <div class="flex items-center gap-2 text-blue-500 animate-pulse">
+                                        <div class="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                                        <span class="text-[10px] font-black uppercase tracking-widest">Synchronisation...</span>
+                                    </div>
+                                </template>
+                                <template x-if="showSuccess">
+                                    <div class="flex items-center gap-2 text-emerald-500">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                        <span class="text-[10px] font-black uppercase tracking-widest">Préférences à jour</span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT COLUMN: Locality, Range & Visualization -->
+                    <div class="lg:col-span-7 space-y-6">
+                        <!-- Localisation & Slider -->
+                        <div class="bg-white rounded-[2.5rem] p-8 shadow-xl border border-slate-100">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
                                 <!-- Postal Code -->
                                 <div>
                                     <label for="zip_code" class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">
@@ -76,9 +114,6 @@
                                             placeholder="ex: 5000"
                                         >
                                     </div>
-                                    <p class="mt-3 text-[10px] text-slate-400 font-bold italic uppercase tracking-tighter">
-                                        Code postal de votre domicile ou lieu de départ.
-                                    </p>
                                 </div>
 
                                 <!-- Distance Slider -->
@@ -103,75 +138,14 @@
                                             @change="save()"
                                             class="w-full h-3 bg-slate-100 rounded-full appearance-none cursor-pointer accent-blue-600"
                                         >
-                                        <div class="flex justify-between text-[9px] text-slate-300 font-black mt-4 px-1 uppercase tracking-widest">
-                                            <span>Local</span>
-                                            <span>100km</span>
-                                            <span>200km</span>
-                                        </div>
                                     </div>
                                 </div>
-
-                                <!-- Driving Licenses -->
-                                <div>
-                                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">
-                                        🪪 Permis de Conduire
-                                    </label>
-                                    <div class="flex flex-wrap gap-2">
-                                        @foreach($allPermits as $permit)
-                                            <button 
-                                                type="button"
-                                                @click="togglePermit({{ $permit->id }})"
-                                                :class="{
-                                                    'bg-blue-600 text-white shadow-lg shadow-blue-100 border-blue-600': permits.includes({{ $permit->id }}),
-                                                    'bg-white text-slate-600 border-slate-100 hover:border-blue-200': !permits.includes({{ $permit->id }})
-                                                }"
-                                                class="px-4 py-2.5 rounded-xl border-2 text-xs font-black transition-all flex items-center gap-2"
-                                            >
-                                                <span class="opacity-50">#</span>
-                                                {{ $permit->label }}
-                                            </button>
-                                        @endforeach
-                                    </div>
-                                    <p class="mt-3 text-[10px] text-slate-400 font-bold italic uppercase tracking-tighter">
-                                        Certaines offres sont inaccessibles sans permis spécifique.
-                                    </p>
-                                </div>
-                            </div>
-
-                            <!-- Save Feedback -->
-                            <div class="mt-8 h-8 flex items-center justify-center">
-                                <template x-if="isSaving">
-                                    <div class="flex items-center gap-2 text-blue-500 animate-pulse">
-                                        <div class="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-                                        <span class="text-[10px] font-black uppercase tracking-widest">Synchronisation...</span>
-                                    </div>
-                                </template>
-                                <template x-if="showSuccess">
-                                    <div class="flex items-center gap-2 text-emerald-500">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-                                        <span class="text-[10px] font-black uppercase tracking-widest">Préférences à jour</span>
-                                    </div>
-                                </template>
                             </div>
                         </div>
 
-                        <!-- Secondary Info -->
-                        <div class="bg-indigo-50 rounded-3xl p-6 border border-indigo-100">
-                            <h4 class="text-xs font-black text-indigo-900 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                Pourquoi ces réglages ?
-                            </h4>
-                            <p class="text-[11px] text-indigo-700/70 leading-relaxed font-medium">
-                                Le lieu de vie est le point de départ de toutes nos analyses. En combinant votre code postal avec votre rayon, l'IA priorise les offres qui respectent votre équilibre vie pro / vie perso.
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- Right Column: Visualization & Guide -->
-                    <div class="lg:col-span-7 space-y-6">
-                        <!-- Visual Explanation Card -->
-                        <div class="bg-white rounded-[2.5rem] p-8 md:p-12 shadow-xl border border-slate-100 relative overflow-hidden h-full flex flex-col">
-                            <div class="relative z-10 flex-grow">
+                        <!-- Visualization Card -->
+                        <div class="bg-white rounded-[2.5rem] p-8 md:p-12 shadow-xl border border-slate-100 relative overflow-hidden flex flex-col">
+                            <div class="relative z-10">
                                 <h3 class="text-2xl font-black text-slate-900 mb-8 flex items-center gap-3">
                                     <span class="text-3xl">🧭</span>
                                     Visualisation du Matching
@@ -239,22 +213,11 @@
 
                                         <div class="mt-8 p-4 bg-slate-50 rounded-2xl border border-slate-100">
                                             <p class="text-[10px] text-slate-500 leading-relaxed font-medium italic">
-                                                "Notre système préfère toujours vous proposer un job un peu plus loin s'il est parfaitement aligné avec vos compétences, plutôt que de l'ignorer totalement."
+                                                "Notre système préfère toujours vous proposer un job un peu plus loin s'il est parfaitement aligné avec vos compétences."
                                             </p>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-
-                            <!-- Bottom Actions -->
-                            <div class="mt-12 pt-8 border-t border-slate-50 flex items-center justify-between">
-                                <a href="{{ route('discovery.index') }}" class="text-xs font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors">
-                                    ← Métiers ROME
-                                </a>
-                                <a href="{{ route('dashboard') }}" class="px-8 py-4 bg-slate-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-black transition-all hover:scale-105 active:scale-95 flex items-center gap-2">
-                                    Explorer mes matchs
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-                                </a>
                             </div>
                         </div>
                     </div>
@@ -262,4 +225,72 @@
             </div>
         </div>
     </div>
+    <script>
+        function mobilityApp(config) {
+            return {
+                zip_code: config.zip_code,
+                radius: config.radius,
+                permits: config.permits,
+                contract_preferences: config.contract_preferences || [],
+                isSaving: false,
+                showSuccess: false,
+
+                togglePermit(id) {
+                    if (id === config.nonePermitId) {
+                        this.permits = [id];
+                    } else {
+                        if (this.permits.includes(config.nonePermitId)) {
+                            this.permits = this.permits.filter(p => p !== config.nonePermitId);
+                        }
+                        
+                        if (this.permits.includes(id)) {
+                            this.permits = this.permits.filter(p => p !== id);
+                        } else {
+                            this.permits.push(id);
+                        }
+                    }
+                    this.save();
+                },
+
+                toggleContract(type) {
+                    if (this.contract_preferences.includes(type)) {
+                        this.contract_preferences = this.contract_preferences.filter(t => t !== type);
+                    } else {
+                        this.contract_preferences.push(type);
+                    }
+                    this.save();
+                },
+
+                async save() {
+                    this.isSaving = true;
+                    this.showSuccess = false;
+
+                    try {
+                        const response = await fetch(config.routes.update, {
+                            method: 'PATCH',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': config.csrfToken
+                            },
+                            body: JSON.stringify({
+                                zip_code: this.zip_code,
+                                radius: this.radius,
+                                permits: this.permits,
+                                contract_preferences: this.contract_preferences
+                            })
+                        });
+
+                        if (response.ok) {
+                            this.showSuccess = true;
+                            setTimeout(() => this.showSuccess = false, 3000);
+                        }
+                    } catch (error) {
+                        console.error('Save failed:', error);
+                    } finally {
+                        this.isSaving = false;
+                    }
+                }
+            }
+        }
+    </script>
 </x-app-layout>

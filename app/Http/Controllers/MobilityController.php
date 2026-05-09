@@ -18,7 +18,11 @@ class MobilityController extends Controller
             
         $userPermitIds = $user->permits()->pluck('permits.id')->toArray();
         
-        return view('profile.mobility.index', compact('user', 'allPermits', 'userPermitIds'));
+        // Liste des types de contrat disponibles (depuis JobOffer)
+        $allContractTypes = \App\Models\JobOffer::distinct()->whereNotNull('contract_type')->pluck('contract_type')->sort()->values()->toArray();
+        $userContractPreferences = $user->contract_preferences ?? [];
+
+        return view('profile.mobility.index', compact('user', 'allPermits', 'userPermitIds', 'allContractTypes', 'userContractPreferences'));
     }
 
     public function update(Request $request)
@@ -28,12 +32,14 @@ class MobilityController extends Controller
             'radius' => ['required', 'integer', 'min:0', 'max:500'],
             'permits' => ['nullable', 'array'],
             'permits.*' => ['exists:permits,id'],
+            'contract_preferences' => ['nullable', 'array'],
         ]);
 
         $user = Auth::user();
         $user->update([
             'zip_code' => $request->zip_code,
             'radius' => $request->radius,
+            'contract_preferences' => $request->contract_preferences,
         ]);
 
         // Synchronisation des permis

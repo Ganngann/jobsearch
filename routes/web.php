@@ -12,7 +12,7 @@ Route::get('/', function () {
         'active' => \App\Models\JobOffer::where('status', 'active')->count(),
     ];
     return view('welcome', compact('stats'));
-});
+})->name('welcome');
 
 Route::post('/feedback', [\App\Http\Controllers\FeedbackController::class, 'store'])->name('feedback.store');
 

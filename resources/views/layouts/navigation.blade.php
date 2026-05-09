@@ -5,7 +5,7 @@
             <div class="flex">
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
-                    <a href="{{ route('dashboard') }}">
+                    <a href="{{ route('welcome') }}">
                         <img src="{{ asset('img/logo.svg') }}" class="block h-10 w-auto fill-current text-gray-800" alt="Forem Matcher AI Logo">
                     </a>
                 </div>
