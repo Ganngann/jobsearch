@@ -14,29 +14,29 @@ return [
     'base_score' => 100,
 
     'handicaps' => [
-        'refused_metier'   => 20,
-        'refused_skill'    => 5,
-        'missing_permit'   => 10,
-        'missing_language' => 10,
+        'refused_metier'   => 5,
+        'refused_skill'    => 1,
+        'missing_permit'   => 5,
+        'missing_language' => 5,
     ],
 
     'bonuses' => [
-        'favorite_metier' => 10,
-        'active_skill'    => 1,
+        'favorite_metier' => 2,
+        'active_skill'    => 0,
     ],
 
     'location' => [
-        'max_penalty'    => 30,
-        'default_radius' => 30,
+        'max_penalty'    => 3,
+        'default_radius' => 10,
     ],
 
     'freshness' => [
-        'malus_per_day'  => 0.5,
+        'malus_per_day'  => 0.1,
         'start_after_days' => 14,
-        'max_malus'      => 10,
+        'max_malus'      => 1,
     ],
 
     'semantic' => [
-        'min_threshold' => 0.6,
+        'min_threshold' => 0,
     ],
 ];

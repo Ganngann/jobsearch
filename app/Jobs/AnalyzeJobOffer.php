@@ -2,12 +2,21 @@
 
 namespace App\Jobs;
 
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 
-class AnalyzeJobOffer implements ShouldQueue
+class AnalyzeJobOffer implements ShouldQueue, ShouldBeUnique
 {
     use Queueable;
+
+    /**
+     * The unique ID of the job.
+     */
+    public function uniqueId(): string
+    {
+        return $this->user->id . '_' . $this->jobOffer->id;
+    }
 
     protected $user;
     protected $jobOffer;

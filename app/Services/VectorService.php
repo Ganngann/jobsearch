@@ -20,6 +20,12 @@ class VectorService
      */
     public function updateJobVector(JobOffer $job): bool
     {
+        // On ne vectorise pas une offre dont le détail n'a pas été chargé.
+        if (!$job->is_detailed) {
+            Log::warning("Annulation de la vectorisation pour l'offre #{$job->id} : détails non chargés.");
+            return false;
+        }
+
         $text = $this->buildJobString($job);
         $vector = $this->gemini->embed($text, 'RETRIEVAL_DOCUMENT');
 

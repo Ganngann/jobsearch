@@ -308,6 +308,12 @@ class GeminiService
             return null;
         }
 
+        // On vérifie que le texte n'est pas vide ou trop court (boilerplate seul)
+        if (strlen(trim($text)) < 50) {
+            Log::warning('GEMINI EMBED SKIPPED: Text too short or empty', ['text' => $text]);
+            return null;
+        }
+
         $payload = [
             'model' => 'models/gemini-embedding-001',
             'taskType' => $taskType,

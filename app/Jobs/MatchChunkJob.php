@@ -2,14 +2,23 @@
 
 namespace App\Jobs;
 
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use App\Models\ZipCode;
 use Illuminate\Support\Facades\DB;
 
-class MatchChunkJob implements ShouldQueue
+class MatchChunkJob implements ShouldQueue, ShouldBeUnique
 {
     use Queueable;
+
+    /**
+     * The unique ID of the job.
+     */
+    public function uniqueId(): string
+    {
+        return $this->user->id . '_' . md5(json_encode($this->jobOfferIds));
+    }
 
     /**
      * Create a new job instance.

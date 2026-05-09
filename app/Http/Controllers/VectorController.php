@@ -6,16 +6,19 @@ use App\Models\JobOffer;
 use App\Models\User;
 use App\Models\UserMatch;
 use App\Services\VectorService;
+use App\Services\MatchingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class VectorController extends Controller
 {
     protected VectorService $vectorService;
+    protected MatchingService $matchingService;
 
-    public function __construct(VectorService $vectorService)
+    public function __construct(VectorService $vectorService, MatchingService $matchingService)
     {
         $this->vectorService = $vectorService;
+        $this->matchingService = $matchingService;
     }
 
     /**
@@ -143,5 +146,47 @@ class VectorController extends Controller
         return request()->expectsJson() 
             ? response()->json(['message' => $msg, 'count' => $count]) 
             : back()->with('status', $msg);
+    }
+
+    /**
+     * Recalcule les similitudes pour TOUS les utilisateurs (Maintenance Admin).
+     */
+    public function syncGlobalSimilarities()
+    {
+        $lock = \Illuminate\Support\Facades\Cache::lock('sync_global_similarities', 60);
+
+        if (!$lock->get()) {
+            return back()->with('error', "Un recalcul global est déjà en cours ou a été lancé récemment. Veuillez patienter.");
+        }
+
+        // On lance le processus lourd en arrière-plan
+        \App\Jobs\GlobalMatchingJob::dispatch();
+
+        return back()->with('success', "Le recalcul global a été lancé en arrière-plan. Les scores seront mis à jour progressivement.");
+    }
+
+    /**
+     * Lance la vectorisation en masse des offres en attente via la file d'attente.
+     */
+    public function launchBatchVectorization()
+    {
+        $lock = \Illuminate\Support\Facades\Cache::lock('batch_vectorization', 30);
+
+        if (!$lock->get()) {
+            return back()->with('error', "Un scan est déjà en cours de lancement. Veuillez patienter.");
+        }
+
+        $pendingJobs = JobOffer::where('status', 'active')
+            ->where('is_detailed', true)
+            ->whereNull('vector_embedding')
+            ->cursor();
+
+        $count = 0;
+        foreach ($pendingJobs as $job) {
+            \App\Jobs\VectorizeJobOffer::dispatch($job);
+            $count++;
+        }
+
+        return back()->with('success', "{$count} offres envoyées en file d'attente pour vectorisation.");
     }
 }

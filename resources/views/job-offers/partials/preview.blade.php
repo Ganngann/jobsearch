@@ -350,12 +350,9 @@
                             @endphp
                             <div x-data="{ 
                                     status: '{{ $status }}',
-                                    async cycleStatus() {
-                                        // Cycle: none (neutral) -> active (validé) -> refused (écarter) -> none
-                                        let nextStatus = 'none';
-                                        if (this.status === 'none') nextStatus = 'active';
-                                        else if (this.status === 'active') nextStatus = 'refused';
-                                        else if (this.status === 'refused') nextStatus = 'none';
+                                    async updateStatus(newStatus) {
+                                        // Si on clique sur le statut déjà actif, on repasse en 'none'
+                                        let finalStatus = (this.status === newStatus) ? 'none' : newStatus;
                                         
                                         const url = '{{ route('profile.skills.status', $skill) }}';
                                         const res = await fetch(url, {
@@ -365,17 +362,17 @@
                                                 'Accept': 'application/json',
                                                 'Content-Type': 'application/json'
                                             },
-                                            body: JSON.stringify({ status: nextStatus })
+                                            body: JSON.stringify({ status: finalStatus })
                                         });
                                         if (res.ok) {
-                                            this.status = nextStatus;
+                                            this.status = finalStatus;
                                             if(window.dashboard) {
                                                 const messages = {
                                                      'active': 'Compétence ajoutée à votre profil !',
                                                      'refused': 'Compétence écartée. Je pénaliserai ces offres.',
                                                      'none': 'Préférence réinitialisée.'
                                                  };
-                                                 window.dashboard.showToast(messages[nextStatus], 'success');
+                                                 window.dashboard.showToast(messages[finalStatus], 'success');
                                                 // On rafraîchit la liste pour mettre à jour les scores globaux
                                                 window.dashboard.refreshList();
                                                 // On rafraîchit la preview pour voir le détail du score mis à jour
@@ -384,8 +381,7 @@
                                         }
                                     }
                                  }" 
-                                 @click="cycleStatus()"
-                                 class="flex items-center justify-between p-3 rounded-xl border transition-all duration-300 cursor-pointer group"
+                                 class="flex items-center justify-between p-3 rounded-xl border transition-all duration-300 group"
                                  :class="{
                                     'bg-emerald-50 border-emerald-100 text-emerald-700 shadow-sm': status === 'active',
                                     'bg-rose-50 border-rose-100 text-rose-700 shadow-sm': status === 'refused',
@@ -409,10 +405,21 @@
                                         <span x-show="status === 'active'">Maîtrisée (+1)</span>
                                         <span x-show="status === 'refused'">Refusée (-5)</span>
                                     </span>
-                                    <div class="p-1 rounded-lg bg-white/50 border border-transparent group-hover:border-slate-200">
-                                        <svg x-show="status === 'active'" class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                                        <svg x-show="status === 'refused'" class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>
-                                        <svg x-show="status === 'none'" class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
+                                    
+                                    <div class="flex items-center gap-1 bg-white/50 p-1 rounded-xl border border-slate-100 transition-opacity duration-300" 
+                                         :class="status !== 'none' ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'">
+                                        <button @click.stop="updateStatus('active')" 
+                                                class="p-1 rounded-lg transition-all"
+                                                title="Valider cette compétence"
+                                                :class="status === 'active' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-300 hover:text-emerald-500 hover:bg-emerald-50'">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                        </button>
+                                        <button @click.stop="updateStatus('refused')" 
+                                                class="p-1 rounded-lg transition-all"
+                                                title="Refuser/Écarter cette compétence"
+                                                :class="status === 'refused' ? 'bg-rose-500 text-white shadow-sm' : 'text-slate-300 hover:text-rose-500 hover:bg-rose-50'">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                        </button>
                                     </div>
                                 </div>
                             </div>

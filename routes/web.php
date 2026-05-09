@@ -38,7 +38,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Vector Testing
     Route::post('/jobs/{jobOffer}/embed', [\App\Http\Controllers\VectorController::class, 'embedJob'])->name('jobs.embed');
     Route::post('/profile/embed', [\App\Http\Controllers\VectorController::class, 'embedProfile'])->name('profile.embed');
-    Route::post('/matching/vector-sync', [\App\Http\Controllers\VectorController::class, 'syncSimilarities'])->name('matching.vector-sync');
     Route::post('/matching/top-ai-sync', [JobOfferController::class, 'triggerTopAi'])->name('matching.top-ai-sync');
 });
 
@@ -55,6 +54,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/profile/skills/suggest', [\App\Http\Controllers\ProfileSkillController::class, 'suggest'])->name('profile.skills.suggest');
     Route::post('/profile/skills/{skill}/status', [\App\Http\Controllers\ProfileSkillController::class, 'updateStatus'])->name('profile.skills.status');
     Route::get('/profile/skills/soft', [\App\Http\Controllers\ProfileSkillController::class, 'softSkills'])->name('profile.skills.soft');
+    
+    // Route de synchronisation (accessible sans 'verified')
+    Route::match(['get', 'post'], '/vector-sync', [\App\Http\Controllers\VectorController::class, 'syncSimilarities'])->name('matching.vector-sync');
 
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
@@ -88,4 +90,16 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/dashboard', [\App\Http\Controllers\AdminController::class, 'dashboard'])->name('dashboard');
     Route::post('/users/{user}/toggle-admin', [\App\Http\Controllers\AdminController::class, 'toggleAdmin'])->name('users.toggle-admin');
     Route::post('/users/{user}/update-limit', [\App\Http\Controllers\AdminController::class, 'updateLimit'])->name('users.update-limit');
+    Route::post('/matching/clear', [\App\Http\Controllers\AdminController::class, 'clearAllMatches'])->name('matching.clear');
+    Route::post('/matching/clear-ai', [\App\Http\Controllers\AdminController::class, 'clearAiAnalyses'])->name('matching.clear-ai');
+    Route::post('/matching/vector-sync', [\App\Http\Controllers\VectorController::class, 'syncGlobalSimilarities'])->name('matching.vector-sync');
+    Route::post('/matching/scan', [\App\Http\Controllers\VectorController::class, 'launchBatchVectorization'])->name('matching.scan');
+    Route::get('/matching/clear-get', [\App\Http\Controllers\AdminController::class, 'clearAllMatches'])->name('matching.clear-get');
+    
+    // Queue Monitoring
+    Route::get('/queue', [\App\Http\Controllers\AdminController::class, 'queueMonitor'])->name('queue.monitor');
+    Route::post('/queue/clear', [\App\Http\Controllers\AdminController::class, 'clearQueue'])->name('queue.clear');
+    Route::post('/queue/failed/clear', [\App\Http\Controllers\AdminController::class, 'clearFailedJobs'])->name('queue.failed.clear');
+    Route::delete('/queue/jobs/{id}', [\App\Http\Controllers\AdminController::class, 'deleteJob'])->name('queue.jobs.delete');
+    Route::post('/queue/jobs/{id}/retry', [\App\Http\Controllers\AdminController::class, 'retryJob'])->name('queue.jobs.retry');
 });

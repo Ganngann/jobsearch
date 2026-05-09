@@ -93,19 +93,9 @@ class MatchingService
         $attractivity = $config['base_score'];
         $details = ['penalties' => [], 'bonuses' => []];
 
-        // --- 0. EXCEPTION DONNÉES PAUVRES (Level 4 doc) ---
-        // Si l'offre n'a pas de données techniques, on reste neutre (100)
-        if ($jobOffer->skills->isEmpty() && $jobOffer->languages->isEmpty() && $jobOffer->permits->isEmpty()) {
-            return [
-                'score' => 100,
-                'details' => [
-                    'base' => 100,
-                    'penalties' => [],
-                    'bonuses' => [],
-                    'is_poor_data' => true
-                ]
-            ];
-        }
+        // --- 0. DÉTECTION DONNÉES PAUVRES ---
+        // On marque l'offre si elle n'a pas de données techniques, mais on continue pour la localisation.
+        $isPoorData = $jobOffer->skills->isEmpty() && $jobOffer->languages->isEmpty() && $jobOffer->permits->isEmpty();
 
         // --- 1. HANDICAPS (SOUSTRACTION) ---
 
@@ -191,7 +181,7 @@ class MatchingService
                 if ($penalty > 0.5) { // On ne pénalise pas pour moins d'un demi-point
                     $attractivity -= $penalty;
                     $details['penalties'][] = [
-                        'label' => 'Friction distance (' . round($distance, 1) . 'km)', 
+                        'label' => 'Distance (' . round($distance, 1) . 'km)', 
                         'value' => -round($penalty, 1), 
                         'type' => 'distance',
                         'meta' => ['distance' => $distance, 'telework' => $isTelework]
@@ -243,6 +233,7 @@ class MatchingService
                 'bonuses' => $details['bonuses'],
                 'distance' => $distance ? round($distance, 1) : null,
                 'is_telework' => $isTelework ?? false,
+                'is_poor_data' => $isPoorData,
             ]
         ];
     }
@@ -425,8 +416,13 @@ class MatchingService
             // 2. Nettoyage des préfixes administratifs courants
             $cleanLocation = trim(str_ireplace(['Arrondissement de', 'Province de', 'Région de'], '', $location));
             
-            // 3. Cherche par nom de ville exact
+            // 3. Cherche par nom de ville exact (avec fallback sur le casing)
             $zip = ZipCode::where('city', $cleanLocation)->first();
+            
+            if (!$zip) {
+                $zip = ZipCode::where('city', \Illuminate\Support\Str::title(mb_strtolower($cleanLocation)))->first();
+            }
+
             if ($zip) $coords = ['lat' => $zip->latitude, 'lon' => $zip->longitude];
 
             // 4. Recherche LIKE (plus lent)
