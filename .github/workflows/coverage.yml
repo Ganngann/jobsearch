@@ -47,6 +47,9 @@ jobs:
       - name: Build assets
         run: npm run build
 
+      - name: Execute frontend tests
+        run: npm run test:js
+
       - name: Execute tests with coverage
         env:
           DB_CONNECTION: sqlite

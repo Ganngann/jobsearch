@@ -55,11 +55,20 @@ class MatchingServiceTest extends TestCase
 
         $result = $this->service->calculatePreScore($user, $jobOffer);
 
-        // MatchingService calculates score based on penalties and bonuses now.
-        // It's subtraction based. It shouldn't crash.
-        $this->assertIsArray($result);
-        $this->assertArrayHasKey('score', $result);
-        $this->assertArrayHasKey('details', $result);
+        // MatchingService calculatePreScore looks at bonuses/penalties, not categories.
+        // The active skill matches, which gives a bonus.
+        // The draft skill is missing from validated skills, but calculatePreScore doesn't penalize missing skills.
+        
+        $this->assertEquals(100, $result['details']['base']); // Base score
+
+        // Find skill matched bonus
+        $skillBonus = collect($result['details']['bonuses'])->firstWhere('type', 'skill_matched');
+        $this->assertNotNull($skillBonus);
+        $this->assertEquals(0, $skillBonus['value']); // 1 matched skill * 0 bonus = 0
+        $this->assertEquals('Compétences maîtrisées (1)', $skillBonus['label']);
+        $this->assertContains('Active Skill', $skillBonus['items']);
+
+        // Check structure for master compatibility
         $this->assertArrayHasKey('penalties', $result['details']);
         $this->assertArrayHasKey('bonuses', $result['details']);
     }
