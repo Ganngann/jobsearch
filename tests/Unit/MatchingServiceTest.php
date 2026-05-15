@@ -8,6 +8,7 @@ use App\Models\Employer;
 use App\Models\Skill;
 use App\Services\MatchingService;
 use App\Services\GeminiService;
+use App\Services\VectorService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Mockery;
@@ -56,13 +57,23 @@ class MatchingServiceTest extends TestCase
 
         $result = $this->service->calculatePreScore($user, $jobOffer);
 
-        // Dans la nouvelle logique, on ne gagne des points que pour les compétences actives.
-        // Les compétences "draft" de l'utilisateur ne comptent pas comme un match.
-        
-        $bonusSkillMatched = collect($result['details']['bonuses'])->firstWhere('type', 'skill_matched');
+        // MatchingService calculates score based on penalties and bonuses now.
+        $this->assertIsArray($result);
+        $this->assertEquals(100, $result['score']);
+        $this->assertEquals(100, $result['details']['base']); // Base score
 
-        $this->assertNotNull($bonusSkillMatched, "Un bonus pour compétences matchées devrait exister.");
-        $this->assertCount(1, $bonusSkillMatched['items'], "Seule une compétence (active) devrait être matchée.");
-        $this->assertEquals('Active Skill', $bonusSkillMatched['items'][0]);
+        // Find skill matched bonus
+        $skillBonus = collect($result['details']['bonuses'])->firstWhere('type', 'skill_matched');
+        $this->assertNotNull($skillBonus);
+        $this->assertEquals(0, $skillBonus['value']); // 1 matched skill * 0 bonus = 0
+        
+        // Assert only the active skill matched
+        $this->assertCount(1, $skillBonus['items']);
+        $this->assertContains('Active Skill', $skillBonus['items']);
+        $this->assertEquals('Compétences maîtrisées (1)', $skillBonus['label']);
+
+        // Check structure
+        $this->assertArrayHasKey('penalties', $result['details']);
+        $this->assertArrayHasKey('bonuses', $result['details']);
     }
 }
