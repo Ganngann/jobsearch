@@ -47,11 +47,12 @@ describe('Feedback System Alpine Component', () => {
 
     it('handles send error', async () => {
         fetch.mockRejectedValueOnce(new Error('Network error'));
-        window.alert = vi.fn();
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
         component.message = 'Bug report';
         await component.sendFeedback();
 
         expect(component.loading).toBe(false);
+        consoleSpy.mockRestore();
     });
 });

@@ -1,6 +1,8 @@
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
 
+process.env.LARAVEL_BYPASS_ENV_CHECK = '1';
+
 export default defineConfig({
     plugins: [
         laravel({

@@ -59,7 +59,17 @@ class MatchingServiceTest extends TestCase
         // MatchingService calculates score based on penalties and bonuses now.
         $this->assertIsArray($result);
         $this->assertEquals(100, $result['score']);
-        $this->assertArrayHasKey('details', $result);
+        
+        $this->assertEquals(100, $result['details']['base']); // Base score
+
+        // Find skill matched bonus
+        $skillBonus = collect($result['details']['bonuses'])->firstWhere('type', 'skill_matched');
+        $this->assertNotNull($skillBonus);
+        $this->assertEquals(0, $skillBonus['value']); // 1 matched skill * 0 bonus = 0
+        $this->assertEquals('Compétences maîtrisées (1)', $skillBonus['label']);
+        $this->assertContains('Active Skill', $skillBonus['items']);
+
+        // Check structure
         $this->assertArrayHasKey('penalties', $result['details']);
         $this->assertArrayHasKey('bonuses', $result['details']);
     }
