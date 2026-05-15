@@ -75,7 +75,7 @@ describe('Mobility Alpine Component', () => {
         const mockResponse = { ok: true };
         fetch.mockResolvedValue(mockResponse);
 
-        await component.save();
+        const savePromise = component.save();
 
         expect(component.isSaving).toBe(true);
         expect(fetch).toHaveBeenCalledWith('/profile/mobility', expect.objectContaining({
@@ -83,7 +83,8 @@ describe('Mobility Alpine Component', () => {
             body: expect.stringContaining('"zip_code":"5000"')
         }));
 
-        vi.advanceTimersByTime(600);
+        await savePromise;
+
         expect(component.isSaving).toBe(false);
         expect(component.showSuccess).toBe(true);
         expect(window.dispatchEvent).toHaveBeenCalledWith(expect.any(CustomEvent));

@@ -1,10 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import discovery from '../../resources/js/discovery';
 
-// Mock Alpine
-global.Alpine = {
-    store: vi.fn()
-};
+// Mock Alpine *before* importing the module that imports it
+vi.mock('alpinejs', () => {
+    return {
+        default: {
+            store: vi.fn()
+        }
+    };
+});
+
+import Alpine from 'alpinejs';
+import discovery from '../../resources/js/discovery';
 
 // Mock fetch
 global.fetch = vi.fn();
@@ -16,7 +22,7 @@ describe('Discovery Alpine Store', () => {
         vi.clearAllMocks();
         discovery();
         // Get the store object passed to Alpine.store('discovery', { ... })
-        store = global.Alpine.store.mock.calls[0][1];
+        store = Alpine.store.mock.calls[0][1];
     });
 
     it('initializes with correct default values', () => {
