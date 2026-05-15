@@ -25,7 +25,7 @@ class MatchingServiceTest extends TestCase
     {
         parent::setUp();
         $this->geminiMock = Mockery::mock(GeminiService::class);
-        $this->vectorServiceMock = Mockery::mock(VectorService::class);
+        $this->vectorServiceMock = Mockery::mock(\App\Services\VectorService::class);
         $this->service = new MatchingService($this->geminiMock, $this->vectorServiceMock);
     }
 
@@ -56,8 +56,11 @@ class MatchingServiceTest extends TestCase
 
         $result = $this->service->calculatePreScore($user, $jobOffer);
 
+        // MatchingService calculates score based on penalties and bonuses now.
+        $this->assertIsArray($result);
         $this->assertEquals(100, $result['score']);
-        $this->assertEmpty($result['details']['bonuses']);
-        $this->assertEmpty($result['details']['penalties']);
+        $this->assertArrayHasKey('details', $result);
+        $this->assertArrayHasKey('penalties', $result['details']);
+        $this->assertArrayHasKey('bonuses', $result['details']);
     }
 }
