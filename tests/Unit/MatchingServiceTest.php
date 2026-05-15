@@ -18,12 +18,14 @@ class MatchingServiceTest extends TestCase
 
     protected MatchingService $service;
     protected $geminiMock;
+    protected $vectorServiceMock;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->geminiMock = Mockery::mock(GeminiService::class);
-        $this->service = new MatchingService($this->geminiMock);
+        $this->vectorServiceMock = Mockery::mock(\App\Services\VectorService::class);
+        $this->service = new MatchingService($this->geminiMock, $this->vectorServiceMock);
     }
 
     public function test_calculate_pre_score_only_considers_active_skills(): void
