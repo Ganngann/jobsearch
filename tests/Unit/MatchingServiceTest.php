@@ -18,13 +18,14 @@ class MatchingServiceTest extends TestCase
 
     protected MatchingService $service;
     protected $geminiMock;
+    protected $vectorServiceMock;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->geminiMock = Mockery::mock(GeminiService::class);
-        $vectorServiceMock = Mockery::mock(\App\Services\VectorService::class);
-        $this->service = new MatchingService($this->geminiMock, $vectorServiceMock);
+        $this->vectorServiceMock = Mockery::mock(\App\Services\VectorService::class);
+        $this->service = new MatchingService($this->geminiMock, $this->vectorServiceMock);
     }
 
     public function test_calculate_pre_score_only_considers_active_skills(): void
@@ -66,5 +67,9 @@ class MatchingServiceTest extends TestCase
         $this->assertEquals(0, $skillBonus['value']); // 1 matched skill * 0 bonus = 0
         $this->assertEquals('Compétences maîtrisées (1)', $skillBonus['label']);
         $this->assertContains('Active Skill', $skillBonus['items']);
+
+        // Check structure for master compatibility
+        $this->assertArrayHasKey('penalties', $result['details']);
+        $this->assertArrayHasKey('bonuses', $result['details']);
     }
 }

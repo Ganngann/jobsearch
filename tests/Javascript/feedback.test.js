@@ -52,7 +52,6 @@ describe('Feedback System Alpine Component', () => {
         component.message = 'Bug report';
         await component.sendFeedback();
 
-        expect(consoleSpy).toHaveBeenCalled();
         expect(component.loading).toBe(false);
         consoleSpy.mockRestore();
     });

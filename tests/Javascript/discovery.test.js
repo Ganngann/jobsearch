@@ -1,17 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import discovery from '../../resources/js/discovery';
 
-import Alpine from 'alpinejs';
-
-// Mock Alpine
+// Mock Alpine *before* importing the module that imports it
 vi.mock('alpinejs', () => {
-    const mockStore = vi.fn();
     return {
         default: {
-            store: mockStore
+            store: vi.fn()
         }
     };
 });
+
+import Alpine from 'alpinejs';
+import discovery from '../../resources/js/discovery';
 
 // Mock fetch
 global.fetch = vi.fn();
