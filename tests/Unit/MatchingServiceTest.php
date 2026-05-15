@@ -37,6 +37,7 @@ class MatchingServiceTest extends TestCase
         $activeSkill = Skill::create(['label' => 'Active Skill', 'code' => 'S1', 'type' => 'hard']);
         $draftSkill = Skill::create(['label' => 'Draft Skill', 'code' => 'S2', 'type' => 'hard']);
 
+        // Le candidat a une compétence active et une compétence draft
         $user->skills()->attach($activeSkill->id, ['status' => 'active', 'level' => 'expert']);
         $user->skills()->attach($draftSkill->id, ['status' => 'draft', 'level' => 'expert']);
 
@@ -51,7 +52,7 @@ class MatchingServiceTest extends TestCase
             'is_detailed' => true,
         ]);
 
-        // Job has both skills
+        // L'offre contient les deux compétences
         $jobOffer->skills()->attach([$activeSkill->id, $draftSkill->id]);
 
         $result = $this->service->calculatePreScore($user, $jobOffer);
@@ -59,15 +60,17 @@ class MatchingServiceTest extends TestCase
         // MatchingService calculates score based on penalties and bonuses now.
         $this->assertIsArray($result);
         $this->assertEquals(100, $result['score']);
-        
         $this->assertEquals(100, $result['details']['base']); // Base score
 
         // Find skill matched bonus
         $skillBonus = collect($result['details']['bonuses'])->firstWhere('type', 'skill_matched');
         $this->assertNotNull($skillBonus);
         $this->assertEquals(0, $skillBonus['value']); // 1 matched skill * 0 bonus = 0
-        $this->assertEquals('Compétences maîtrisées (1)', $skillBonus['label']);
+        
+        // Assert only the active skill matched
+        $this->assertCount(1, $skillBonus['items']);
         $this->assertContains('Active Skill', $skillBonus['items']);
+        $this->assertEquals('Compétences maîtrisées (1)', $skillBonus['label']);
 
         // Check structure
         $this->assertArrayHasKey('penalties', $result['details']);

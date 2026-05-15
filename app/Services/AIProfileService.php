@@ -575,15 +575,26 @@ EOT;
         }
 
         // 8. Traiter les langues suggérées
-        foreach ($aiResponse['languages'] ?? [] as $data) {
-            $action = $data['action'] ?? 'add';
-            if (!empty($data['label'])) {
-                $lang = \App\Models\Language::where('label', $data['label'])->first();
+        $suggestedLanguages = $aiResponse['languages'] ?? [];
+        $labels = collect($suggestedLanguages)->pluck('label')->filter()->unique();
+
+        if ($labels->isNotEmpty()) {
+            $existingLanguages = \App\Models\Language::whereIn('label', $labels)->get()->keyBy('label');
+
+            foreach ($suggestedLanguages as $data) {
+                $label = $data['label'] ?? null;
+                if (!$label) continue;
+
+                $action = $data['action'] ?? 'add';
+                $lang = $existingLanguages->get($label);
                 
                 if ($action === 'delete' && $lang) {
                     $user->languages()->detach($lang->id);
                 } elseif ($action !== 'delete') {
-                    $lang = $lang ?: \App\Models\Language::create(['label' => $data['label']]);
+                    if (!$lang) {
+                        $lang = \App\Models\Language::create(['label' => $label]);
+                        $existingLanguages->put($label, $lang);
+                    }
                     $user->languages()->syncWithoutDetaching([$lang->id => ['level' => $data['level'] ?? 'Débutant']]);
                 }
             }
