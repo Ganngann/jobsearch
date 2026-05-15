@@ -432,16 +432,82 @@ class ProfileChatController extends Controller
     public function storeItem(Request $request, $type)
     {
         $user = Auth::user();
-        $data = $request->all();
+
+        $rules = match ($type) {
+            'experience' => [
+                'company' => 'required|string|max:255',
+                'company_logo' => 'nullable|string|max:255',
+                'title' => 'required|string|max:255',
+                'employment_type' => 'nullable|string|max:255',
+                'description' => 'nullable|string',
+                'location' => 'nullable|string|max:255',
+                'start_date' => 'nullable',
+                'end_date' => 'nullable',
+                'is_current' => 'nullable|boolean',
+            ],
+            'education' => [
+                'school' => 'required|string|max:255',
+                'degree' => 'nullable|string|max:255',
+                'field' => 'nullable|string|max:255',
+                'start_date' => 'nullable',
+                'graduation_year' => 'nullable',
+                'grade' => 'nullable|string|max:255',
+                'description' => 'nullable|string',
+            ],
+            'project' => [
+                'name' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'url' => 'nullable|string|max:255',
+                'start_date' => 'nullable',
+                'end_date' => 'nullable',
+                'is_ongoing' => 'nullable|boolean',
+            ],
+            'interest' => [
+                'name' => 'required|string|max:255',
+            ],
+            'certification' => [
+                'name' => 'required|string|max:255',
+                'issuing_organization' => 'nullable|string|max:255',
+                'issue_date' => 'nullable',
+                'expiration_date' => 'nullable',
+                'credential_id' => 'nullable|string|max:255',
+                'credential_url' => 'nullable|string|max:255',
+            ],
+            'volunteer' => [
+                'organization' => 'required|string|max:255',
+                'role' => 'nullable|string|max:255',
+                'description' => 'nullable|string',
+                'start_date' => 'nullable',
+                'end_date' => 'nullable',
+            ],
+            'fact' => [
+                'content' => 'required|string',
+                'category' => 'nullable|string|max:255',
+                'experience_id' => 'nullable|exists:experiences,id',
+                'session_id' => 'nullable|string|max:255',
+            ],
+            'skill' => [
+                'label' => 'required|string|max:255',
+            ],
+            'language' => [
+                'label' => 'required|string|max:255',
+                'level' => 'nullable|string|max:255',
+            ],
+            default => null
+        };
+
+        if (!$rules) return response()->json(['error' => 'Invalid type'], 400);
+
+        $data = $request->validate($rules);
         $data['status'] = 'validated'; // Manual addition is pre-validated
-        
+
         // Sanitize dates if present
         if (isset($data['start_date'])) $data['start_date'] = $this->sanitizeDate($data['start_date']);
         if (isset($data['end_date'])) $data['end_date'] = $this->sanitizeDate($data['end_date']);
         if (isset($data['issue_date'])) $data['issue_date'] = $this->sanitizeDate($data['issue_date']);
         if (isset($data['expiration_date'])) $data['expiration_date'] = $this->sanitizeDate($data['expiration_date']);
 
-        $item = match($type) {
+        $item = match ($type) {
             'experience' => $user->experiences()->create($data),
             'education' => $user->educations()->create($data),
             'project' => $user->projects()->create($data),
@@ -449,8 +515,7 @@ class ProfileChatController extends Controller
             'certification' => $user->certifications()->create($data),
             'volunteer' => $user->volunteerExperiences()->create($data),
             'fact' => $user->facts()->create($data),
-            'skill' => (function() use ($user, $data) {
-                if (empty($data['label'])) return null;
+            'skill' => (function () use ($user, $data) {
                 $skill = \App\Models\Skill::firstOrCreate(
                     ['label' => $data['label']],
                     ['code' => \Illuminate\Support\Str::slug($data['label']), 'type' => 'manual', 'slug' => \Illuminate\Support\Str::slug($data['label'])]
@@ -458,8 +523,7 @@ class ProfileChatController extends Controller
                 $user->skills()->syncWithoutDetaching([$skill->id]);
                 return $skill;
             })(),
-            'language' => (function() use ($user, $data) {
-                if (empty($data['label'])) return null;
+            'language' => (function () use ($user, $data) {
                 $lang = \App\Models\Language::where('label', 'like', $data['label'])->first();
                 if (!$lang) return null;
                 $user->languages()->syncWithoutDetaching([$lang->id => ['level' => $data['level'] ?? 'Débutant']]);
@@ -468,7 +532,7 @@ class ProfileChatController extends Controller
             default => null
         };
 
-        if (!$item) return response()->json(['error' => 'Invalid type or creation failed'], 400);
+        if (!$item) return response()->json(['error' => 'Creation failed'], 400);
 
         return response()->json(['success' => true, 'item' => $item]);
     }
@@ -476,13 +540,27 @@ class ProfileChatController extends Controller
     public function updateItem(Request $request, $type, $id)
     {
         $user = Auth::user();
-        
+
         if ($type === 'user') {
-            $user->update($request->only(['name', 'email', 'phone', 'linkedin_url', 'github_url', 'portfolio_url', 'birth_date', 'links', 'headline', 'profile_text', 'aspirations']));
+            $validatedData = $request->validate([
+                'name' => 'nullable|string|max:255',
+                'email' => 'nullable|email|max:255',
+                'phone' => 'nullable|string|max:255',
+                'linkedin_url' => 'nullable|url|max:255',
+                'github_url' => 'nullable|url|max:255',
+                'portfolio_url' => 'nullable|url|max:255',
+                'birth_date' => 'nullable',
+                'links' => 'nullable|array',
+                'headline' => 'nullable|string|max:255',
+                'profile_text' => 'nullable|string',
+                'aspirations' => 'nullable|string',
+            ]);
+            if (isset($validatedData['birth_date'])) $validatedData['birth_date'] = $this->sanitizeDate($validatedData['birth_date']);
+            $user->update($validatedData);
             return response()->json(['success' => true, 'item' => $user->fresh()]);
         }
 
-        $item = match($type) {
+        $item = match ($type) {
             'experience' => $user->experiences()->find($id),
             'education' => $user->educations()->find($id),
             'project' => $user->projects()->find($id),
@@ -497,10 +575,71 @@ class ProfileChatController extends Controller
 
         if (!$item) return response()->json(['error' => 'Item not found'], 404);
 
-        // Update all provided fields and set status to validated
-        $data = $request->all();
+        $rules = match ($type) {
+            'experience' => [
+                'company' => 'required|string|max:255',
+                'company_logo' => 'nullable|string|max:255',
+                'title' => 'required|string|max:255',
+                'employment_type' => 'nullable|string|max:255',
+                'description' => 'nullable|string',
+                'location' => 'nullable|string|max:255',
+                'start_date' => 'nullable',
+                'end_date' => 'nullable',
+                'is_current' => 'nullable|boolean',
+            ],
+            'education' => [
+                'school' => 'required|string|max:255',
+                'degree' => 'nullable|string|max:255',
+                'field' => 'nullable|string|max:255',
+                'start_date' => 'nullable',
+                'graduation_year' => 'nullable',
+                'grade' => 'nullable|string|max:255',
+                'description' => 'nullable|string',
+            ],
+            'project' => [
+                'name' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'url' => 'nullable|string|max:255',
+                'start_date' => 'nullable',
+                'end_date' => 'nullable',
+                'is_ongoing' => 'nullable|boolean',
+            ],
+            'interest' => [
+                'name' => 'required|string|max:255',
+            ],
+            'certification' => [
+                'name' => 'required|string|max:255',
+                'issuing_organization' => 'nullable|string|max:255',
+                'issue_date' => 'nullable',
+                'expiration_date' => 'nullable',
+                'credential_id' => 'nullable|string|max:255',
+                'credential_url' => 'nullable|string|max:255',
+            ],
+            'volunteer' => [
+                'organization' => 'required|string|max:255',
+                'role' => 'nullable|string|max:255',
+                'description' => 'nullable|string',
+                'start_date' => 'nullable',
+                'end_date' => 'nullable',
+            ],
+            'fact' => [
+                'content' => 'required|string',
+                'category' => 'nullable|string|max:255',
+                'experience_id' => 'nullable|exists:experiences,id',
+            ],
+            'skill' => [
+                'label' => 'required|string|max:255',
+            ],
+            'language' => [
+                'label' => 'required|string|max:255',
+                'level' => 'nullable|string|max:255',
+            ],
+            default => []
+        };
+
+        $data = $request->validate($rules);
         $data['status'] = 'validated'; // Manual edit validates the item
-        
+
         // Sanitize dates if present
         if (isset($data['start_date'])) $data['start_date'] = $this->sanitizeDate($data['start_date']);
         if (isset($data['end_date'])) $data['end_date'] = $this->sanitizeDate($data['end_date']);
