@@ -36,6 +36,7 @@ class MatchingServiceTest extends TestCase
         $activeSkill = Skill::create(['label' => 'Active Skill', 'code' => 'S1', 'type' => 'hard']);
         $draftSkill = Skill::create(['label' => 'Draft Skill', 'code' => 'S2', 'type' => 'hard']);
 
+        // Le candidat a une compétence active et une compétence draft
         $user->skills()->attach($activeSkill->id, ['status' => 'active', 'level' => 'expert']);
         $user->skills()->attach($draftSkill->id, ['status' => 'draft', 'level' => 'expert']);
 
@@ -50,17 +51,18 @@ class MatchingServiceTest extends TestCase
             'is_detailed' => true,
         ]);
 
-        // Job has both skills
+        // L'offre contient les deux compétences
         $jobOffer->skills()->attach([$activeSkill->id, $draftSkill->id]);
 
         $result = $this->service->calculatePreScore($user, $jobOffer);
 
-        // MatchingService gives 40% to skills.
-        // If it matches 1 out of 2 => score should be (1/2)*40 = 20.
-        // If it matches 2 out of 2 => score should be (2/2)*40 = 40.
+        // Dans la nouvelle logique, on ne gagne des points que pour les compétences actives.
+        // Les compétences "draft" de l'utilisateur ne comptent pas comme un match.
         
-        $this->assertEquals(20, $result['details']['categories']['skills']['score']);
-        $this->assertCount(1, $result['details']['categories']['skills']['missing']);
-        $this->assertEquals('Draft Skill', $result['details']['categories']['skills']['missing'][0]);
+        $bonusSkillMatched = collect($result['details']['bonuses'])->firstWhere('type', 'skill_matched');
+
+        $this->assertNotNull($bonusSkillMatched, "Un bonus pour compétences matchées devrait exister.");
+        $this->assertCount(1, $bonusSkillMatched['items'], "Seule une compétence (active) devrait être matchée.");
+        $this->assertEquals('Active Skill', $bonusSkillMatched['items'][0]);
     }
 }
