@@ -23,7 +23,8 @@ class MatchingServiceTest extends TestCase
     {
         parent::setUp();
         $this->geminiMock = Mockery::mock(GeminiService::class);
-        $this->service = new MatchingService($this->geminiMock);
+        $vectorServiceMock = Mockery::mock(\App\Services\VectorService::class);
+        $this->service = new MatchingService($this->geminiMock, $vectorServiceMock);
     }
 
     public function test_calculate_pre_score_only_considers_active_skills(): void
@@ -53,12 +54,17 @@ class MatchingServiceTest extends TestCase
 
         $result = $this->service->calculatePreScore($user, $jobOffer);
 
-        // MatchingService gives 40% to skills.
-        // If it matches 1 out of 2 => score should be (1/2)*40 = 20.
-        // If it matches 2 out of 2 => score should be (2/2)*40 = 40.
+        // MatchingService calculatePreScore looks at bonuses/penalties, not categories.
+        // The active skill matches, which gives a bonus.
+        // The draft skill is missing from validated skills, but calculatePreScore doesn't penalize missing skills.
         
-        $this->assertEquals(20, $result['details']['categories']['skills']['score']);
-        $this->assertCount(1, $result['details']['categories']['skills']['missing']);
-        $this->assertEquals('Draft Skill', $result['details']['categories']['skills']['missing'][0]);
+        $this->assertEquals(100, $result['details']['base']); // Base score
+
+        // Find skill matched bonus
+        $skillBonus = collect($result['details']['bonuses'])->firstWhere('type', 'skill_matched');
+        $this->assertNotNull($skillBonus);
+        $this->assertEquals(0, $skillBonus['value']); // 1 matched skill * 0 bonus = 0
+        $this->assertEquals('Compétences maîtrisées (1)', $skillBonus['label']);
+        $this->assertContains('Active Skill', $skillBonus['items']);
     }
 }
