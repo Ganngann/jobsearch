@@ -8,6 +8,7 @@ use App\Models\Employer;
 use App\Models\Skill;
 use App\Services\MatchingService;
 use App\Services\GeminiService;
+use App\Services\VectorService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Mockery;
@@ -55,9 +56,9 @@ class MatchingServiceTest extends TestCase
 
         $result = $this->service->calculatePreScore($user, $jobOffer);
 
-        // MatchingService calculatePreScore looks at bonuses/penalties, not categories.
-        // The active skill matches, which gives a bonus.
-        // The draft skill is missing from validated skills, but calculatePreScore doesn't penalize missing skills.
+        // MatchingService calculates score based on penalties and bonuses now.
+        $this->assertIsArray($result);
+        $this->assertEquals(100, $result['score']);
         
         $this->assertEquals(100, $result['details']['base']); // Base score
 
@@ -68,7 +69,7 @@ class MatchingServiceTest extends TestCase
         $this->assertEquals('Compétences maîtrisées (1)', $skillBonus['label']);
         $this->assertContains('Active Skill', $skillBonus['items']);
 
-        // Check structure for master compatibility
+        // Check structure
         $this->assertArrayHasKey('penalties', $result['details']);
         $this->assertArrayHasKey('bonuses', $result['details']);
     }
