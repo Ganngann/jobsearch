@@ -13,5 +13,14 @@ export default defineConfig({
     test: {
         environment: 'happy-dom',
         globals: true,
+        coverage: {
+            reporter: ['text', 'json-summary', 'json'],
+            thresholds: {
+                lines: 49,
+                functions: 62,
+                branches: 46,
+                statements: 48,
+            },
+        },
     },
 });
