@@ -127,6 +127,7 @@ Les badges de compétences sur l'offre sont interactifs :
 - [x] Création de la configuration centralisée (`config/matching.php`).
 - [x] Refonte du `MatchingService` (Logique soustractive).
 - [x] Intégration du Modèle Multiplicatif (Sémantique x Attractivité).
+- [x] Mise en place du calcul de distance réel (Haversine) basé sur les coordonnées postales.
 - [ ] Injection du malus de vétusté automatique.
 
 ### Phase 2 : Interface & Interaction (Frontend)
