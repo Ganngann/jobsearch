@@ -15,6 +15,12 @@ export default defineConfig({
         globals: true,
         coverage: {
             reporter: ['text', 'json-summary', 'json'],
+            thresholds: {
+                lines: 50,
+                functions: 50,
+                branches: 50,
+                statements: 50,
+            },
         },
     },
 });
