@@ -118,9 +118,9 @@ function generateApiReport(cloverPath) {
 
   // Set default minimums to match the current state of the backend
   const metricMap = {
-    'Statements': { current: parseFloat(metrics.statements), min: 18 },
-    'Methods': { current: parseFloat(metrics.methods), min: 27 },
-    'Elements': { current: parseFloat(metrics.elements), min: 18 }
+    'Statements': { current: parseFloat(metrics.statements), min: 45 },
+    'Methods': { current: parseFloat(metrics.methods), min: 46 },
+    'Elements': { current: parseFloat(metrics.elements), min: 45 }
   };
 
   let improved = false;
