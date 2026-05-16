@@ -82,7 +82,7 @@ class AdminController extends Controller
             'jobs_total' => \App\Models\JobOffer::count(),
             'jobs_vectorized' => \App\Models\JobOffer::whereNotNull('vector_embedding')->count(),
             'jobs_active_vectorized' => \App\Models\JobOffer::where('status', 'active')->whereNotNull('vector_embedding')->count(),
-            'jobs_pending_vectorization' => \App\Models\JobOffer::where('status', 'active')->whereNull('vector_embedding')->count(),
+            'jobs_pending_vectorization' => \App\Models\JobOffer::where('status', 'active')->where('is_detailed', true)->whereNull('vector_embedding')->count(),
             'matches_total' => \App\Models\UserMatch::count(),
             'matches_ai' => \App\Models\UserMatch::whereNotNull('ai_score')->count(),
         ];
