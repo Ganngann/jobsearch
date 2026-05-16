@@ -4,8 +4,11 @@ namespace Tests\Feature\Controllers;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 use App\Models\Skill;
+use Mockery;
+use App\Services\ResumeParserService;
 
 class ProfileControllerTest extends TestCase
 {
@@ -72,5 +75,55 @@ class ProfileControllerTest extends TestCase
 
         $response->assertRedirect('/');
         $this->assertNull(User::find($user->id));
+    }
+
+    public function test_upload_resume_error_handling_json()
+    {
+        $user = User::factory()->create();
+
+        $mockParser = Mockery::mock(ResumeParserService::class);
+        $mockParser->shouldReceive('extractText')
+            ->once()
+            ->andThrow(new \Exception('Parsing failed due to encryption'));
+
+        $this->instance(ResumeParserService::class, $mockParser);
+
+        $file = UploadedFile::fake()->create('resume.pdf', 100, 'application/pdf');
+
+        $response = $this->actingAs($user)
+            ->withHeaders(['Accept' => 'application/json'])
+            ->post('/profile/upload-resume', [
+                'resume' => $file
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJson([
+                'message' => 'Parsing failed due to encryption'
+            ]);
+    }
+
+    public function test_upload_resume_error_handling_redirect()
+    {
+        $user = User::factory()->create();
+
+        $mockParser = Mockery::mock(ResumeParserService::class);
+        $mockParser->shouldReceive('extractText')
+            ->once()
+            ->andThrow(new \Exception('Parsing failed due to encryption'));
+
+        $this->instance(ResumeParserService::class, $mockParser);
+
+        $file = UploadedFile::fake()->create('resume.pdf', 100, 'application/pdf');
+
+        $response = $this->actingAs($user)
+            ->from('/profile/edit')
+            ->post('/profile/upload-resume', [
+                'resume' => $file
+            ]);
+
+        $response->assertRedirect('/profile/edit')
+            ->assertSessionHasErrors([
+                'resume' => 'Parsing failed due to encryption'
+            ]);
     }
 }
