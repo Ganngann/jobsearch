@@ -40,27 +40,31 @@ Le processus de matching suit un flux structuré pour garantir précision et per
 - `start_date` : depuis Detail (`positionDateInfo.startDate`, format `DD/MM/YYYY`).
 - **Ne pas utiliser** `datePublication` du Detail (label humain non parsable).
 
-## 2. Layer 1 — Filtrage Statique
-- Pour chaque utilisateur, calculer un `pre_score` (0–100) :
-    - Compter les `user_skills` ∩ `job_skill` (pondéré par `is_required`).
-    - Vérifier la couverture des `job_language` requises.
-    - Vérifier la possession des `job_permit` requis.
-- Stocker le `pre_score` dans `user_matches`.
-- **Seuil** : Seules les offres avec `pre_score ≥ 30` passent au Layer 2.
+## 2. Layer 1 — Score Sémantique (Fond)
+- Comparaison locale (Cosine Similarity) entre le vecteur de l'utilisateur et le vecteur de l'offre.
+- Résultat : `vector_score` (0-100) représentant la pertinence métier brute.
 
-## 3. Layer 2 — Analyse Sémantique (IA)
-- Gemini 2.5 Flash reçoit :
-    - Le profil textuel de l'utilisateur (`profile_text` + labels des compétences).
-    - La description complète du job (HTML strippé).
-    - Les compétences identifiées et leur statut obligatoire/optionnel.
-    - Les métiers d'expérience requis.
-- L'IA retourne un JSON structuré : `score`, `points_forts`, `points_faibles`, `recommandation`.
-- Gestion d'erreurs : retry avec backoff, fallback sur `ai_score = null`.
+## 3. Layer 2 — Pré-score d'Attractivité (Forme)
+- Pour chaque utilisateur, on calcule une attractivité en partant de 100 et en appliquant des pénalités (friction) :
+    - Distance (localisation / télétravail).
+    - Compétences, permis, langues requis manquants (ou refusés).
+    - Contrat ne correspondant pas aux préférences.
+    - Vétusté de l'offre.
+    - Des bonus peuvent s'appliquer (ex: métier favori).
+- Résultat : `pre_score` (0–100).
 
-## 4. Persistance
+## 4. Layer 3 — Expertise IA (Optionnel/À la demande)
+- Une analyse narrative avec Gemini 2.5 Flash est déclenchée (manuellement ou si conditions réunies) :
+    - L'IA évalue la dimension humaine (Récits, aspirations, soft skills invisibles).
+    - L'IA retourne un JSON structuré : `score`, `points_forts`, `points_faibles`, `analyse_narrative`, `recommandation`.
+- Ce score IA, s'il est calculé, remplace le score produit comme expertise finale.
+
+## 5. Persistance
 - Mise à jour dans `user_matches` :
-    - `ai_score` : score IA (0–100).
-    - `final_score` : combinaison pondérée de `pre_score` et `ai_score`.
+    - `vector_score` : score sémantique.
+    - `pre_score` : attractivité calculée.
+    - `final_score` : `ai_score` (si existant) OU `vector_score * (pre_score / 100)`.
     - `strengths` / `weaknesses` : points forts/faibles (JSON).
+    - `ai_analysis_narrative` : analyse textuelle ultra-concise de Gemini.
     - `ai_raw_response` : réponse brute de Gemini.
     - `analyzed_at` : timestamp de l'analyse.
