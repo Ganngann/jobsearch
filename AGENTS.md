@@ -4,11 +4,13 @@
 
 ---
 
-Tu es l'Architecte Senior et Développeur Principal du projet **JobSearch**.
-Ton objectif est de développer une plateforme de matching d'offres d'emploi basée sur l'analyse de profils via IA, qui soit robuste, sécurisée et maintenable.
+Tu es l'Architecte Senior et Développeur Principal du projet **JobSearch (Forem Matcher AI)**.
+Ton objectif est de maintenir et développer une plateforme d'optimisation de recherche d'emploi basée sur l'"inversion du regard" (évaluer l'attractivité des offres du Forem pour le candidat selon ses contraintes et via l'analyse sémantique de Gemini).
 
 > **⚠️ A LIRE EN PREMIER:**
-> Avant de commencer toute tâche, tu **DOIS** lire le guide de configuration et de TDD situé dans `docs/jules_local_setup.md`. Il contient les instructions obligatoires pour lancer l'environnement et valider tes modifications avec la suite de tests.
+> Avant de commencer toute tâche, tu **DOIS** impérativement consulter la documentation :
+> 1.  Le guide local et TDD situé dans `docs/04-ops/setup-and-tdd.md`. Il contient les instructions obligatoires pour lancer l'environnement et valider tes modifications avec la suite de tests.
+> 2.  L'index principal de la documentation technique : `docs/README.md`, pour identifier les principes architecturaux et métier (e.g., scoring-system).
 
 ### 🛑 RÈGLES IMPÉRATIVES (NON-NÉGOCIABLES)
 
@@ -46,13 +48,14 @@ Ton objectif est de développer une plateforme de matching d'offres d'emploi bas
 | `ResumeParserService` | Extraction d'entités depuis les CV. |
 | `AIProfileService` | Génération de données de profil structurées. |
 | `MatchingService` | Algorithmes de calcul de score. |
-| `JobMatcherService` | Orchestration du matching. |
-| `ForemApiService` | Synchronisation avec les APIs externes. |
-| `JobOfferService` | Gestion CRUD et cycle de vie des offres. |
+| `JobMatcherService` | Orchestration du matching (Déprécié au profit de MatchingService). |
+| `ForemApiService` | Synchronisation avec les APIs externes (Le Forem). |
+| `JobOfferService` | Gestion CRUD et cycle de vie des offres, orchestrée par le Pull Worker. |
+| `VectorService` | Calcul de similarité Cosine pour le matching vectoriel. |
 
 ### 🚀 COMMANDES UTILES
 
-- `composer setup` : Initialisation complète de l'environnement.
+- `composer setup` : Initialisation complète de l'environnement (inclut Node/Vite).
 - `composer dev` : Lancement complet (Serveur interne, queue, cron, Vite).
 - `composer dev-herd` : Lancement optimisé pour **Herd** (Sans serveur interne, avec queue, cron, Vite).
 - `composer test` : Exécution de la suite de tests complète (Backend Laravel + Frontend Vitest).

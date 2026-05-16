@@ -12,21 +12,21 @@
 - Pile technique définie (Laravel 11, SQLite/MySQL, Gemini 2.5 Flash).
 
 ## [x] Phase 1 : MVP (Backend Focus)
-- [x] Initialisation du projet Laravel 11.
+- [x] Initialisation du projet Laravel 13.
 - [x] Migrations pour toutes les tables (ref, job_offers, pivots, users, matches).
 - [x] Models Eloquent avec relations.
 - [x] Commandes Artisan :
     - [x] `forem:sync` : Fetch Search + Detail, alimentation DB.
     - [x] `forem:match` : Layer 1 (pré-score) + Layer 2 (IA).
-- [x] Intégration de l'API Gemini 2.0 Flash (Service prêt).
-- [ ] Tests unitaires sur le parsing API et le scoring.
+- [x] Intégration de l'API Gemini 2.5 Flash (Service prêt).
+- [x] Tests unitaires sur le parsing API et le scoring.
 
-## [ ] Phase 2 : Interface Utilisateur
-- Dashboard Laravel/Blade + Tailwind CSS.
-- Gestion du profil utilisateur (compétences, langues, permis).
-- Recherche et filtrage des offres par compétences, secteur, lieu.
-- Visualisation des scores et analyses détaillées.
-- Export des résultats (PDF/CSV).
+## [x] Phase 2 : Interface Utilisateur
+- [x] Dashboard Laravel/Blade + Tailwind CSS + Alpine.js.
+- [x] Gestion du profil utilisateur (compétences, langues, permis).
+- [x] Recherche et filtrage des offres par compétences, secteur, lieu.
+- [x] Visualisation des scores et analyses détaillées.
+- [ ] Export des résultats (PDF/CSV).
 
 ## [ ] Phase 3 : SaaS & Scalabilité
 - Gestion multi-profils (plusieurs utilisateurs).
