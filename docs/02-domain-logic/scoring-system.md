@@ -21,10 +21,11 @@ On part d'un score d'attractivité de **100 points** par défaut, puis on soustr
 
 #### A. Les Handicaps Lourds (Soft Vetos)
 Ce sont les éléments qui réduisent l'intérêt de l'offre, sans pour autant l'interdire totalement (Philosophie de la "Motivation par le rêve") :
-*   **Métier Refusé** : -20 pts.
-*   **Compétence Refusée (JIT)** : -5 pts par compétence.
-*   **Permis Requis manquant** : -10 pts. (Permet au candidat de voir qu'un job idéal est accessible s'il passe son permis).
-*   **Langue Requise manquante** : -10 pts.
+*   **Métier Refusé** : -5 pts.
+*   **Compétence Refusée (JIT)** : -1 pt par compétence.
+*   **Permis Requis manquant** : -5 pts. (Permet au candidat de voir qu'un job idéal est accessible s'il passe son permis).
+*   **Langue Requise manquante** : -5 pts.
+*   **Contrat non souhaité** : -1 pt.
 
 *Note : Ces handicaps sont lourds mais non-létaux. Une offre avec un handicap reste visible si sa pertinence sémantique (Niveau 1) est exceptionnelle.*
 
@@ -32,26 +33,29 @@ Ce sont les éléments qui réduisent l'intérêt de l'offre, sans pour autant l
 
 La distance n'est pas traitée comme un simple chiffre, mais comme un **coût de confort quotidien** qui impacte l'attractivité de l'offre. Le calcul prend en compte le domicile du candidat et son **rayon de mobilité souhaité (R)**.
 
-*   **Pénalité de Distance** : Soustraction de **0 à 30 pts**.
+*   **Pénalité de Distance** : Soustraction de **0 à 5 pts**.
 *   **Courbe de Friction (Logique du "Pivot Radius")** :
     *   **Proximité Immédiate (0 km)** : Pénalité de **0 pt**.
-    *   **Au Rayon Souhaité (d = R)** : Pénalité de **15 pts** (perte de 50% de l'attractivité de confort).
-    *   **Au-delà du Rayon (d > R)** : La pénalité continue d'augmenter vers le maximum (30 pts) de façon dégressive.
+    *   **Au Rayon Souhaité (d = R)** : Pénalité de **1 pt** (perte de 50% de l'attractivité de confort).
+    *   **Au-delà du Rayon (d > R)** : La pénalité continue d'augmenter vers le maximum (5 pts) de façon dégressive.
 
 **La formule mathématique cible :**
-$$Pénalité = 30 \times \frac{Distance}{Distance + Rayon}$$
+La pénalité est nulle dans la "zone de gratuité" (`free_radius` = 5 km). Au-delà, elle s'applique avec une constante K pour qu'à la limite du rayon `R`, la pénalité vaille `penalty_at_radius` (1 pt).
 
-*   **Sécurité** : Si le rayon (R) n'est pas défini par l'utilisateur, une valeur par défaut de **30 km** est utilisée pour le calcul.
+$$DistanceEffective = max(0, Distance - 5)$$
+$$Pénalité = 5 \times \frac{DistanceEffective}{DistanceEffective + K}$$
+
+*   **Sécurité** : Si le rayon (R) n'est pas défini par l'utilisateur, une valeur par défaut de **10 km** (avec une zone de gratuité de 5 km) est utilisée pour le calcul.
 *   **Bonus Télétravail** : Si le job mentionne le télétravail (détection par mots-clés), la pénalité de distance est **divisée par 2**.
 
 
 #### C. Les Bonus d'Affinité (Légers)
 Pour faire émerger les "coups de cœur" :
-*   **Métier Favori** : +10 pts.
-*   **Compétence Validée (Active)** : **+1 pt**. Un léger bonus si l'offre demande quelque chose que l'utilisateur aime/maîtrise déjà.
+*   **Métier Favori** : +2 pts.
+*   **Compétence Validée (Active)** : **0 pt**. Un léger bonus si l'offre demande quelque chose que l'utilisateur aime/maîtrise déjà.
 
 #### D. La Fraîcheur (Vétusté)
-*   **Malus de Vétusté** : -0.5 pt par jour après le 14ème jour de publication (plafonné à -10 pts).
+*   **Malus de Vétusté** : -0.03 pt par jour après le 14ème jour de publication (plafonné à -1 pt).
 
 ## 3. L'Entonnoir à trois niveaux (Rappel)
 
@@ -128,17 +132,17 @@ Les badges de compétences sur l'offre sont interactifs :
 - [x] Refonte du `MatchingService` (Logique soustractive).
 - [x] Intégration du Modèle Multiplicatif (Sémantique x Attractivité).
 - [x] Mise en place du calcul de distance réel (Haversine) basé sur les coordonnées postales.
-- [ ] Injection du malus de vétusté automatique.
+- [x] Injection du malus de vétusté automatique.
 
 ### Phase 2 : Interface & Interaction (Frontend)
-- [ ] Mise à jour du Dashboard pour afficher les deux jauges (Pertinence vs Confort).
-- [ ] Création du composant de détail du score (Pop-over/Tooltip).
-- [ ] Implémentation des endpoints API pour le feedback JIT (Skills status update).
-- [ ] Ajout de l'animation de recalcul de score lors d'un feedback.
+- [x] Mise à jour du Dashboard pour afficher les deux jauges (Pertinence vs Confort).
+- [x] Création du composant de détail du score (Pop-over/Tooltip).
+- [x] Implémentation des endpoints API pour le feedback JIT (Skills status update).
+- [x] Ajout de l'animation de recalcul de score lors d'un feedback.
 
 ### Phase 3 : Intelligence (Niveau 3)
-- [ ] Trigger de l'analyse IA (Gemini) restreint au Top 20 final.
-- [ ] Affichage de l'analyse narrative ultra-concise (3 lignes).
+- [x] Trigger de l'analyse IA (Gemini) restreint au Top 20 final.
+- [x] Affichage de l'analyse narrative ultra-concise (3 lignes).
 
 ---
 
