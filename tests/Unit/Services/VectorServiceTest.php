@@ -1,0 +1,59 @@
+<?php
+
+namespace Tests\Unit\Services;
+
+use App\Services\VectorService;
+use App\Services\GeminiService;
+use App\Models\JobOffer;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+use Mockery;
+
+class VectorServiceTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected VectorService $service;
+    protected $geminiMock;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->geminiMock = Mockery::mock(GeminiService::class);
+        $this->service = new VectorService($this->geminiMock);
+    }
+
+    public function test_update_job_vector_success()
+    {
+        $offer = JobOffer::factory()->create(['title' => 'Test Job', 'description' => 'Test Desc', 'is_detailed' => true]);
+        $this->geminiMock->shouldReceive('embed')->once()->withArgs(function($text, $type) {
+            return $type === 'RETRIEVAL_DOCUMENT' && is_string($text);
+        })->andReturn([0.1, 0.2, 0.3]);
+
+        $result = $this->service->updateJobVector($offer);
+        $this->assertTrue($result);
+        $this->assertNotEmpty($offer->fresh()->vector_embedding);
+    }
+
+    public function test_update_user_vector_success()
+    {
+        $user = User::factory()->create();
+        $this->geminiMock->shouldReceive('forUser')->once()->with($user)->andReturn($this->geminiMock);
+        $this->geminiMock->shouldReceive('embed')->once()->withArgs(function($text, $type) {
+            return $type === 'RETRIEVAL_QUERY' && is_string($text);
+        })->andReturn([0.1, 0.2, 0.3]);
+
+        $result = $this->service->updateUserVector($user);
+        $this->assertTrue($result);
+        $this->assertNotEmpty($user->fresh()->vector_embedding);
+    }
+
+    public function test_calculate_semantic_score()
+    {
+        $v1 = [1, 0, 0];
+        $v2 = [1, 0, 0];
+        $score = $this->service->calculateSemanticScore($v1, $v2);
+        $this->assertEquals(100, $score);
+    }
+}
