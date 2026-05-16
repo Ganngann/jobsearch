@@ -128,7 +128,7 @@ class MatchingService
 
         // C. Permis Requis Manquant
         $userPermitIds = $context['permit_ids'] ?? $user->permits()->pluck('permits.id')->toArray();
-        $missingRequiredPermits = $jobOffer->permits()->wherePivot('is_required', true)->get()->whereNotIn('id', $userPermitIds);
+        $missingRequiredPermits = $jobOffer->permits->where('pivot.is_required', true)->whereNotIn('id', $userPermitIds);
         
         if ($missingRequiredPermits->isNotEmpty()) {
             $penalty = $config['handicaps']['missing_permit'];
@@ -143,7 +143,7 @@ class MatchingService
 
         // D. Langue Requise Manquante
         $userLangIds = $context['language_ids'] ?? $user->languages()->pluck('languages.id')->toArray();
-        $missingRequiredLangs = $jobOffer->languages()->wherePivot('is_required', true)->get()->whereNotIn('id', $userLangIds);
+        $missingRequiredLangs = $jobOffer->languages->where('pivot.is_required', true)->whereNotIn('id', $userLangIds);
         
         if ($missingRequiredLangs->isNotEmpty()) {
             $penalty = $config['handicaps']['missing_language'];
@@ -310,7 +310,7 @@ class MatchingService
         $userHardSkills = $allUserSkills->where('type', 'hard')->pluck('label')->implode(', ');
         $userSoftSkills = $allUserSkills->where('type', 'soft')->pluck('label')->implode(', ');
 
-        $userLangs = $user->languages()->withPivot('level')->get()->map(fn($l) => "{$l->label} ({$l->pivot->level})")->implode(', ');
+        $userLangs = $user->languages->map(fn($l) => "{$l->label} ({$l->pivot->level})")->implode(', ');
         
         // Récupération de tous les récits
         $userFacts = $user->facts()
@@ -318,9 +318,9 @@ class MatchingService
             ->map(fn($f) => "- " . $f)
             ->implode("\n");
 
-        $jobSkills = $jobOffer->skills()->wherePivot('is_required', true)->pluck('label')->implode(', ');
-        $jobOptionalSkills = $jobOffer->skills()->wherePivot('is_required', false)->pluck('label')->implode(', ');
-        $jobLangs = $jobOffer->languages()->withPivot('level')->get()->map(fn($l) => "{$l->label} ({$l->pivot->level})")->implode(', ');
+        $jobSkills = $jobOffer->skills->where('pivot.is_required', true)->pluck('label')->implode(', ');
+        $jobOptionalSkills = $jobOffer->skills->where('pivot.is_required', false)->pluck('label')->implode(', ');
+        $jobLangs = $jobOffer->languages->map(fn($l) => "{$l->label} ({$l->pivot->level})")->implode(', ');
 
         return "
         Tu es un expert en recrutement francophone belge, spécialisé dans l'approche narrative et humaine (Dimension Humaine).
