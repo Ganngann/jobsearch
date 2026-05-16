@@ -14,7 +14,7 @@ composer setup
 - Installe les dépendances PHP (`composer install`).
 - Crée le fichier `.env` s'il n'existe pas (copie de `.env.example`).
 - Génère la clé d'application (`php artisan key:generate`).
-- Exécute les migrations de la base de données SQLite (`php artisan migrate --force`).
+- Exécute les migrations de la base de données SQLite (`php artisan migrate --force`). *(Note : l'application et les queues partagent désormais la même base de données unifiée, qu'il s'agisse de SQLite en local ou de MySQL en production).*
 - Installe les dépendances Node.js (`npm install`).
 - Compile les assets frontend (`npm run build`).
 
