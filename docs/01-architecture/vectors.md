@@ -47,9 +47,9 @@ Ajout d'une méthode `embed(string $text): array` :
 
 ---
 
-## 3. Matching Sémantique Local (Layer 1.5)
+## 3. Matching Sémantique Local (Layer 1)
 
-Contrairement à l'analyse narrative (Layer 2) qui nécessite un appel API par match, le matching sémantique s'effectue **entièrement en local** sur notre serveur.
+Contrairement à l'analyse narrative (Layer 3) qui nécessite un appel API par match, le matching sémantique s'effectue **entièrement en local** sur notre serveur.
 
 ### Fonctionnement
 1. **Extraction** : On récupère le vecteur de l'utilisateur (Query) et les vecteurs des offres (Documents) depuis la base de données SQLite.

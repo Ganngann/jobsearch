@@ -110,14 +110,11 @@ Le principe de **Dimension Humaine** impose une personnalisation totale :
 | :--- | :--- |
 | **Persistance (Store-First)** | Les scores Layer 1 sont calculés par le Pull Worker et écrits en dur. Le dashboard ne fait aucun calcul. |
 | **Lazy Invalidation** | Si l'utilisateur change son profil, ses anciens scores sont marqués `stale`. Ils sont recalculés en arrière-plan (priorité aux offres récentes). |
-| **Circuit-Court Métier** | Si l'ID Métier ne match pas, le processus s'arrête immédiatement avant de charger les compétences. |
 | **Élagage (Pruning)** | On ignore les scores < 30%. Économie de ~90% de l'espace disque. |
 | **Futur : In-Memory (Redis)** | Pour les montées en charge extrêmes, utilisation de Redis Sets pour les intersections de compétences. |
 
-### Stratégie de "Circuit Court" (Short-circuiting)
-Le code du service de matching s'arrête le plus tôt possible pour économiser les cycles CPU :
-1. `if ($jobMetierId !== $userMetierId) return 0;` (Arrêt immédiat).
-2. `if ($hasMissingMandatoryPermit) return 10;` (Score minimal immédiat sans charger le reste).
+### Calcul Complet par Soustraction
+Contrairement à une logique de circuit-court strict, le système calcule le score d'attractivité complet pour chaque offre détaillée. Chaque contrainte de l'utilisateur (métier refusé, compétences proscrites, permis manquants) est traitée comme un point de friction qui soustrait un nombre de points défini au score de base, sans interrompre prématurément le calcul.
 
 ---
 
