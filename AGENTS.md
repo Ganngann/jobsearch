@@ -1,5 +1,8 @@
 # Documentation Technique (Agents)
 
+> **⚠️ A LIRE EN PREMIER:**
+> Avant de commencer toute tâche, tu **DOIS** lire le guide de configuration et de TDD situé dans `docs/jules_local_setup.md`. Il contient les instructions obligatoires pour lancer l'environnement et valider tes modifications avec la suite de tests.
+
 ## Services Principaux
 
 | Service | Rôle |
