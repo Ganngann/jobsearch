@@ -136,7 +136,8 @@ class ProfileChatController extends Controller
 
     public function uploadDocument(Request $request, \App\Services\ResumeParserService $resumeParser)
     {
-        $request->validate(['document' => 'required|file|max:20480']);
+        // SECURE: Restricting file uploads to supported types (mimes:pdf,docx) to prevent malicious files
+        $request->validate(['document' => 'required|file|mimes:pdf,docx|max:20480']);
         $user = Auth::user();
         $sessionId = session('profile_builder_session');
         

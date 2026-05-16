@@ -50,8 +50,9 @@ class ProfileController extends Controller
             return back()->withErrors(['resume' => $msg]);
         }
 
+        // SECURE: Restricting file uploads to supported types (mimes:pdf,docx) to prevent malicious files
         $request->validate([
-            'resume' => 'required|file|max:20480',
+            'resume' => 'required|file|mimes:pdf,docx|max:20480',
         ]);
 
         $user = Auth::user();
