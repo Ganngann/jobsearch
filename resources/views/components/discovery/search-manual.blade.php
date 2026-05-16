@@ -26,7 +26,9 @@
         Ajouter manuellement
     </h3>
     <div class="relative mb-4">
+        <label for="manual-search" class="sr-only">Rechercher un métier</label>
         <input 
+            id="manual-search"
             type="text" 
             x-model="searchQuery" 
             @input.debounce.300ms="searchMetiers()"
@@ -48,9 +50,10 @@
                 </div>
                 <button 
                     @click="addMetier(res)"
-                    class="p-2 bg-white text-indigo-600 rounded-lg shadow-sm opacity-0 group-hover:opacity-100 transition-all hover:bg-indigo-600 hover:text-white"
+                    class="p-2 bg-white text-indigo-600 rounded-lg shadow-sm opacity-0 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 transition-all hover:bg-indigo-600 hover:text-white"
+                    aria-label="Ajouter ce métier"
                 >
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                 </button>
             </div>
         </template>
