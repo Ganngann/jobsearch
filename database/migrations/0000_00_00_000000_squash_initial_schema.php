@@ -15,12 +15,12 @@ return new class extends Migration
             return;
         }
 
-        $path = database_path('schema/squash-schema.sql');
+        $driver = Schema::getConnection()->getDriverName();
+        $schemaFile = $driver === 'sqlite' ? 'squash-schema.sql' : 'squash-schema.mysql.sql';
+        $path = database_path("schema/$schemaFile");
         
         if (file_exists($path)) {
             $sql = file_get_contents($path);
-            // Splitting by ; followed by newline to execute statement by statement
-            // This is safer for some PDO drivers although unprepared() should handle it.
             DB::unprepared($sql);
         }
     }

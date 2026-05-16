@@ -28,7 +28,7 @@ class PermitSeeder extends Seeder
         foreach ($permits as $permit) {
             \App\Models\Permit::updateOrCreate(
                 ['slug' => $permit['slug']],
-                ['label' => $permit['label'], 'code' => $permit['code']]
+                ['label' => $permit['label'], 'code' => $permit['code'], 'value' => $permit['code']]
             );
         }
     }
