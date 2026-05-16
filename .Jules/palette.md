@@ -1,0 +1,3 @@
+## 2024-05-19 - Missing Accessibility on Interactive List Items
+**Learning:** Found a pattern across the discovery UI where interactable items (favorite/neutral/refuse buttons, search inputs, delete actions) use raw `<button>` elements with inline SVGs for icons but completely lack `aria-label` attributes and keyboard focus indicators (`focus-visible` ring utility classes). This makes the interface very hard to use for screen reader users or those relying on keyboard navigation.
+**Action:** When working on new list components or interactive widgets, ensure all icon-only buttons include `aria-label` or `sr-only` text, hide the internal SVGs using `aria-hidden="true"`, and include explicit `focus-visible:ring` states for keyboard navigability.
