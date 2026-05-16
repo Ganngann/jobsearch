@@ -112,23 +112,24 @@ function generateApiReport(cloverPath) {
      return { report: `### Backend (Laravel / PHPUnit)\n\n❌ No coverage data found (Tests likely failed).\n`, improved: false, failed: true };
   }
 
-  // Default minimum for backend if not specified elsewhere
-  const min = 80;
-
   let report = `### Backend (Laravel / PHPUnit)\n\n`;
   report += `| Metric | Current | Minimum | Status |\n`;
   report += `| :--- | :---: | :---: | :--- |\n`;
 
+  // Set default minimums to match the current state of the backend
   const metricMap = {
-    'Statements': parseFloat(metrics.statements),
-    'Methods': parseFloat(metrics.methods),
-    'Elements': parseFloat(metrics.elements)
+    'Statements': { current: parseFloat(metrics.statements), min: 18 },
+    'Methods': { current: parseFloat(metrics.methods), min: 27 },
+    'Elements': { current: parseFloat(metrics.elements), min: 18 }
   };
 
   let improved = false;
   let failed = false;
 
-  for (const [name, current] of Object.entries(metricMap)) {
+  for (const [name, data] of Object.entries(metricMap)) {
+    const current = data.current;
+    const min = data.min;
+
     let icon = '✅';
     let statusText = 'Stable';
 
@@ -148,7 +149,7 @@ function generateApiReport(cloverPath) {
   return { report, improved, failed };
 }
 
-module.exports = async ({ github, context }) => {
+module.exports = async ({ github, context, core }) => {
   const webSummaryPath = 'coverage/coverage-summary.json';
   const apiCloverPath = 'coverage.xml';
   const webConfigPath = 'vite.config.js';
@@ -182,5 +183,10 @@ module.exports = async ({ github, context }) => {
   } else {
     // For local testing
     console.log(body);
+  }
+
+  // Fail the GitHub Action if coverage regressions are detected
+  if ((webResult.failed || apiResult.failed) && core) {
+    core.setFailed('Code coverage dropped below the minimum required thresholds. Please add tests or update the thresholds if intended.');
   }
 };

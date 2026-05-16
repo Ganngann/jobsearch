@@ -82,4 +82,4 @@ jobs:
         with:
           script: |
             const script = require('./.github/scripts/comment-coverage.cjs');
-            await script({ github, context });
+            await script({ github, context, core });
