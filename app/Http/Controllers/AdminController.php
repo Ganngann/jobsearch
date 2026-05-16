@@ -178,23 +178,23 @@ class AdminController extends Controller
      */
     public function queueMonitor()
     {
-        $activeJobs = \Illuminate\Support\Facades\DB::connection('queue')->table('jobs')
+        $activeJobs = \Illuminate\Support\Facades\DB::table('jobs')
             ->whereNotNull('reserved_at')
             ->orderBy('reserved_at', 'desc')
             ->get();
 
-        $pendingJobs = \Illuminate\Support\Facades\DB::connection('queue')->table('jobs')
+        $pendingJobs = \Illuminate\Support\Facades\DB::table('jobs')
             ->whereNull('reserved_at')
             ->orderBy('id', 'desc')
             ->paginate(50, ['*'], 'pending_page');
 
-        $failedJobs = \Illuminate\Support\Facades\DB::connection('queue')->table('failed_jobs')
+        $failedJobs = \Illuminate\Support\Facades\DB::table('failed_jobs')
             ->orderBy('id', 'desc')
             ->paginate(10, ['*'], 'failed_page');
 
-        $pendingCount = \Illuminate\Support\Facades\DB::connection('queue')->table('jobs')->whereNull('reserved_at')->count();
+        $pendingCount = \Illuminate\Support\Facades\DB::table('jobs')->whereNull('reserved_at')->count();
         $activeCount = $activeJobs->count();
-        $failedCount = \Illuminate\Support\Facades\DB::connection('queue')->table('failed_jobs')->count();
+        $failedCount = \Illuminate\Support\Facades\DB::table('failed_jobs')->count();
         
         // Liste en dur des tâches critiques à surveiller (le Schedule auto-détecté ne passe pas toujours sur le web)
         $scheduledTasks = collect([
@@ -235,7 +235,7 @@ class AdminController extends Controller
      */
     public function clearQueue()
     {
-        \Illuminate\Support\Facades\DB::connection('queue')->table('jobs')->delete();
+        \Illuminate\Support\Facades\DB::table('jobs')->delete();
         return back()->with('success', 'File d\'attente purgée avec succès.');
     }
 
@@ -244,7 +244,7 @@ class AdminController extends Controller
      */
     public function deleteJob($id)
     {
-        \Illuminate\Support\Facades\DB::connection('queue')->table('jobs')->where('id', $id)->delete();
+        \Illuminate\Support\Facades\DB::table('jobs')->where('id', $id)->delete();
         return back()->with('success', "Job #{$id} supprimé.");
     }
 
@@ -264,7 +264,7 @@ class AdminController extends Controller
      */
     public function clearFailedJobs()
     {
-        \Illuminate\Support\Facades\DB::connection('queue')->table('failed_jobs')->delete();
+        \Illuminate\Support\Facades\DB::table('failed_jobs')->delete();
         return back()->with('success', 'Historique des échecs purgé.');
     }
 
