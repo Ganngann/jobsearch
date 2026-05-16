@@ -50,7 +50,7 @@ class MatchChunkJob implements ShouldQueue, ShouldBeUnique
             'user_zip' => ZipCode::where('zip_code', $this->user->zip_code)->first(),
         ];
 
-        $offers = \App\Models\JobOffer::whereIn('id', $this->jobOfferIds)->get();
+        $offers = \App\Models\JobOffer::with(['skills', 'permits', 'languages'])->whereIn('id', $this->jobOfferIds)->get();
         
         // On traite tout dans une transaction avec retry pour éviter les verrous SQLite
         DB::transaction(function() use ($offers, $matchingService, $context) {
