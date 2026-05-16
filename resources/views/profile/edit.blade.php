@@ -8,7 +8,14 @@
         </div>
     </x-slot>
 
-    <div class="py-12" x-data="{ tab: '{{ request('tab', 'info') }}' }">
+    @php
+        $defaultTab = request('tab', 'info');
+        if ($errors->updatePassword->isNotEmpty() || $errors->userDeletion->isNotEmpty()) {
+            $defaultTab = 'security';
+        }
+    @endphp
+
+    <div class="py-12" x-data="{ tab: '{{ $defaultTab }}' }">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             
             @if (session('status'))
