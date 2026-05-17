@@ -187,51 +187,55 @@ class JobOfferService
             
             // Skills (Technical, Soft, Office)
             $allSkills = [];
-            
+            $skillsUpsertData = [];
+            $skillsRequiredData = [];
+
             // Technical
             $techSkills = $jobData['competences'] ?? $jobData['competencies'] ?? [];
             foreach ($techSkills as $sData) {
                 if (!isset($sData['libelle'])) continue;
                 $slug = \Illuminate\Support\Str::slug($sData['libelle']);
-                $skill = Skill::updateOrCreate(
-                    ['slug' => $slug],
-                    [
-                        'label' => $sData['libelle'], 
-                        'code' => isset($sData['code']) && strlen($sData['code']) <= 10 ? $sData['code'] : $slug,
-                        'type' => 'hard'
-                    ]
-                );
-                $allSkills[$skill->id] = ['is_required' => $sData['required'] ?? true];
+                $skillsUpsertData[$slug] = [
+                    'slug' => $slug,
+                    'label' => $sData['libelle'],
+                    'code' => isset($sData['code']) && strlen($sData['code']) <= 10 ? $sData['code'] : $slug,
+                    'type' => 'hard'
+                ];
+                $skillsRequiredData[$slug] = $sData['required'] ?? true;
             }
 
             // Soft Skills
             foreach ($jobData['softSkills'] ?? [] as $sData) {
                 if (!isset($sData['libelle'])) continue;
                 $slug = Str::slug($sData['libelle']);
-                $skill = Skill::updateOrCreate(
-                    ['slug' => $slug],
-                    [
-                        'label' => $sData['libelle'], 
-                        'code' => isset($sData['code']) && strlen($sData['code']) <= 10 ? $sData['code'] : $slug,
-                        'type' => 'soft'
-                    ]
-                );
-                $allSkills[$skill->id] = ['is_required' => $sData['required'] ?? true];
+                $skillsUpsertData[$slug] = [
+                    'slug' => $slug,
+                    'label' => $sData['libelle'],
+                    'code' => isset($sData['code']) && strlen($sData['code']) <= 10 ? $sData['code'] : $slug,
+                    'type' => 'soft'
+                ];
+                $skillsRequiredData[$slug] = $sData['required'] ?? true;
             }
 
             // Office Skills
             foreach ($jobData['officeSkills'] ?? [] as $sData) {
                 if (!isset($sData['libelle'])) continue;
                 $slug = Str::slug($sData['libelle']);
-                $skill = Skill::updateOrCreate(
-                    ['slug' => $slug],
-                    [
-                        'label' => $sData['libelle'], 
-                        'code' => isset($sData['code']) && strlen($sData['code']) <= 10 ? $sData['code'] : $slug,
-                        'type' => 'hard'
-                    ]
-                );
-                $allSkills[$skill->id] = ['is_required' => $sData['required'] ?? true];
+                $skillsUpsertData[$slug] = [
+                    'slug' => $slug,
+                    'label' => $sData['libelle'],
+                    'code' => isset($sData['code']) && strlen($sData['code']) <= 10 ? $sData['code'] : $slug,
+                    'type' => 'hard'
+                ];
+                $skillsRequiredData[$slug] = $sData['required'] ?? true;
+            }
+
+            if (!empty($skillsUpsertData)) {
+                Skill::upsert(array_values($skillsUpsertData), ['slug'], ['label', 'code', 'type']);
+                $dbSkills = Skill::whereIn('slug', array_keys($skillsUpsertData))->get();
+                foreach ($dbSkills as $skill) {
+                    $allSkills[$skill->id] = ['is_required' => $skillsRequiredData[$skill->slug] ?? true];
+                }
             }
 
             $jobOffer->skills()->sync($allSkills);

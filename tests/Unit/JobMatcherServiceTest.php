@@ -176,4 +176,82 @@ class JobMatcherServiceTest extends TestCase
         $this->assertCount(1, $result['details']['skills']['matched']);
         $this->assertEquals('Active', $result['details']['skills']['matched'][0]['label']);
     }
+
+
+    public function test_calculate_hard_score_with_missing_languages(): void
+    {
+        $user = User::factory()->create(['zip_code' => '1000']);
+        $employer = Employer::create(['label' => 'Test Employer']);
+
+        $langMissing = Language::create(['label' => 'Dutch', 'code' => 'NL']);
+
+        $jobOffer = JobOffer::create([
+            'forem_id' => '1234567890',
+            'forem_ref' => 'REF1234567',
+            'employer_id' => $employer->id,
+            'contract_type' => 'CDI',
+            'working_regime' => 'Temps plein',
+            'title' => 'Test Job',
+            'location' => '1000 Bruxelles',
+            'is_detailed' => true,
+        ]);
+
+        $jobOffer->languages()->attach($langMissing->id, ['is_required' => true, 'level' => 'fluent']);
+
+        $result = $this->service->calculateHardScore($user, $jobOffer);
+
+        $this->assertEquals(0, $result['details']['languages']['score']);
+        $this->assertCount(1, $result['details']['languages']['missing']);
+        $this->assertEquals('Dutch', $result['details']['languages']['missing'][0]['label']);
+    }
+
+    public function test_calculate_hard_score_with_missing_permits(): void
+    {
+        $user = User::factory()->create(['zip_code' => '1000']);
+        $employer = Employer::create(['label' => 'Test Employer']);
+
+        $permitMissing = Permit::create(['label' => 'C', 'code' => 'C', 'value' => 'C']);
+
+        $jobOffer = JobOffer::create([
+            'forem_id' => '12345678901',
+            'forem_ref' => 'REF12345678',
+            'employer_id' => $employer->id,
+            'contract_type' => 'CDI',
+            'working_regime' => 'Temps plein',
+            'title' => 'Test Job',
+            'location' => '1000 Bruxelles',
+            'is_detailed' => true,
+        ]);
+
+        $jobOffer->permits()->attach($permitMissing->id, ['is_required' => true]);
+
+        $result = $this->service->calculateHardScore($user, $jobOffer);
+
+        $this->assertEquals(0, $result['details']['permits']['score']);
+        $this->assertCount(1, $result['details']['permits']['missing']);
+        $this->assertEquals('C', $result['details']['permits']['missing'][0]['label']);
+    }
+
+    public function test_calculate_hard_score_without_user_zip_code(): void
+    {
+        $user = User::factory()->create(['zip_code' => null]);
+        $employer = Employer::create(['label' => 'Test Employer']);
+
+        $jobOffer = JobOffer::create([
+            'forem_id' => '123456789012',
+            'forem_ref' => 'REF123456789',
+            'employer_id' => $employer->id,
+            'contract_type' => 'CDI',
+            'working_regime' => 'Temps plein',
+            'title' => 'Test Job',
+            'location' => '1000 Bruxelles',
+            'is_detailed' => true,
+        ]);
+
+        $result = $this->service->calculateHardScore($user, $jobOffer);
+
+        $this->assertEquals(50, $result['details']['location']['score']);
+        $this->assertEquals('Zone de mobilité non définie', $result['details']['location']['message']);
+    }
+
 }

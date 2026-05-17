@@ -129,6 +129,48 @@ class AdminControllerTest extends TestCase
     }
 
     /**
+     * Test that an admin can clear failed jobs.
+     */
+    public function test_admin_can_clear_failed_jobs(): void
+    {
+        $admin = User::factory()->create([
+            'is_admin' => true,
+        ]);
+
+        \Illuminate\Support\Facades\DB::table('failed_jobs')->insert([
+            'uuid' => 'test-uuid-123',
+            'connection' => 'database',
+            'queue' => 'default',
+            'payload' => '{"job":"TestFailedJob","data":[]}',
+            'exception' => 'TestException: Error',
+            'failed_at' => now(),
+        ]);
+
+        $this->assertEquals(1, \Illuminate\Support\Facades\DB::table('failed_jobs')->count());
+
+        $response = $this->actingAs($admin)->post(route('admin.queue.failed.clear'));
+
+        $response->assertStatus(302);
+        $response->assertSessionHas('success', 'Historique des échecs purgé.');
+
+        $this->assertEquals(0, \Illuminate\Support\Facades\DB::table('failed_jobs')->count());
+    }
+
+    /**
+     * Test that a non-admin cannot clear failed jobs.
+     */
+    public function test_non_admin_cannot_clear_failed_jobs(): void
+    {
+        $user = User::factory()->create([
+            'is_admin' => false,
+        ]);
+
+        $response = $this->actingAs($user)->post(route('admin.queue.failed.clear'));
+
+        $response->assertStatus(403);
+    }
+
+    /**
      * Test that an admin can update a user's global AI limit.
      */
     public function test_admin_can_update_global_ai_limit(): void
@@ -232,5 +274,68 @@ class AdminControllerTest extends TestCase
 
         // Ensure the database hasn't changed
         $this->assertEquals(50, $user->fresh()->daily_ai_limit);
+    }
+
+    /**
+     * Test that an admin can access the settings page.
+     */
+    public function test_admin_can_access_settings_page(): void
+    {
+        $admin = User::factory()->create([
+            'is_admin' => true,
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('admin.settings'));
+
+        $response->assertStatus(200);
+        $response->assertViewIs('admin.settings');
+    }
+
+    /**
+     * Test that a non-admin user cannot access the settings page.
+     */
+    public function test_non_admin_cannot_access_settings_page(): void
+    {
+        $user = User::factory()->create([
+            'is_admin' => false,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('admin.settings'));
+
+        $response->assertStatus(403);
+    }
+
+    /**
+     * Test that the settings page shows only ai_pricing and ai_limits settings.
+     */
+    public function test_settings_page_shows_correct_settings(): void
+    {
+        $admin = User::factory()->create([
+            'is_admin' => true,
+        ]);
+
+        // Create some settings
+        \App\Models\Setting::create(['key' => 'rate_in_model1', 'value' => '10', 'group' => 'ai_pricing']);
+        \App\Models\Setting::create(['key' => 'limit_model2', 'value' => '100', 'group' => 'ai_limits']);
+        \App\Models\Setting::create(['key' => 'some_other_setting', 'value' => '1', 'group' => 'other_group']);
+
+        $response = $this->actingAs($admin)->get(route('admin.settings'));
+
+        $response->assertStatus(200);
+        $response->assertViewIs('admin.settings');
+
+        $settings = $response->viewData('settings');
+
+        // Assert that the created settings are present
+        $this->assertTrue($settings->contains('key', 'rate_in_model1'));
+        $this->assertTrue($settings->contains('key', 'limit_model2'));
+
+        // Assert that the other setting is not present
+        $this->assertFalse($settings->contains('key', 'some_other_setting'));
+
+        // Assert that all returned settings belong to the expected groups
+        $this->assertTrue($settings->every(function ($setting) {
+            return in_array($setting->group, ['ai_pricing', 'ai_limits']);
+        }));
     }
 }

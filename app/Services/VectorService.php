@@ -26,6 +26,12 @@ class VectorService
             return false;
         }
 
+        // Edge case: don't vectorize if the job has no meaningful content
+        if (empty(trim($job->title)) && empty(trim(strip_tags($job->description)))) {
+            Log::warning("Annulation de la vectorisation pour l'offre #{$job->id} : contenu vide.");
+            return false;
+        }
+
         $text = $this->buildJobString($job);
         $vector = $this->gemini->embed($text, 'RETRIEVAL_DOCUMENT');
 

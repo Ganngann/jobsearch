@@ -415,10 +415,15 @@ EOT;
         }
 
         // 2. Traiter les expériences suggérées
+        $experiencesToAdd = [];
+        $expIdsToFetch = collect($aiResponse['experiences'] ?? [])->pluck('id')->filter();
+        $existingExps = $expIdsToFetch->isEmpty() ? collect() : $user->experiences()->whereIn('id', $expIdsToFetch)->get()->keyBy('id');
+
         foreach ($aiResponse['experiences'] ?? [] as $expData) {
             $action = $expData['action'] ?? 'add';
             if ($action === 'add') {
-                $user->experiences()->create([
+                $experiencesToAdd[] = [
+                    'user_id' => $user->id,
                     'company' => $expData['company'] ?? '?',
                     'title' => $expData['title'] ?? '?',
                     'company_logo' => $expData['company_logo'] ?? null,
@@ -429,10 +434,12 @@ EOT;
                     'end_date' => $this->sanitizeDate($expData['end_date'] ?? null),
                     'is_current' => $expData['is_current'] ?? false,
                     'status' => 'draft',
-                    'proposed_action' => 'add'
-                ]);
+                    'proposed_action' => 'add',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
             } elseif ($action === 'update' && isset($expData['id'])) {
-                $exp = $user->experiences()->find($expData['id']);
+                $exp = $existingExps->get($expData['id']);
                 if ($exp) {
                     $newData = array_filter([
                         'company' => $expData['company'] ?? null,
@@ -449,16 +456,24 @@ EOT;
                     }
                 }
             } elseif ($action === 'delete' && isset($expData['id'])) {
-                $exp = $user->experiences()->find($expData['id']);
+                $exp = $existingExps->get($expData['id']);
                 if ($exp) $exp->update(['proposed_action' => 'delete']);
             }
         }
+        if (!empty($experiencesToAdd)) {
+            \App\Models\Experience::insert($experiencesToAdd);
+        }
 
         // 3. Traiter les formations suggérées
+        $educationsToAdd = [];
+        $eduIdsToFetch = collect($aiResponse['educations'] ?? [])->pluck('id')->filter();
+        $existingEdus = $eduIdsToFetch->isEmpty() ? collect() : $user->educations()->whereIn('id', $eduIdsToFetch)->get()->keyBy('id');
+
         foreach ($aiResponse['educations'] ?? [] as $eduData) {
             $action = $eduData['action'] ?? 'add';
             if ($action === 'add') {
-                $user->educations()->create([
+                $educationsToAdd[] = [
+                    'user_id' => $user->id,
                     'school' => $eduData['school'] ?? '?',
                     'degree' => $eduData['degree'] ?? '?',
                     'field' => $eduData['field'] ?? null,
@@ -466,10 +481,12 @@ EOT;
                     'graduation_year' => $this->sanitizeYear($eduData['graduation_year'] ?? null),
                     'description' => $eduData['description'] ?? null,
                     'status' => 'draft',
-                    'proposed_action' => 'add'
-                ]);
+                    'proposed_action' => 'add',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
             } elseif ($action === 'update' && isset($eduData['id'])) {
-                $edu = $user->educations()->find($eduData['id']);
+                $edu = $existingEdus->get($eduData['id']);
                 if ($edu) {
                     $newData = array_filter([
                         'school' => $eduData['school'] ?? null,
@@ -483,42 +500,60 @@ EOT;
                     }
                 }
             } elseif ($action === 'delete' && isset($eduData['id'])) {
-                $edu = $user->educations()->find($eduData['id']);
+                $edu = $existingEdus->get($eduData['id']);
                 if ($edu) $edu->update(['proposed_action' => 'delete']);
             }
         }
+        if (!empty($educationsToAdd)) {
+            \App\Models\Education::insert($educationsToAdd);
+        }
 
         // 4. Traiter le bénévolat suggéré (volunteer_experiences)
+        $volunteersToAdd = [];
+        $volIdsToFetch = collect($aiResponse['volunteer_experiences'] ?? [])->pluck('id')->filter();
+        $existingVols = $volIdsToFetch->isEmpty() ? collect() : $user->volunteerExperiences()->whereIn('id', $volIdsToFetch)->get()->keyBy('id');
+
         foreach ($aiResponse['volunteer_experiences'] ?? [] as $data) {
             $action = $data['action'] ?? 'add';
             if ($action === 'add') {
-                $user->volunteerExperiences()->create([
+                $volunteersToAdd[] = [
+                    'user_id' => $user->id,
                     'organization' => $data['organization'] ?? '?',
                     'role' => $data['role'] ?? '?',
                     'description' => $data['description'] ?? null,
                     'start_date' => $this->sanitizeDate($data['start_date'] ?? null),
                     'end_date' => $this->sanitizeDate($data['end_date'] ?? null),
-                    'is_current' => $data['is_current'] ?? false,
+                    // Removed 'is_current' as the column does not exist on volunteer_experiences
                     'status' => 'draft',
-                    'proposed_action' => 'add'
-                ]);
+                    'proposed_action' => 'add',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
             } elseif ($action === 'update' && isset($data['id'])) {
-                $item = $user->volunteerExperiences()->find($data['id']);
+                $item = $existingVols->get($data['id']);
                 if ($item) {
                     $newData = array_filter($data, fn($k) => in_array($k, ['organization', 'role', 'description', 'start_date', 'end_date', 'is_current']), ARRAY_FILTER_USE_KEY);
                     $item->update(['proposed_data' => $newData, 'proposed_action' => 'update']);
                 }
             } elseif ($action === 'delete' && isset($data['id'])) {
-                $item = $user->volunteerExperiences()->find($data['id']);
+                $item = $existingVols->get($data['id']);
                 if ($item) $item->update(['proposed_action' => 'delete']);
             }
         }
+        if (!empty($volunteersToAdd)) {
+            \App\Models\VolunteerExperience::insert($volunteersToAdd);
+        }
 
         // 5. Traiter les projets suggérés
+        $projectsToAdd = [];
+        $projIdsToFetch = collect($aiResponse['projects'] ?? [])->pluck('id')->filter();
+        $existingProjs = $projIdsToFetch->isEmpty() ? collect() : $user->projects()->whereIn('id', $projIdsToFetch)->get()->keyBy('id');
+
         foreach ($aiResponse['projects'] ?? [] as $data) {
             $action = $data['action'] ?? 'add';
             if ($action === 'add') {
-                $user->projects()->create([
+                $projectsToAdd[] = [
+                    'user_id' => $user->id,
                     'name' => $data['name'] ?? '?',
                     'description' => $data['description'] ?? null,
                     'url' => $data['url'] ?? null,
@@ -526,25 +561,35 @@ EOT;
                     'end_date' => $this->sanitizeDate($data['end_date'] ?? null),
                     'is_ongoing' => $data['is_ongoing'] ?? false,
                     'status' => 'draft',
-                    'proposed_action' => 'add'
-                ]);
+                    'proposed_action' => 'add',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
             } elseif ($action === 'update' && isset($data['id'])) {
-                $item = $user->projects()->find($data['id']);
+                $item = $existingProjs->get($data['id']);
                 if ($item) {
                     $newData = array_filter($data, fn($k) => in_array($k, ['name', 'description', 'url', 'start_date', 'end_date', 'is_ongoing']), ARRAY_FILTER_USE_KEY);
                     $item->update(['proposed_data' => $newData, 'proposed_action' => 'update']);
                 }
             } elseif ($action === 'delete' && isset($data['id'])) {
-                $item = $user->projects()->find($data['id']);
+                $item = $existingProjs->get($data['id']);
                 if ($item) $item->update(['proposed_action' => 'delete']);
             }
         }
+        if (!empty($projectsToAdd)) {
+            \App\Models\Project::insert($projectsToAdd);
+        }
 
         // 6. Traiter les certifications suggérées
+        $certsToAdd = [];
+        $certIdsToFetch = collect($aiResponse['certifications'] ?? [])->pluck('id')->filter();
+        $existingCerts = $certIdsToFetch->isEmpty() ? collect() : $user->certifications()->whereIn('id', $certIdsToFetch)->get()->keyBy('id');
+
         foreach ($aiResponse['certifications'] ?? [] as $data) {
             $action = $data['action'] ?? 'add';
             if ($action === 'add') {
-                $user->certifications()->create([
+                $certsToAdd[] = [
+                    'user_id' => $user->id,
                     'name' => $data['name'] ?? '?',
                     'issuing_organization' => $data['issuing_organization'] ?? '?',
                     'issue_date' => $this->sanitizeDate($data['issue_date'] ?? null),
@@ -552,33 +597,48 @@ EOT;
                     'credential_id' => $data['credential_id'] ?? null,
                     'credential_url' => $data['credential_url'] ?? null,
                     'status' => 'draft',
-                    'proposed_action' => 'add'
-                ]);
+                    'proposed_action' => 'add',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
             } elseif ($action === 'update' && isset($data['id'])) {
-                $item = $user->certifications()->find($data['id']);
+                $item = $existingCerts->get($data['id']);
                 if ($item) {
                     $newData = array_filter($data, fn($k) => in_array($k, ['name', 'issuing_organization', 'issue_date', 'expiration_date', 'credential_id', 'credential_url']), ARRAY_FILTER_USE_KEY);
                     $item->update(['proposed_data' => $newData, 'proposed_action' => 'update']);
                 }
             } elseif ($action === 'delete' && isset($data['id'])) {
-                $item = $user->certifications()->find($data['id']);
+                $item = $existingCerts->get($data['id']);
                 if ($item) $item->update(['proposed_action' => 'delete']);
             }
         }
+        if (!empty($certsToAdd)) {
+            \App\Models\Certification::insert($certsToAdd);
+        }
 
         // 7. Traiter les centres d'intérêt suggérés
+        $interestsToAdd = [];
+        $intIdsToFetch = collect($aiResponse['interests'] ?? [])->pluck('id')->filter();
+        $existingInts = $intIdsToFetch->isEmpty() ? collect() : $user->interests()->whereIn('id', $intIdsToFetch)->get()->keyBy('id');
+
         foreach ($aiResponse['interests'] ?? [] as $data) {
             $action = $data['action'] ?? 'add';
             if ($action === 'add' && !empty($data['name'])) {
-                $user->interests()->create([
+                $interestsToAdd[] = [
+                    'user_id' => $user->id,
                     'name' => $data['name'],
                     'status' => 'draft',
-                    'proposed_action' => 'add'
-                ]);
+                    'proposed_action' => 'add',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
             } elseif ($action === 'delete' && isset($data['id'])) {
-                $item = $user->interests()->find($data['id']);
+                $item = $existingInts->get($data['id']);
                 if ($item) $item->update(['proposed_action' => 'delete']);
             }
+        }
+        if (!empty($interestsToAdd)) {
+            \App\Models\Interest::insert($interestsToAdd);
         }
 
         // 8. Traiter les langues suggérées
