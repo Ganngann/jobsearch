@@ -42,11 +42,19 @@ class ProfileChatControllerTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $this->actingAs($user);
+        $initialSessionId = 'old-session-id';
+
+        $this->actingAs($user)
+             ->withSession(['profile_builder_session' => $initialSessionId]);
 
         $response = $this->get('/profile/builder/reset');
 
-        $response->assertRedirect();
+        $response->assertRedirect(route('profile.builder'));
+        $response->assertSessionHas('profile_builder_session');
+
+        $newSessionId = session('profile_builder_session');
+        $this->assertNotEquals($initialSessionId, $newSessionId);
+        $this->assertNotEmpty($newSessionId);
     }
 
     public function test_chat_sends_message_and_returns_response()
