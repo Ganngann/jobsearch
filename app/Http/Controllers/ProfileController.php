@@ -12,6 +12,7 @@ use App\Models\Skill;
 use App\Models\Metier;
 use App\Jobs\RecalculateMatchesJob;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Cache;
 
 class ProfileController extends Controller
 {
@@ -147,11 +148,17 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
+        // Cache taxonomy query to avoid N+1 and slow loading
+        $allLanguages = Cache::remember('all_languages', 3600, function () {
+            return \App\Models\Language::all();
+        });
+
+        // allSkills and allPermits are fetched asynchronously by front-end when needed,
+        // so we avoid loading large datasets like 5000+ skills at page load.
+
         return view('profile.edit', [
             'user' => $request->user(),
-            'allSkills' => \App\Models\Skill::all(),
-            'allLanguages' => \App\Models\Language::all(),
-            'allPermits' => \App\Models\Permit::all(),
+            'allLanguages' => $allLanguages,
         ]);
     }
 
