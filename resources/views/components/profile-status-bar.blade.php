@@ -3,7 +3,8 @@
     if (!$user) return;
 
     // 1. Narrative Logic (70/30)
-    $factsCount = $user->facts()->count();
+    $userFacts = $user->facts;
+    $factsCount = $userFacts->count();
     $journeyCount = $user->experiences()->count() + $user->educations()->count();
     
     $narrativeScore = min(70, ($factsCount / 20) * 70);
@@ -11,25 +12,27 @@
     $narrativeProgress = round($narrativeScore + $journeyScore);
 
     // 2. Soft Skills Logic (Target 15 mastered)
-    $skillsCount = $user->skills()->where('type', 'soft')->wherePivot('status', 'active')->count();
+    // Use preloaded skills collection
+    $skillsCount = $user->skills->where('type', 'soft')->where('pivot.status', 'active')->count();
     $skillsProgress = min(100, round(($skillsCount / 15) * 100));
 
     // 3. ROME Logic (Target 3 favorites: specific OR family)
-    $specificCount = $user->preferredMetiers()->wherePivot('status', 'favorite')->count();
-    $familyCount = $user->preferredReferentielMetiers()->wherePivot('status', 'favorite')->count();
+    // Use preloaded collections
+    $specificCount = $user->preferredMetiers->where('pivot.status', 'favorite')->count();
+    $familyCount = $user->preferredReferentielMetiers->where('pivot.status', 'favorite')->count();
     $romeCount = $specificCount + $familyCount;
     $romeProgress = min(100, round(($romeCount / 3) * 100));
 
     // 4. Mobility Logic
-    $permitsCount = $user->permits()->count();
+    $permitsCount = $user->permits->count();
     $mobilityProgress = $user->zip_code ? 100 : 0;
 
     // Categories for Tooltip (Narrative)
     $categoryCounts = [
-        'VALEURS' => $user->facts()->where('category', 'VALEURS')->count(),
-        'OBJECTIFS' => $user->facts()->where('category', 'OBJECTIFS')->count(),
-        'SOFT_SKILLS' => $user->facts()->where('category', 'SOFT_SKILLS')->count(),
-        'PREFERENCES' => $user->facts()->where('category', 'PREFERENCES')->count(),
+        'VALEURS' => $userFacts->where('category', 'VALEURS')->count(),
+        'OBJECTIFS' => $userFacts->where('category', 'OBJECTIFS')->count(),
+        'SOFT_SKILLS' => $userFacts->where('category', 'SOFT_SKILLS')->count(),
+        'PREFERENCES' => $userFacts->where('category', 'PREFERENCES')->count(),
     ];
     
     $categories = [
