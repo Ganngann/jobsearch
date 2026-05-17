@@ -357,9 +357,12 @@
                 <div>
                     <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Analyse des compétences (JIT)</h3>
                     <div class="space-y-3">
+                        @php
+                            $userSkillsKeyed = $user->skills->keyBy('id');
+                        @endphp
                         @foreach($jobOffer->skills as $skill)
                             @php
-                                $userSkill = $user->skills->where('id', $skill->id)->first();
+                                $userSkill = $userSkillsKeyed->get($skill->id);
                                 $status = $userSkill ? $userSkill->pivot->status : 'none';
                             @endphp
                             <div x-data="{ 
