@@ -380,6 +380,11 @@ class ProfileChatController extends Controller
     public function updateFact(Request $request, UserFact $fact)
     {
         if ($fact->user_id !== Auth::id()) abort(403);
+
+        $request->validate([
+            'content' => 'required|string|max:10000',
+        ]);
+
         $fact->update(['content' => $request->content, 'status' => 'validated']);
         return $this->getUpdatedDataResponse(Auth::user(), session('profile_builder_session'), "Fait mis à jour.");
     }
