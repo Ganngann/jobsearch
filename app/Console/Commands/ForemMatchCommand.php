@@ -23,27 +23,30 @@ class ForemMatchCommand extends Command
     public function handle()
     {
         $userId = $this->option('user');
-        $users = $userId ? User::where('id', $userId)->get() : User::all();
+        $userQuery = $userId ? User::where('id', $userId) : User::query();
 
-        if ($users->isEmpty()) {
+        if ($userQuery->count() === 0) {
             $this->error('Aucun utilisateur trouvé.');
             return;
         }
 
-        $jobOffers = JobOffer::all();
-        if ($jobOffers->isEmpty()) {
+        if (JobOffer::count() === 0) {
             $this->error('Aucune offre d\'emploi trouvée. Lancez forem:sync d\'abord.');
             return;
         }
 
-        foreach ($users as $user) {
-            $this->info("Traitement de l'utilisateur : {$user->name}");
+        $userQuery->chunk(200, function ($users) {
+            JobOffer::chunk(200, function ($jobOffers) use ($users) {
+                foreach ($users as $user) {
+                    $this->info("Traitement de l'utilisateur : {$user->name}");
 
-            foreach ($jobOffers as $jobOffer) {
-                $this->line("  Offre #{$jobOffer->forem_id} : {$jobOffer->title}");
-                $this->matchingService->match($user, $jobOffer);
-            }
-        }
+                    foreach ($jobOffers as $jobOffer) {
+                        $this->line("  Offre #{$jobOffer->forem_id} : {$jobOffer->title}");
+                        $this->matchingService->match($user, $jobOffer);
+                    }
+                }
+            });
+        });
 
         $this->info('Matching terminé !');
     }
