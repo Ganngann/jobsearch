@@ -5,11 +5,11 @@
         refusedSkills: {{ Js::from($refusedSkills) }},
         csrfToken: '{{ csrf_token() }}',
         routes: {
-            search: '',
-            suggest: '',
-            soft: ''
+            search: '{{ route('api.skills.search') }}',
+            suggest: '{{ route('profile.skills.suggest') }}',
+            soft: '{{ route('profile.skills.soft') }}'
         }
-    })">
+    })" x-init="fetchSoftSkills()">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             
             <!-- Header -->
@@ -65,6 +65,45 @@
             </div>
 
 
+            <!-- Suggestions List -->
+            <div class="mb-12" x-show="suggestions.length > 0" style="display: none;">
+                <h3 class="text-lg font-black text-slate-900 mb-6 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                    Compétences non classées
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <template x-for="skill in suggestions" :key="skill.id">
+                        <div x-show="!skill.hidden"
+                             x-transition:leave="transition ease-in duration-200"
+                             x-transition:leave-start="opacity-100 transform scale-100"
+                             x-transition:leave-end="opacity-0 transform scale-95"
+                             class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex flex-col justify-between h-full group hover:border-indigo-100 focus-within:border-indigo-100 transition-all">
+
+                            <div class="mb-4">
+                                <span class="font-bold text-slate-700 text-sm block leading-tight" x-text="skill.label"></span>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-1">
+                                <button @click="setStatus(skill, 'active')" class="flex flex-col items-center justify-center p-2 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none transition-all" title="Maîtriser" :aria-label="`Maîtriser ${skill.label}`">
+                                    <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                    <span class="text-[9px] font-bold uppercase tracking-wider">Maîtrisé</span>
+                                </button>
+
+                                <button @click="setStatus(skill, 'neutral')" class="flex flex-col items-center justify-center p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none transition-all" title="Ignorer" :aria-label="`Ignorer ${skill.label}`">
+                                    <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"/></svg>
+                                    <span class="text-[9px] font-bold uppercase tracking-wider">Ignorer</span>
+                                </button>
+
+                                <button @click="setStatus(skill, 'refused')" class="flex flex-col items-center justify-center p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none transition-all" title="Écarter" :aria-label="`Écarter ${skill.label}`">
+                                    <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    <span class="text-[9px] font-bold uppercase tracking-wider">Écarté</span>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
             <!-- Qualified Lists -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <!-- Validated -->
@@ -75,14 +114,14 @@
                     </h3>
                     <div class="space-y-2">
                         <template x-for="skill in activeSkills" :key="skill.id">
-                            <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl group hover:bg-white hover:shadow-sm transition-all border border-transparent hover:border-indigo-100">
+                            <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl group hover:bg-white hover:shadow-sm transition-all border border-transparent hover:border-indigo-100 focus-within:border-indigo-100 focus-within:bg-white focus-within:shadow-sm">
                                 <span class="text-sm font-bold text-slate-700" x-text="skill.label"></span>
-                                <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                                    <button @click="moveTo(skill, 'neutral')" class="p-1.5 text-slate-300 hover:text-slate-500" title="Ignorer">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"/></svg>
+                                <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all">
+                                    <button @click="moveTo(skill, 'neutral')" class="p-1.5 text-slate-300 hover:text-slate-500 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:outline-none rounded-lg" title="Ignorer" :aria-label="`Ignorer ${skill.label}`">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"/></svg>
                                     </button>
-                                    <button @click="moveTo(skill, 'refused')" class="p-1.5 text-slate-300 hover:text-rose-500" title="Écarter">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    <button @click="moveTo(skill, 'refused')" class="p-1.5 text-slate-300 hover:text-rose-500 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:outline-none rounded-lg" title="Écarter" :aria-label="`Écarter ${skill.label}`">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                     </button>
                                 </div>
                             </div>
@@ -98,14 +137,14 @@
                     </h3>
                     <div class="space-y-2">
                         <template x-for="skill in neutralSkills" :key="skill.id">
-                            <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl group hover:bg-white hover:shadow-sm transition-all border border-transparent hover:border-slate-200">
+                            <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl group hover:bg-white hover:shadow-sm transition-all border border-transparent hover:border-slate-200 focus-within:border-slate-200 focus-within:bg-white focus-within:shadow-sm">
                                 <span class="text-sm font-medium text-slate-500" x-text="skill.label"></span>
-                                <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                                    <button @click="moveTo(skill, 'active')" class="p-1.5 text-indigo-400 hover:text-indigo-600" title="Maîtriser">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all">
+                                    <button @click="moveTo(skill, 'active')" class="p-1.5 text-indigo-400 hover:text-indigo-600 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:outline-none rounded-lg" title="Maîtriser" :aria-label="`Maîtriser ${skill.label}`">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                                     </button>
-                                    <button @click="moveTo(skill, 'refused')" class="p-1.5 text-slate-300 hover:text-rose-500" title="Écarter">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    <button @click="moveTo(skill, 'refused')" class="p-1.5 text-slate-300 hover:text-rose-500 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:outline-none rounded-lg" title="Écarter" :aria-label="`Écarter ${skill.label}`">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                     </button>
                                 </div>
                             </div>
@@ -121,14 +160,14 @@
                     </h3>
                     <div class="space-y-2">
                         <template x-for="skill in refusedSkills" :key="skill.id">
-                            <div class="flex items-center justify-between p-3 bg-rose-50/30 rounded-xl group hover:bg-white hover:shadow-sm transition-all border border-transparent hover:border-rose-100">
+                            <div class="flex items-center justify-between p-3 bg-rose-50/30 rounded-xl group hover:bg-white hover:shadow-sm transition-all border border-transparent hover:border-rose-100 focus-within:border-rose-100 focus-within:bg-white focus-within:shadow-sm">
                                 <span class="text-sm font-medium text-rose-900/60" x-text="skill.label"></span>
-                                <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                                    <button @click="moveTo(skill, 'active')" class="p-1.5 text-rose-300 hover:text-indigo-600" title="Maîtriser">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all">
+                                    <button @click="moveTo(skill, 'active')" class="p-1.5 text-rose-300 hover:text-indigo-600 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:outline-none rounded-lg" title="Maîtriser" :aria-label="`Maîtriser ${skill.label}`">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                                     </button>
-                                    <button @click="moveTo(skill, 'neutral')" class="p-1.5 text-rose-300 hover:text-slate-600" title="Ignorer">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"/></svg>
+                                    <button @click="moveTo(skill, 'neutral')" class="p-1.5 text-rose-300 hover:text-slate-600 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:outline-none rounded-lg" title="Ignorer" :aria-label="`Ignorer ${skill.label}`">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"/></svg>
                                     </button>
                                 </div>
                             </div>

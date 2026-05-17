@@ -42,4 +42,40 @@ class ProfileSkillControllerTest extends TestCase
             'status' => 'active'
         ]);
     }
+
+    public function test_soft_skills_returns_unassociated_skills()
+    {
+        $user = User::factory()->create();
+
+        $skill1 = Skill::factory()->create(['type' => 'soft', 'label' => 'Skill 1']);
+        $skill2 = Skill::factory()->create(['type' => 'soft', 'label' => 'Skill 2']);
+        $skill3 = Skill::factory()->create(['type' => 'hard', 'label' => 'Skill 3']);
+
+        $user->skills()->attach($skill1->id, ['status' => 'active']);
+
+        $this->actingAs($user);
+
+        $response = $this->get('/profile/skills/soft');
+
+        $response->assertStatus(200);
+
+        $response->assertJsonPath('suggestions.0.id', $skill2->id);
+        $response->assertJsonMissing(['id' => $skill1->id]);
+        $response->assertJsonMissing(['id' => $skill3->id]);
+    }
+
+    public function test_suggest_returns_empty_array()
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user);
+
+        $response = $this->postJson('/profile/skills/suggest');
+
+        $response->assertStatus(200);
+
+        $response->assertJson([
+            'suggestions' => []
+        ]);
+    }
 }

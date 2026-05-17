@@ -357,9 +357,12 @@
                 <div>
                     <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Analyse des compétences (JIT)</h3>
                     <div class="space-y-3">
+                        @php
+                            $userSkillsKeyed = $user->skills->keyBy('id');
+                        @endphp
                         @foreach($jobOffer->skills as $skill)
                             @php
-                                $userSkill = $user->skills->where('id', $skill->id)->first();
+                                $userSkill = $userSkillsKeyed->get($skill->id);
                                 $status = $userSkill ? $userSkill->pivot->status : 'none';
                             @endphp
                             <div x-data="{ 
@@ -457,9 +460,10 @@
 
                     <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Langues</h3>
                     <div class="space-y-2">
+                        @php $userLanguagesKeyed = $user->languages->keyBy('id'); @endphp
                         @forelse($jobOffer->languages as $lang)
                             @php 
-                                $userLang = $user->languages->where('id', $lang->id)->first();
+                                $userLang = $userLanguagesKeyed->get($lang->id);
                                 $hasLang = !is_null($userLang);
                             @endphp
                             <div class="flex items-center justify-between p-2 rounded-lg border {{ $hasLang ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-slate-50 border-slate-100 text-slate-400' }}">

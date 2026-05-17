@@ -43,7 +43,6 @@ class CleanTaxonomiesCommand extends Command
     {
         $this->info("Cleaning table: $tableName...");
         
-        // 1. Generate slugs for everything
         $items = $modelClass::all();
         foreach ($items as $item) {
             $slug = ($tableName === 'permits') 
