@@ -85,4 +85,46 @@ class AdminControllerTest extends TestCase
         $stats = $response->viewData('stats');
         $this->assertEquals(1, $stats['jobs_pending_vectorization']);
     }
+
+    /**
+     * Test that an admin can clear the queue.
+     */
+    public function test_admin_can_clear_queue(): void
+    {
+        $admin = User::factory()->create([
+            'is_admin' => true,
+        ]);
+
+        \Illuminate\Support\Facades\DB::table('jobs')->insert([
+            'queue' => 'default',
+            'payload' => '{"job":"TestJob","data":[]}',
+            'attempts' => 0,
+            'reserved_at' => null,
+            'available_at' => time(),
+            'created_at' => time()
+        ]);
+
+        $this->assertEquals(1, \Illuminate\Support\Facades\DB::table('jobs')->count());
+
+        $response = $this->actingAs($admin)->post(route('admin.queue.clear'));
+
+        $response->assertStatus(302);
+        $response->assertSessionHas('success', 'File d\'attente purgée avec succès.');
+
+        $this->assertEquals(0, \Illuminate\Support\Facades\DB::table('jobs')->count());
+    }
+
+    /**
+     * Test that a non-admin cannot clear the queue.
+     */
+    public function test_non_admin_cannot_clear_queue(): void
+    {
+        $user = User::factory()->create([
+            'is_admin' => false,
+        ]);
+
+        $response = $this->actingAs($user)->post(route('admin.queue.clear'));
+
+        $response->assertStatus(403);
+    }
 }
