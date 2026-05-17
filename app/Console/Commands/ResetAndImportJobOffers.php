@@ -83,9 +83,11 @@ class ResetAndImportJobOffers extends Command
         $this->info("{$importedCount} offres importées avec succès.");
         
         $this->info("Lancement du matching global pour les utilisateurs...");
-        foreach (\App\Models\User::all() as $user) {
-            $matchingService->triggerMassMatch($user);
-        }
+        \App\Models\User::chunk(200, function ($users) use ($matchingService) {
+            foreach ($users as $user) {
+                $matchingService->triggerMassMatch($user);
+            }
+        });
         $this->info("Matching terminé.");
     }
 }
