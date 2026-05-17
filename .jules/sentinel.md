@@ -1,3 +1,4 @@
+## 2026-05-17 - XSS via Unescaped Output in Job Offer Description\n**Vulnerability:** Unescaped HTML rendering ({!! !!}) of external Job Offer descriptions allowed stored XSS.\n**Learning:** Rendering complex JSON structures from external APIs (like Forem) directly via Blade's raw unescaped tags is extremely dangerous without prior HTML sanitization. Also, caching directories for third-party libraries (like HTMLPurifier) must be explicitly created in the Provider to avoid 500 errors on fresh deployments.\n**Prevention:** Use a robust HTML sanitizer (e.g., HTMLPurifier) combined with a custom Blade directive (like @purify) when you need to render safe HTML from untrusted sources, rather than relying on raw unescaped tags.
 
 ## 2024-05-24 - Insecure Debug Configuration in Environment Example
 **Vulnerability:** The `.env.example` file shipped with `APP_DEBUG=true` by default.
