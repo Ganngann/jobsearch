@@ -219,14 +219,14 @@
                                 <div>
                                     <h4 class="text-md font-bold text-slate-900 mb-4">Responsabilité et missions</h4>
                                     <div class="prose prose-slate max-w-none text-slate-600 text-sm leading-relaxed">
-                                        {!! $jobOffer->raw_data['descriptionJob'] !!}
+                                        @purify($jobOffer->raw_data['descriptionJob'])
                                     </div>
                                 </div>
                                 @else
                                 <div>
                                     <h4 class="text-md font-bold text-slate-900 mb-4">Description de l'offre</h4>
                                     <div class="prose prose-slate max-w-none text-slate-600 text-sm leading-relaxed">
-                                        {!! $jobOffer->description !!}
+                                        @purify($jobOffer->description)
                                     </div>
                                 </div>
                                 @endif
@@ -432,7 +432,7 @@
                                 <div>
                                     <h4 class="text-md font-bold text-slate-900 mb-4">Description complémentaire</h4>
                                     <div class="prose prose-slate max-w-none text-slate-600 text-sm leading-relaxed">
-                                        {!! $jobOffer->raw_data['descriptionComment'] !!}
+                                        @purify($jobOffer->raw_data['descriptionComment'])
                                     </div>
                                 </div>
                                 @endif
@@ -448,7 +448,7 @@
                             </button>
                             <div class="p-8" x-show="open" x-collapse>
                                 <div class="prose prose-slate max-w-none text-slate-600 text-sm leading-relaxed">
-                                    {!! $jobOffer->raw_data['commentaireGeneral'] !!}
+                                    @purify($jobOffer->raw_data['commentaireGeneral'])
                                 </div>
                             </div>
                         </div>
@@ -499,7 +499,7 @@
                                 <div>
                                     <h4 class="text-md font-bold text-slate-900 mb-4">Ce que nous offrons :</h4>
                                     <div class="prose prose-slate max-w-none text-slate-600 text-sm leading-relaxed">
-                                        {!! $jobOffer->raw_data['benefitsComments'] ?? $jobOffer->benefits_comments !!}
+                                        @purify($jobOffer->raw_data['benefitsComments'] ?? $jobOffer->benefits_comments)
                                     </div>
                                 </div>
                                 @endif
