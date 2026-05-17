@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Permit extends Model
 {
+    use \Illuminate\Database\Eloquent\Factories\HasFactory;
     protected $fillable = ['code', 'label', 'value', 'slug'];
 
     /**
