@@ -460,9 +460,10 @@
 
                     <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Langues</h3>
                     <div class="space-y-2">
+                        @php $userLanguagesKeyed = $user->languages->keyBy('id'); @endphp
                         @forelse($jobOffer->languages as $lang)
                             @php 
-                                $userLang = $user->languages->where('id', $lang->id)->first();
+                                $userLang = $userLanguagesKeyed->get($lang->id);
                                 $hasLang = !is_null($userLang);
                             @endphp
                             <div class="flex items-center justify-between p-2 rounded-lg border {{ $hasLang ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-slate-50 border-slate-100 text-slate-400' }}">
