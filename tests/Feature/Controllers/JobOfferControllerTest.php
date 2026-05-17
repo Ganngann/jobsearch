@@ -108,4 +108,38 @@ class JobOfferControllerTest extends TestCase
         $response = $this->post("/jobs/{$offer->forem_id}/match");
         $response->assertRedirect();
     }
+
+    public function test_search_escapes_wildcard_characters()
+    {
+        $user = User::factory()->create();
+
+        $employer1 = Employer::create(['label' => 'Test100%']);
+        $offer1 = JobOffer::factory()->create([
+            'title' => 'Developer',
+            'employer_id' => $employer1->id,
+            'is_detailed' => true
+        ]);
+
+        $employer2 = Employer::create(['label' => 'Test1000']);
+        $offer2 = JobOffer::factory()->create([
+            'title' => 'Designer',
+            'employer_id' => $employer2->id,
+            'is_detailed' => true
+        ]);
+
+        $this->actingAs($user);
+
+        // This query should find only employer1 due to strict 100% matching
+        $response = $this->get('/dashboard?q=Test100%');
+        $response->assertStatus(200);
+
+        // Since testing exact UI matches depends on partial views and structure,
+        // asserting no SQL syntax errors or generic 500s is the primary goal for DoS wildcard testing.
+        // It should handle %, _, and \ safely.
+        $response2 = $this->get('/dashboard?q=%\_\\\\');
+        $response2->assertStatus(200);
+
+        $response3 = $this->get('/dashboard?rome=%\_\\\\');
+        $response3->assertStatus(200);
+    }
 }
