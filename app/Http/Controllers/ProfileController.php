@@ -286,8 +286,10 @@ class ProfileController extends Controller
         $q = $request->query('q');
         if (!$q || strlen($q) < 2) return response()->json([]);
 
-        $metiers = \App\Models\Metier::where('label', 'like', "%{$q}%")
-            ->orWhere('code', 'like', "%{$q}%")
+        $escapedQ = str_replace(['=', '%', '_'], ['==', '=%', '=_'], $q);
+
+        $metiers = \App\Models\Metier::whereRaw("label LIKE ? ESCAPE '='", ["%{$escapedQ}%"])
+            ->orWhereRaw("code LIKE ? ESCAPE '='", ["%{$escapedQ}%"])
             ->limit(50) // Augmenté pour plus de visibilité
             ->orderBy('label')
             ->get(['id', 'label', 'code']);
@@ -303,7 +305,9 @@ class ProfileController extends Controller
         $q = $request->query('q');
         if (!$q || strlen($q) < 2) return response()->json([]);
 
-        $skills = \App\Models\Skill::where('label', 'like', "%{$q}%")
+        $escapedQ = str_replace(['=', '%', '_'], ['==', '=%', '=_'], $q);
+
+        $skills = \App\Models\Skill::whereRaw("label LIKE ? ESCAPE '='", ["%{$escapedQ}%"])
             ->limit(20)
             ->orderBy('label')
             ->get(['id', 'label']);
