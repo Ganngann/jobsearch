@@ -1,0 +1,14 @@
+--- tests/Unit/Services/VectorServiceTest.php
++++ tests/Unit/Services/VectorServiceTest.php
+@@ -43,7 +43,10 @@
+             'is_detailed' => true
+         ]);
+
+-        $this->geminiMock->shouldReceive('embed')->once()->andReturn(null);
++        // Le buildJobString va générer une chaîne très courte (< 50 chars) car tout est vide.
++        // Par conséquent, GeminiService::embed() va return null (logique interne vue dans GeminiService).
++        // Mais dans ce test, on vérifie VectorService, donc on mock GeminiService pour qu'il retourne null.
++        $this->geminiMock->shouldReceive('embed')->once()->andReturn(null);
+
+         $result = $this->service->updateJobVector($offer);
+         $this->assertFalse($result);

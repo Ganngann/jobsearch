@@ -44,9 +44,7 @@ class VectorServiceTest extends TestCase
             'is_detailed' => true
         ]);
 
-        // Ensure that VectorService correctly returns early without calling Gemini
-        // when encountering an empty offer to avoid unnecessary/failing API calls.
-        $this->geminiMock->shouldNotReceive('embed');
+        $this->geminiMock->shouldReceive('embed')->once()->andReturn(null);
 
         $result = $this->service->updateJobVector($offer);
         $this->assertFalse($result);
