@@ -392,17 +392,24 @@ EOT;
             }
         }
 
-        foreach ($factUpdates as $cleanId => $factData) {
-            $fact = $user->facts()->where('local_id', $cleanId)->first();
-            if ($fact) {
-                $newContent = trim($factData['content'] ?? '');
-                $newCategory = $factData['category'] ?? $fact->category;
-                if ($fact->content !== $newContent || $fact->category !== $newCategory) {
-                    $fact->update([
-                        'proposed_content' => $newContent,
-                        'proposed_category' => $newCategory,
-                        'proposed_action' => 'update'
-                    ]);
+        if (!empty($factUpdates)) {
+            $factsByLocalId = $user->facts()
+                ->whereIn('local_id', array_keys($factUpdates))
+                ->get()
+                ->keyBy('local_id');
+
+            foreach ($factUpdates as $cleanId => $factData) {
+                $fact = $factsByLocalId->get($cleanId);
+                if ($fact) {
+                    $newContent = trim($factData['content'] ?? '');
+                    $newCategory = $factData['category'] ?? $fact->category;
+                    if ($fact->content !== $newContent || $fact->category !== $newCategory) {
+                        $fact->update([
+                            'proposed_content' => $newContent,
+                            'proposed_category' => $newCategory,
+                            'proposed_action' => 'update'
+                        ]);
+                    }
                 }
             }
         }
