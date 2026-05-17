@@ -13,3 +13,7 @@
 ## 2025-02-12 - Prevent Memory Exhaustion with Chunking
 **Learning:** Using `Model::all()` in loops for mass operations loads the entire table into memory at once, causing significant memory spikes (e.g., ~22MB for 5000 records).
 **Action:** Always use `Model::chunk($size, $callback)` or `Model::cursor()` for bulk processing tasks (like `ResetAndImportJobOffers` command) to maintain low, stable memory overhead regardless of table size.
+
+## 2026-05-17 - Optimize JobOfferService Sector Sync
+**Learning:** Using `Model::updateOrCreate` inside a loop causes an N+1 query problem, making bulk operations extremely slow and generating heavy DB load. The performance can be vastly improved by using bulk operations.
+**Action:** Use `Model::upsert()` followed by `whereIn()->pluck('id')` and `syncWithoutDetaching()` for related models when handling multiple elements, eliminating redundant DB queries.

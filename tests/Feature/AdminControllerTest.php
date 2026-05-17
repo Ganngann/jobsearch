@@ -127,4 +127,110 @@ class AdminControllerTest extends TestCase
 
         $response->assertStatus(403);
     }
+
+    /**
+     * Test that an admin can update a user's global AI limit.
+     */
+    public function test_admin_can_update_global_ai_limit(): void
+    {
+        $admin = User::factory()->create([
+            'is_admin' => true,
+        ]);
+        $user = User::factory()->create([
+            'daily_ai_limit' => 50,
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->from('/admin/dashboard')
+            ->post(route('admin.users.update-limit', $user), [
+                'limit' => 100,
+            ]);
+
+        $response->assertRedirect('/admin/dashboard');
+        $response->assertSessionHas('success', "Limite IA globale de {$user->name} mise à jour.");
+        $this->assertEquals(100, $user->fresh()->daily_ai_limit);
+    }
+
+    /**
+     * Test that an admin can update a user's model-specific AI limit.
+     */
+    public function test_admin_can_update_model_specific_ai_limit(): void
+    {
+        $admin = User::factory()->create([
+            'is_admin' => true,
+        ]);
+        $user = User::factory()->create([
+            'daily_ai_limits' => [],
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->from('/admin/dashboard')
+            ->post(route('admin.users.update-limit', $user), [
+                'limit' => 150,
+                'model' => 'gemini-1.5-flash',
+            ]);
+
+        $response->assertRedirect('/admin/dashboard');
+        $response->assertSessionHas('success', "Limite IA pour gemini-1.5-flash mise à jour pour {$user->name}.");
+        $this->assertEquals(150, $user->fresh()->daily_ai_limits['gemini-1.5-flash']);
+    }
+
+    /**
+     * Test that a non-admin user cannot update an AI limit.
+     */
+    public function test_non_admin_cannot_update_ai_limit(): void
+    {
+        $user = User::factory()->create([
+            'is_admin' => false,
+        ]);
+        $targetUser = User::factory()->create([
+            'daily_ai_limit' => 50,
+        ]);
+
+        $response = $this->actingAs($user)
+            ->post(route('admin.users.update-limit', $targetUser), [
+                'limit' => 100,
+            ]);
+
+        $response->assertStatus(403);
+        $this->assertEquals(50, $targetUser->fresh()->daily_ai_limit);
+    }
+
+    /**
+     * Test that the update limit endpoint validates input.
+     */
+    public function test_update_limit_validates_input(): void
+    {
+        $admin = User::factory()->create([
+            'is_admin' => true,
+        ]);
+        $user = User::factory()->create([
+            'daily_ai_limit' => 50,
+        ]);
+
+        // Test with missing limit
+        $response = $this->actingAs($admin)
+            ->post(route('admin.users.update-limit', $user), []);
+
+        $response->assertSessionHasErrors('limit');
+
+        // Test with invalid limit type
+        $response = $this->actingAs($admin)
+            ->post(route('admin.users.update-limit', $user), [
+                'limit' => 'invalid',
+            ]);
+
+        $response->assertSessionHasErrors('limit');
+
+        // Test with negative limit
+        $response = $this->actingAs($admin)
+            ->post(route('admin.users.update-limit', $user), [
+                'limit' => -10,
+            ]);
+
+        $response->assertSessionHasErrors('limit');
+
+        // Ensure the database hasn't changed
+        $this->assertEquals(50, $user->fresh()->daily_ai_limit);
+    }
 }
