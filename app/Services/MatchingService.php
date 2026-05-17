@@ -66,16 +66,9 @@ class MatchingService
         // 2. Layer 2 — Analyse IA
         // On lance l'IA si :
         // - On force l'analyse (demande manuelle)
-        // - OU (Le pre-score est élevé >= 70 ET pas encore d'analyse faite ET trigger autorisé ET utilisateur en ligne ET quota dispo)
         if ($forceAi) {
             $this->performAiAnalysis($user, $jobOffer, $match, $preMatchData['details']['distance'] ?? null);
         }
-        //} elseif ($triggerAi && $preScore >= 70 && !$match->analyzed_at) { // && $user->isOnline()) {
-            // Auto : On ne le fait que si l'utilisateur est en ligne et a du quota
-            //if ($user->useAiPoint()) {
-            //    $this->performAiAnalysis($user, $jobOffer, $match, $preMatchData['details']['distance'] ?? null);
-            //}
-        //}
 
         return $match;
     }
