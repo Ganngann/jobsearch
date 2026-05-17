@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\JobOffer;
-use App\Models\User;
 use App\Models\UserMatch;
 use App\Services\VectorService;
 use App\Services\MatchingService;

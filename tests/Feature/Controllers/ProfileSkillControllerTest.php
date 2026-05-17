@@ -64,6 +64,21 @@ class ProfileSkillControllerTest extends TestCase
         $response->assertJsonMissing(['id' => $skill3->id]);
     }
 
+    public function test_soft_skills_limits_suggestions_to_10()
+    {
+        $user = User::factory()->create();
+
+        Skill::factory()->count(15)->create(['type' => 'soft']);
+
+        $this->actingAs($user);
+
+        $response = $this->get('/profile/skills/soft');
+
+        $response->assertStatus(200);
+
+        $response->assertJsonCount(10, 'suggestions');
+    }
+
     public function test_suggest_returns_empty_array()
     {
         $user = User::factory()->create();
@@ -76,6 +91,44 @@ class ProfileSkillControllerTest extends TestCase
 
         $response->assertJson([
             'suggestions' => []
+        ]);
+    }
+
+    public function test_update_status_invalid_status()
+    {
+        $user = User::factory()->create();
+        $skill = Skill::factory()->create();
+
+        $this->actingAs($user);
+
+        $response = $this->postJson("/profile/skills/{$skill->id}/status", [
+            'status' => 'invalid_status'
+        ]);
+
+        $response->assertStatus(400);
+        $response->assertJson([
+            'status' => 'error',
+            'message' => 'Statut invalide.'
+        ]);
+    }
+
+    public function test_update_status_none()
+    {
+        $user = User::factory()->create();
+        $skill = Skill::factory()->create();
+        $user->skills()->attach($skill->id, ['status' => 'active']);
+
+        $this->actingAs($user);
+
+        $response = $this->postJson("/profile/skills/{$skill->id}/status", [
+            'status' => 'none'
+        ]);
+
+        $response->assertStatus(200);
+
+        $this->assertDatabaseMissing('user_skill', [
+            'user_id' => $user->id,
+            'skill_id' => $skill->id
         ]);
     }
 }
