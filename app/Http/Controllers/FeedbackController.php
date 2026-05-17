@@ -13,6 +13,7 @@ class FeedbackController extends Controller
         $request->validate([
             'message' => 'required|string|min:5',
             'type' => 'required|string|in:feedback,bug,idea',
+            'page_url' => 'nullable|string|max:2048',
         ]);
 
         UserFeedback::create([
