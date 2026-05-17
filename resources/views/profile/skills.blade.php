@@ -5,11 +5,11 @@
         refusedSkills: {{ Js::from($refusedSkills) }},
         csrfToken: '{{ csrf_token() }}',
         routes: {
-            search: '',
-            suggest: '',
-            soft: ''
+            search: '{{ route('api.skills.search') }}',
+            suggest: '{{ route('profile.skills.suggest') }}',
+            soft: '{{ route('profile.skills.soft') }}'
         }
-    })">
+    })" x-init="fetchSoftSkills()">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             
             <!-- Header -->
@@ -64,6 +64,45 @@
                 </div>
             </div>
 
+
+            <!-- Suggestions List -->
+            <div class="mb-12" x-show="suggestions.length > 0" style="display: none;">
+                <h3 class="text-lg font-black text-slate-900 mb-6 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                    Compétences non classées
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <template x-for="skill in suggestions" :key="skill.id">
+                        <div x-show="!skill.hidden"
+                             x-transition:leave="transition ease-in duration-200"
+                             x-transition:leave-start="opacity-100 transform scale-100"
+                             x-transition:leave-end="opacity-0 transform scale-95"
+                             class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex flex-col justify-between h-full group hover:border-indigo-100 focus-within:border-indigo-100 transition-all">
+
+                            <div class="mb-4">
+                                <span class="font-bold text-slate-700 text-sm block leading-tight" x-text="skill.label"></span>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-1">
+                                <button @click="setStatus(skill, 'active')" class="flex flex-col items-center justify-center p-2 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none transition-all" title="Maîtriser" :aria-label="`Maîtriser ${skill.label}`">
+                                    <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                    <span class="text-[9px] font-bold uppercase tracking-wider">Maîtrisé</span>
+                                </button>
+
+                                <button @click="setStatus(skill, 'neutral')" class="flex flex-col items-center justify-center p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none transition-all" title="Ignorer" :aria-label="`Ignorer ${skill.label}`">
+                                    <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"/></svg>
+                                    <span class="text-[9px] font-bold uppercase tracking-wider">Ignorer</span>
+                                </button>
+
+                                <button @click="setStatus(skill, 'refused')" class="flex flex-col items-center justify-center p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none transition-all" title="Écarter" :aria-label="`Écarter ${skill.label}`">
+                                    <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    <span class="text-[9px] font-bold uppercase tracking-wider">Écarté</span>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
 
             <!-- Qualified Lists -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">

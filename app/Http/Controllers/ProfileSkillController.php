@@ -35,6 +35,31 @@ class ProfileSkillController extends Controller
         ]);
     }
 
+    public function softSkills()
+    {
+        $user = Auth::user();
+
+        $associatedSkillIds = $user->skills()->pluck('skills.id')->toArray();
+
+        $suggestions = Skill::where('type', 'soft')
+            ->whereNotIn('id', $associatedSkillIds)
+            ->inRandomOrder()
+            ->limit(10)
+            ->get(['id', 'label']);
+
+        return response()->json([
+            'suggestions' => $suggestions
+        ]);
+    }
+
+    public function suggest()
+    {
+        // Currently bypassing AI suggestion generation for this view
+        return response()->json([
+            'suggestions' => []
+        ]);
+    }
+
 
     public function updateStatus(Request $request, Skill $skill)
     {
