@@ -26,6 +26,32 @@ class JobOfferControllerTest extends TestCase
         $response->assertStatus(200);
     }
 
+    public function test_preview_loads_correctly_with_detailed_offer()
+    {
+        $user = User::factory()->create();
+
+        $employer = Employer::create(['label' => 'Test']);
+        $offer = JobOffer::factory()->create([
+            'forem_id' => '456',
+            'employer_id' => $employer->id,
+            'is_detailed' => true
+        ]);
+
+        $this->actingAs($user);
+
+        $response = $this->get("/jobs/{$offer->forem_id}/preview");
+
+        $response->assertStatus(200);
+        $response->assertViewIs('job-offers.partials.preview');
+        $response->assertViewHasAll([
+            'jobOffer',
+            'match',
+            'user',
+            'isParentFavorite',
+            'isOfferBlacklisted'
+        ]);
+    }
+
     public function test_preview_loads_details_if_needed()
     {
         $user = User::factory()->create();
