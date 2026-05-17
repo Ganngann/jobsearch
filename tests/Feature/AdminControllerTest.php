@@ -129,6 +129,48 @@ class AdminControllerTest extends TestCase
     }
 
     /**
+     * Test that an admin can clear failed jobs.
+     */
+    public function test_admin_can_clear_failed_jobs(): void
+    {
+        $admin = User::factory()->create([
+            'is_admin' => true,
+        ]);
+
+        \Illuminate\Support\Facades\DB::table('failed_jobs')->insert([
+            'uuid' => 'test-uuid-123',
+            'connection' => 'database',
+            'queue' => 'default',
+            'payload' => '{"job":"TestFailedJob","data":[]}',
+            'exception' => 'TestException: Error',
+            'failed_at' => now(),
+        ]);
+
+        $this->assertEquals(1, \Illuminate\Support\Facades\DB::table('failed_jobs')->count());
+
+        $response = $this->actingAs($admin)->post(route('admin.queue.failed.clear'));
+
+        $response->assertStatus(302);
+        $response->assertSessionHas('success', 'Historique des échecs purgé.');
+
+        $this->assertEquals(0, \Illuminate\Support\Facades\DB::table('failed_jobs')->count());
+    }
+
+    /**
+     * Test that a non-admin cannot clear failed jobs.
+     */
+    public function test_non_admin_cannot_clear_failed_jobs(): void
+    {
+        $user = User::factory()->create([
+            'is_admin' => false,
+        ]);
+
+        $response = $this->actingAs($user)->post(route('admin.queue.failed.clear'));
+
+        $response->assertStatus(403);
+    }
+
+    /**
      * Test that an admin can update a user's global AI limit.
      */
     public function test_admin_can_update_global_ai_limit(): void
