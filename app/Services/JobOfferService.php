@@ -72,11 +72,20 @@ class JobOfferService
             );
 
             // Sectors (Si présents)
-            if (isset($item['secteursActivite'])) {
-                foreach ($item['secteursActivite'] as $sectorLabel) {
-                    $sector = \App\Models\Sector::updateOrCreate(['label' => $sectorLabel]);
-                    $jobOffer->sectors()->syncWithoutDetaching([$sector->id]);
-                }
+            if (isset($item['secteursActivite']) && !empty($item['secteursActivite'])) {
+                $sectorsData = array_map(fn($label) => ['label' => $label], $item['secteursActivite']);
+
+                \App\Models\Sector::upsert(
+                    $sectorsData,
+                    ['label'], // unique keys
+                    ['label']  // columns to update
+                );
+
+                $sectorIds = \App\Models\Sector::whereIn('label', $item['secteursActivite'])
+                    ->pluck('id')
+                    ->toArray();
+
+                $jobOffer->sectors()->syncWithoutDetaching($sectorIds);
             }
 
             return $jobOffer;
