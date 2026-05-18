@@ -103,32 +103,33 @@ class VectorController extends Controller
         // Lever la limite de temps pour ce calcul massif
         set_time_limit(0);
 
-        // On récupère toutes les offres actives détaillées via un curseur
-        $jobs = JobOffer::where('status', 'active')
-            ->where('is_detailed', true)
-            ->whereNotNull('vector_embedding')
-            ->cursor();
-
         $count = 0;
         $upsertData = [];
         
-        foreach ($jobs as $job) {
-            $score = $this->vectorService->calculateSemanticScore($user->vector_embedding, $job->vector_embedding);
-            
-            $upsertData[] = [
-                'user_id' => $user->id,
-                'job_offer_id' => $job->id,
-                'vector_score' => $score
-            ];
-            
-            $count++;
-            
-            // On traite par paquets de 500 pour ne pas saturer la requête SQL
-            if (count($upsertData) >= 500) {
-                UserMatch::upsert($upsertData, ['user_id', 'job_offer_id'], ['vector_score']);
-                $upsertData = [];
-            }
-        }
+        // Utilisation de chunkById et select pour éviter l'épuisement de la mémoire
+        JobOffer::select(['id', 'vector_embedding'])
+            ->where('status', 'active')
+            ->where('is_detailed', true)
+            ->whereNotNull('vector_embedding')
+            ->chunkById(500, function ($jobs) use (&$count, &$upsertData, $user) {
+                foreach ($jobs as $job) {
+                    $score = $this->vectorService->calculateSemanticScore($user->vector_embedding, $job->vector_embedding);
+
+                    $upsertData[] = [
+                        'user_id' => $user->id,
+                        'job_offer_id' => $job->id,
+                        'vector_score' => $score
+                    ];
+
+                    $count++;
+
+                    // On traite par paquets de 500 pour ne pas saturer la requête SQL
+                    if (count($upsertData) >= 500) {
+                        UserMatch::upsert($upsertData, ['user_id', 'job_offer_id'], ['vector_score']);
+                        $upsertData = [];
+                    }
+                }
+            });
 
         // Dernier paquet
         if (!empty($upsertData)) {
@@ -175,16 +176,20 @@ class VectorController extends Controller
             return back()->with('error', "Un scan est déjà en cours de lancement. Veuillez patienter.");
         }
 
-        $pendingJobs = JobOffer::where('status', 'active')
+        $count = 0;
+
+        // Utilisation de chunkById et select('id') pour économiser la mémoire.
+        // Le modèle sera rechargé de manière transparente lors de l'exécution du Job (SerializesModels).
+        JobOffer::select('id')
+            ->where('status', 'active')
             ->where('is_detailed', true)
             ->whereNull('vector_embedding')
-            ->cursor();
-
-        $count = 0;
-        foreach ($pendingJobs as $job) {
-            \App\Jobs\VectorizeJobOffer::dispatch($job);
-            $count++;
-        }
+            ->chunkById(500, function ($jobs) use (&$count) {
+                foreach ($jobs as $job) {
+                    \App\Jobs\VectorizeJobOffer::dispatch($job);
+                    $count++;
+                }
+            });
 
         return back()->with('success', "{$count} offres envoyées en file d'attente pour vectorisation.");
     }
