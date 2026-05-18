@@ -142,7 +142,7 @@ Assurez-vous de sélectionner **PHP 8.3** dans l'outil **Sélectionner une versi
 o2switch ne permet pas d'installer Supervisor. Pour traiter les jobs :
 1. **Option Cron** (Recommandée) : Ajoutez cette tâche cron toutes les minutes :
    ```bash
-   * * * * * /usr/local/bin/php /home/votreuser/jobsearch/artisan queue:work --stop-when-empty >> /dev/null 2>&1
+   * * * * * /usr/local/bin/php /home/votreuser/jobsearch/artisan queue:work --queue=high,default,low --stop-when-empty >> /dev/null 2>&1
    ```
 2. **Terminal SSH** : Vous pouvez lancer un worker manuellement dans le terminal SSH, mais il risque d'être arrêté si la session se ferme.
 
