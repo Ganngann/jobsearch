@@ -7,9 +7,9 @@ use App\Models\Setting;
 use App\Services\VectorService;
 use Illuminate\Console\Command;
 
-class ForemVectorWorkerCommand extends Command
+class VectorWorkerCommand extends Command
 {
-    protected $signature = 'forem:vector-worker {--sleep=5 : Secondes entre chaque requête} {--limit=100 : Nombre d\'itérations avant de s\'arrêter}';
+    protected $signature = 'matching:vector-worker {--sleep=5 : Secondes entre chaque requête} {--limit=100 : Nombre d\'itérations avant de s\'arrêter}';
     protected $description = 'Worker qui vectorise (embedding) les offres d\'emploi au compte-goutte, si activé.';
 
     protected $vectorService;

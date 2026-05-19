@@ -9,7 +9,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Mockery;
 
-class ForemVectorWorkerCommandTest extends TestCase
+class VectorWorkerCommandTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -17,7 +17,7 @@ class ForemVectorWorkerCommandTest extends TestCase
     {
         Setting::set('enable_continuous_vectorization', '0');
 
-        $this->artisan('forem:vector-worker', ['--limit' => 1])
+        $this->artisan('matching:vector-worker', ['--limit' => 1])
             ->expectsOutputToContain('La vectorisation continue est désactivée dans les paramètres. Arrêt.')
             ->assertExitCode(0);
     }
@@ -43,7 +43,7 @@ class ForemVectorWorkerCommandTest extends TestCase
 
         $this->app->instance(VectorService::class, $mockVectorService);
 
-        $this->artisan('forem:vector-worker', ['--limit' => 1, '--sleep' => 0])
+        $this->artisan('matching:vector-worker', ['--limit' => 1, '--sleep' => 0])
             ->expectsOutputToContain('Vectorisation de #' . $jobOffer->forem_id)
             ->expectsOutputToContain('--> Succès')
             ->assertExitCode(0);
@@ -56,7 +56,7 @@ class ForemVectorWorkerCommandTest extends TestCase
         Setting::set('enable_continuous_vectorization', '1');
         // Do not create any active/detailed job offers
 
-        $this->artisan('forem:vector-worker', ['--limit' => 1, '--sleep' => 0])
+        $this->artisan('matching:vector-worker', ['--limit' => 1, '--sleep' => 0])
             ->expectsOutputToContain('Aucune offre à vectoriser. Arrêt du worker (redémarrage prévu au prochain cycle).')
             ->assertExitCode(0);
     }
