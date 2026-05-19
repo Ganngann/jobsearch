@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class MobilityController extends Controller
 {
@@ -12,9 +13,11 @@ class MobilityController extends Controller
         $user = Auth::user();
         
         // On récupère les permis en mettant 'NONE' en haut, puis le reste par label
-        $allPermits = \App\Models\Permit::orderByRaw("CASE WHEN code = 'NONE' THEN 0 ELSE 1 END")
-            ->orderBy('label')
-            ->get();
+        $allPermits = Cache::remember('all_permits_ordered', 3600, function () {
+            return \App\Models\Permit::orderByRaw("CASE WHEN code = 'NONE' THEN 0 ELSE 1 END")
+                ->orderBy('label')
+                ->get();
+        });
             
         $userPermitIds = $user->permits()->pluck('permits.id')->toArray();
         

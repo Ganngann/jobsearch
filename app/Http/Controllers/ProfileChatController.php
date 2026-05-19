@@ -11,6 +11,7 @@ use App\Services\AIProfileService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 
 class ProfileChatController extends Controller
 {
@@ -118,7 +119,7 @@ class ProfileChatController extends Controller
         $all_experiences = $user->experiences()->orderBy('start_date', 'desc')->get();
         $all_educations = $user->educations()->orderBy('graduation_year', 'desc')->get();
         $languages = $user->languages()->get()->map(fn($l) => ['id' => $l->id, 'label' => $l->label, 'level' => $l->pivot->level]);
-        $allAvailableLanguages = \App\Models\Language::orderBy('label')->get(['id', 'label']);
+        $allAvailableLanguages = Cache::remember('all_languages_ordered', 3600, function () { return \App\Models\Language::orderBy('label')->get(['id', 'label']); });
 
         return view('profile.builder', compact(
             'messages', 'facts', 'activeSessions', 'archivedSessions', 'sessionId', 'stats',
