@@ -17,7 +17,7 @@
                     </template>
                 </div>
             </div>
-            <div class="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-gray-100 rounded text-[8px] text-gray-400">Éditer profil</div>
+            <div class="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 focus-within:opacity-100 focus:opacity-100 transition-opacity p-1 bg-gray-100 rounded text-[8px] text-gray-400">Éditer profil</div>
         </div>
     </template>
 
