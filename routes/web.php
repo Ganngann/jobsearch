@@ -94,7 +94,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/matching/clear-ai', [\App\Http\Controllers\AdminController::class, 'clearAiAnalyses'])->name('matching.clear-ai');
     Route::post('/matching/vector-sync', [\App\Http\Controllers\VectorController::class, 'syncGlobalSimilarities'])->name('matching.vector-sync');
     Route::post('/matching/scan', [\App\Http\Controllers\VectorController::class, 'launchBatchVectorization'])->name('matching.scan');
-    Route::get('/matching/clear-get', [\App\Http\Controllers\AdminController::class, 'clearAllMatches'])->name('matching.clear-get');
     
     // Queue Monitoring
     Route::get('/queue', [\App\Http\Controllers\AdminController::class, 'queueMonitor'])->name('queue.monitor');
