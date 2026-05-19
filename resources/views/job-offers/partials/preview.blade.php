@@ -347,7 +347,7 @@
                 <div>
                     <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Description du poste</h3>
                     <div class="prose prose-slate max-w-none text-slate-600 text-sm leading-relaxed">
-                        {!! $jobOffer->description !!}
+                        @purify($jobOffer->description)
                     </div>
                 </div>
             </div>
