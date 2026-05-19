@@ -12,6 +12,7 @@ use App\Models\Skill;
 use App\Models\Metier;
 use App\Jobs\RecalculateMatchesJob;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Cache;
 
 class ProfileController extends Controller
 {
@@ -147,11 +148,17 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
+        // Cache taxonomy query to avoid N+1 and slow loading
+        $allLanguages = Cache::remember('all_languages', 3600, function () {
+            return \App\Models\Language::all();
+        });
+
+        // allSkills and allPermits are fetched asynchronously by front-end when needed,
+        // so we avoid loading large datasets like 5000+ skills at page load.
+
         return view('profile.edit', [
             'user' => $request->user(),
-            'allSkills' => \App\Models\Skill::all(),
-            'allLanguages' => \App\Models\Language::all(),
-            'allPermits' => \App\Models\Permit::all(),
+            'allLanguages' => $allLanguages,
         ]);
     }
 
@@ -286,8 +293,10 @@ class ProfileController extends Controller
         $q = $request->query('q');
         if (!$q || strlen($q) < 2) return response()->json([]);
 
-        $metiers = \App\Models\Metier::where('label', 'like', "%{$q}%")
-            ->orWhere('code', 'like', "%{$q}%")
+        $escapedQ = str_replace(['=', '%', '_'], ['==', '=%', '=_'], $q);
+
+        $metiers = \App\Models\Metier::whereRaw("label LIKE ? ESCAPE '='", ["%{$escapedQ}%"])
+            ->orWhereRaw("code LIKE ? ESCAPE '='", ["%{$escapedQ}%"])
             ->limit(50) // Augmenté pour plus de visibilité
             ->orderBy('label')
             ->get(['id', 'label', 'code']);
@@ -303,7 +312,9 @@ class ProfileController extends Controller
         $q = $request->query('q');
         if (!$q || strlen($q) < 2) return response()->json([]);
 
-        $skills = \App\Models\Skill::where('label', 'like', "%{$q}%")
+        $escapedQ = str_replace(['=', '%', '_'], ['==', '=%', '=_'], $q);
+
+        $skills = \App\Models\Skill::whereRaw("label LIKE ? ESCAPE '='", ["%{$escapedQ}%"])
             ->limit(20)
             ->orderBy('label')
             ->get(['id', 'label']);

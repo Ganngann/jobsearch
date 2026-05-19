@@ -55,6 +55,19 @@ class ProfileControllerTest extends TestCase
         $response->assertStatus(200);
     }
 
+    public function test_search_skills_escapes_wildcards()
+    {
+        $user = User::factory()->create();
+        \App\Models\Skill::factory()->create(['label' => '100% Cotton']);
+        \App\Models\Skill::factory()->create(['label' => '1000 items']);
+
+        $response = $this->actingAs($user)->get('/api/skills/search?q=100%25'); // URL encoded %
+
+        $response->assertStatus(200);
+        $this->assertCount(1, $response->json());
+        $this->assertEquals('100% Cotton', $response->json()[0]['label']);
+    }
+
     public function test_search_metiers()
     {
         $user = User::factory()->create();
@@ -63,6 +76,19 @@ class ProfileControllerTest extends TestCase
         $response = $this->actingAs($user)->get('/api/metiers/search?q=Dev');
 
         $response->assertStatus(200);
+    }
+
+    public function test_search_metiers_escapes_wildcards()
+    {
+        $user = User::factory()->create();
+        \App\Models\Metier::create(['label' => 'Front_End', 'code' => 'D124']);
+        \App\Models\Metier::create(['label' => 'Front End', 'code' => 'D125']);
+
+        $response = $this->actingAs($user)->get('/api/metiers/search?q=Front_');
+
+        $response->assertStatus(200);
+        $this->assertCount(1, $response->json());
+        $this->assertEquals('Front_End', $response->json()[0]['label']);
     }
 
     public function test_delete_profile()
