@@ -17,7 +17,7 @@
                         <span class="text-[10px] font-bold text-gray-900" x-text="lang.label"></span>
                         <span class="text-[9px] text-gray-400" x-text="lang.level"></span>
                         
-                        <button @click.stop="deleteItem('language', lang.id)" class="opacity-0 group-hover:opacity-100 text-red-300 hover:text-red-500 ml-1">
+                        <button @click.stop="deleteItem('language', lang.id)" class="opacity-0 group-hover:opacity-100 focus-within:opacity-100 focus:opacity-100 text-red-300 hover:text-red-500 ml-1">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                             </svg>
