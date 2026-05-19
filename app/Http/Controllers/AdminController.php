@@ -87,7 +87,19 @@ class AdminController extends Controller
             'matches_ai' => \App\Models\UserMatch::whereNotNull('ai_score')->count(),
         ];
 
+        $stats['continuous_vectorization'] = \App\Models\Setting::get('enable_continuous_vectorization', '0') === '1';
+
         return view('admin.dashboard', compact('users', 'stats'));
+    }
+
+    public function toggleContinuousVectorization()
+    {
+        $current = \App\Models\Setting::get('enable_continuous_vectorization', '0');
+        $new = $current === '1' ? '0' : '1';
+        \App\Models\Setting::set('enable_continuous_vectorization', $new);
+
+        $status = $new === '1' ? 'activée' : 'désactivée';
+        return back()->with('success', "La vectorisation continue a été {$status}.");
     }
 
     public function toggleAdmin(User $user)
@@ -215,6 +227,12 @@ class AdminController extends Controller
                 'expression' => '* * * * *',
                 'description' => 'Récupération des détails (Lazy Loading)',
                 'key' => 'pull-worker'
+            ],
+            [
+                'command' => 'matching:vector-worker',
+                'expression' => '* * * * *',
+                'description' => 'Vectorisation continue des offres',
+                'key' => 'vector-worker'
             ],
         ])->map(function($task) {
             return [
