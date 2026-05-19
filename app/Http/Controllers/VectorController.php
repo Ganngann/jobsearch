@@ -165,32 +165,5 @@ class VectorController extends Controller
         return back()->with('success', "Le recalcul global a été lancé en arrière-plan. Les scores seront mis à jour progressivement.");
     }
 
-    /**
-     * Lance la vectorisation en masse des offres en attente via la file d'attente.
-     */
-    public function launchBatchVectorization()
-    {
-        $lock = \Illuminate\Support\Facades\Cache::lock('batch_vectorization', 30);
 
-        if (!$lock->get()) {
-            return back()->with('error', "Un scan est déjà en cours de lancement. Veuillez patienter.");
-        }
-
-        $count = 0;
-
-        // Utilisation de chunkById et select('id') pour économiser la mémoire.
-        // Le modèle sera rechargé de manière transparente lors de l'exécution du Job (SerializesModels).
-        JobOffer::select('id')
-            ->where('status', 'active')
-            ->where('is_detailed', true)
-            ->whereNull('vector_embedding')
-            ->chunkById(500, function ($jobs) use (&$count) {
-                foreach ($jobs as $job) {
-                    \App\Jobs\VectorizeJobOffer::dispatch($job);
-                    $count++;
-                }
-            });
-
-        return back()->with('success', "{$count} offres envoyées en file d'attente pour vectorisation.");
-    }
 }

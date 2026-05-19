@@ -36,33 +36,5 @@ class VectorControllerMemorySafeTest extends TestCase
         $this->assertEquals(10, UserMatch::where('user_id', $user->id)->count());
     }
 
-    public function test_launch_batch_vectorization_uses_memory_safe_chunking()
-    {
-        Queue::fake();
 
-        $admin = User::factory()->create(['is_admin' => true]);
-        $this->actingAs($admin);
-
-        // Crée des offres sans vecteur, actives et détaillées
-        JobOffer::factory()->count(5)->create([
-            'status' => 'active',
-            'is_detailed' => true,
-            'vector_embedding' => null,
-            'raw_data' => array_fill(0, 100, 'large data payload'),
-        ]);
-
-        // Crée des offres déjà vectorisées (ne doivent pas être dispatchées)
-        JobOffer::factory()->count(3)->create([
-            'status' => 'active',
-            'is_detailed' => true,
-            'vector_embedding' => array_fill(0, 768, 0.1),
-        ]);
-
-        $response = $this->post(route('admin.matching.scan'));
-
-        $response->assertRedirect();
-        $response->assertSessionHas('success', '5 offres envoyées en file d\'attente pour vectorisation.');
-
-        Queue::assertPushed(\App\Jobs\VectorizeJobOffer::class, 5);
-    }
 }
