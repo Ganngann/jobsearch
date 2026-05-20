@@ -87,21 +87,23 @@
                     </div>
                     <p class="text-[10px] text-slate-400 font-bold uppercase mt-1 italic">Vecteurs OK & Statut Actif</p>
                 </div>
-                <div class="p-6 bg-amber-50/30">
-                    <p class="text-amber-600 text-[10px] font-black uppercase tracking-widest mb-1">En attente de Scan</p>
+                <div class="p-6 bg-amber-50/30 relative">
+                    <div class="flex justify-between items-start mb-1">
+                        <p class="text-amber-600 text-[10px] font-black uppercase tracking-widest">En attente de Scan</p>
+                        <form action="{{ route('admin.settings.toggle-vectorization') }}" method="POST" class="inline-flex">
+                            @csrf
+                            <button type="submit" class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors {{ $stats['continuous_vectorization'] ? 'bg-amber-500' : 'bg-slate-300' }}" role="switch" aria-checked="{{ $stats['continuous_vectorization'] ? 'true' : 'false' }}">
+                                <span class="sr-only">Activer la vectorisation continue</span>
+                                <span class="inline-block h-3 w-3 transform rounded-full bg-white transition-transform {{ $stats['continuous_vectorization'] ? 'translate-x-5' : 'translate-x-1' }}"></span>
+                            </button>
+                        </form>
+                    </div>
                     <div class="flex items-baseline gap-3">
                         <p class="text-2xl font-black text-amber-600">{{ $stats['jobs_pending_vectorization'] }}</p>
-                        @if($stats['jobs_pending_vectorization'] > 0)
-                            <form x-data="{ loading: false }" @submit="loading = true" action="{{ route('admin.matching.scan') }}" method="POST">
-                                @csrf
-                                <button type="submit" 
-                                    :disabled="loading"
-                                    :class="loading ? 'opacity-50 cursor-not-allowed' : ''"
-                                    class="px-3 py-1 bg-amber-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-amber-700 transition-all shadow-sm flex items-center gap-1">
-                                    <svg x-show="loading" class="animate-spin h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                    <span x-text="loading ? 'Scan...' : 'Lancer Scan'"></span>
-                                </button>
-                            </form>
+                        @if($stats['continuous_vectorization'])
+                            <span class="px-2 py-0.5 bg-amber-100 text-amber-700 text-[9px] font-black uppercase tracking-widest rounded-full animate-pulse flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Actif
+                            </span>
                         @endif
                     </div>
                     <p class="text-[10px] text-amber-500/70 font-bold uppercase mt-1">Offres actives sans vecteur</p>
