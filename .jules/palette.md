@@ -1,3 +1,4 @@
-## 2024-05-19 - Keyboard Accessibility for Hover-Revealed Actions
-**Learning:** In the CV components, there are many action buttons (e.g., delete, add) that are hidden by default using `opacity-0` and revealed on hover using `group-hover:opacity-100`. This hides the actions from keyboard users (tabbing) because the elements don't become visible when focused.
-**Action:** When hiding elements visually with Tailwind's `opacity-0 group-hover:opacity-100`, always pair it with `focus-within:opacity-100` (on the parent group) or `focus:opacity-100` (on the element itself) to ensure they are visible when receiving keyboard focus.
+## 2024-05-20 - Non-interactive element accessibility
+
+**Learning:** When styling non-interactive elements like `div`s as clickable components using Alpine.js (`@click`), they must be made keyboard accessible to conform to WCAG guidelines, as they do not natively receive focus or respond to keyboard events.
+**Action:** Always add `role="button"`, `tabindex="0"`, keydown bindings (`@keydown.enter.prevent`, `@keydown.space.prevent`), and `focus-visible` Tailwind classes to any non-interactive element that acts as a button.

@@ -33,14 +33,19 @@
         $isOfferBlacklisted = $match?->is_blacklisted ?? false;
     @endphp
     <div 
+        role="button"
+        tabindex="0"
         @click="selectOffer('{{ $offer->forem_id }}')"
+        @keydown.enter.prevent="selectOffer('{{ $offer->forem_id }}')"
+        @keydown.space.prevent="selectOffer('{{ $offer->forem_id }}')"
+        :aria-current="selectedId == '{{ $offer->forem_id }}' ? 'true' : 'false'"
         data-offer-id="{{ $offer->forem_id }}"
         data-pre-score="{{ $match?->pre_score ?? 0 }}"
         data-ai-score="{{ $match?->ai_score ?? '' }}"
         data-vector-score="{{ ($match?->vector_score !== null) ? round($match->vector_score) : '' }}"
         data-final-score="{{ $match?->final_score ?? 0 }}"
         :class="selectedId == '{{ $offer->forem_id }}' ? 'border-indigo-500 ring-2 ring-indigo-500/10 bg-white' : 'border-slate-100 hover:border-slate-300 bg-white'"
-        class="p-5 rounded-2xl border cursor-pointer transition-all duration-300 shadow-sm hover:shadow-md group relative overflow-hidden {{ $isOfferBlacklisted ? 'opacity-50 grayscale-[0.5]' : '' }}"
+        class="p-5 rounded-2xl border cursor-pointer transition-all duration-300 shadow-sm hover:shadow-md group relative overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 {{ $isOfferBlacklisted ? 'opacity-50 grayscale-[0.5]' : '' }}"
     >
         <!-- Score Section -->
         <div class="absolute top-0 right-0 p-3">
