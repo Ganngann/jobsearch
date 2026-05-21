@@ -11,7 +11,7 @@ class FeedbackController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'message' => 'required|string|min:5',
+            'message' => 'required|string|min:5|max:10000',
             'type' => 'required|string|in:feedback,bug,idea',
             'page_url' => 'nullable|string|max:2048',
         ]);

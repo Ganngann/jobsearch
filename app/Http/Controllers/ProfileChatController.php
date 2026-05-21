@@ -265,7 +265,7 @@ class ProfileChatController extends Controller
 
     public function sendMessage(Request $request)
     {
-        $request->validate(['message' => 'required|string']);
+        $request->validate(['message' => 'required|string|max:10000']);
         $user = Auth::user();
         $sessionId = session('profile_builder_session', uniqid());
 
@@ -488,7 +488,7 @@ class ProfileChatController extends Controller
                 'end_date' => 'nullable',
             ],
             'fact' => [
-                'content' => 'required|string',
+                'content' => 'required|string|max:10000',
                 'category' => 'nullable|string|max:255',
                 'experience_id' => 'nullable|exists:experiences,id',
                 'session_id' => 'nullable|string|max:255',
@@ -630,7 +630,7 @@ class ProfileChatController extends Controller
                 'end_date' => 'nullable',
             ],
             'fact' => [
-                'content' => 'required|string',
+                'content' => 'required|string|max:10000',
                 'category' => 'nullable|string|max:255',
                 'experience_id' => 'nullable|exists:experiences,id',
             ],
