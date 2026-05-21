@@ -12,3 +12,7 @@
 **Vulnerability:** Unescaped variables containing HTML content (like `$jobOffer->description`) were rendered using Blade's `{!! !!}` syntax without sanitization, leading to a Cross-Site Scripting (XSS) vulnerability if the data is maliciously crafted.
 **Learning:** While using `nl2br(e($content))` is safe for plain text, complex HTML needs proper sanitization.
 **Prevention:** Replace all unescaped `{!! $variable !!}` usages with the custom `@purify($variable)` Blade directive (which uses HTMLPurifier) when displaying external or user-generated HTML content.
+## 2026-05-21 - Prevent DoS via Input Length Limits
+**Vulnerability:** Unbounded string inputs in ProfileChatController and FeedbackController.
+**Learning:** Laravel's `string` validation rule doesn't enforce a maximum length by default, allowing malicious users to send massive payloads causing memory exhaustion or DB truncation.
+**Prevention:** Always pair `string` validation with a `max:` constraint (e.g., `max:10000`) based on the expected input size.
