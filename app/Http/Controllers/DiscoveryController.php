@@ -23,39 +23,82 @@ class DiscoveryController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $suggestions = $user->discoverySuggestions()->get()->map(function($s) use ($user) {
-            $referentiel = ReferentielMetier::where('code', $s->code)->first();
-            $pivot = $user->preferredReferentielMetiers()->where('code', $s->code)->first();
-            $isParentFavorite = $pivot && $pivot->pivot->status === 'favorite';
-            $parentStatus = $pivot ? $pivot->pivot->status : 'none';
-            $isParentRefused = $pivot && $pivot->pivot->status === 'refused';
 
-            $variants = Metier::where('code', 'LIKE', $s->code . '%')
-                ->orderBy('label')
-                ->get(['id', 'code', 'label'])
-                ->map(function($v) use ($user, $isParentFavorite) {
-                    $pivot = $user->preferredMetiers()->where('metier_id', $v->id)->first();
-                    $v->status = $pivot ? $pivot->pivot->status : ($isParentFavorite ? 'favorite' : 'none');
-                    return $v;
+        $baseSuggestions = $user->discoverySuggestions()->get();
+        $suggestionCodes = $baseSuggestions->pluck('code')->toArray();
+
+        $suggestions = collect([]);
+
+        if (!empty($suggestionCodes)) {
+            // Load related referentiels in one go
+            $referentiels = ReferentielMetier::whereIn('code', $suggestionCodes)->get()->keyBy('code');
+
+            // Load user preferred referentiels in one go
+            $preferredReferentiels = $user->preferredReferentielMetiers()->whereIn('code', $suggestionCodes)->get()->keyBy('code');
+
+            // Load variants in one go
+            $allVariants = Metier::where(function($q) use ($suggestionCodes) {
+                foreach ($suggestionCodes as $code) {
+                    $q->orWhere('code', 'LIKE', $code . '%');
+                }
+            })->orderBy('label')->get(['id', 'code', 'label']);
+            $variantIds = $allVariants->pluck('id')->toArray();
+
+            // Load user preferred metiers in one go
+            $preferredMetiers = $user->preferredMetiers()->whereIn('metier_id', $variantIds)->get()->keyBy('id');
+
+            $variantsGrouped = [];
+            foreach ($allVariants as $v) {
+                foreach ($suggestionCodes as $code) {
+                    if (str_starts_with($v->code, $code)) {
+                        $variantsGrouped[$code][] = $v;
+                    }
+                }
+            }
+
+            // Group job offer counts
+            $offersCountQuery = \App\Models\JobOffer::query()
+                ->selectRaw('metiers.id as metier_id, COUNT(job_offers.id) as count')
+                ->join('metiers', 'job_offers.metier_id', '=', 'metiers.id')
+                ->whereIn('metiers.id', $variantIds)
+                ->groupBy('metiers.id')
+                ->get()
+                ->pluck('count', 'metier_id');
+
+            $suggestions = $baseSuggestions->map(function($s) use ($referentiels, $preferredReferentiels, $variantsGrouped, $preferredMetiers, $offersCountQuery) {
+                $referentiel = $referentiels->get($s->code);
+                $pivot = $preferredReferentiels->get($s->code);
+
+                $isParentFavorite = $pivot && $pivot->pivot->status === 'favorite';
+                $parentStatus = $pivot ? $pivot->pivot->status : 'none';
+                $isParentRefused = $pivot && $pivot->pivot->status === 'refused';
+
+                $variants = collect($variantsGrouped[$s->code] ?? [])->map(function($v) use ($preferredMetiers, $isParentFavorite) {
+                    $clone = clone $v;
+                    $pivot = $preferredMetiers->get($v->id);
+                    $clone->status = $pivot ? $pivot->pivot->status : ($isParentFavorite ? 'favorite' : 'none');
+                    return $clone;
                 });
-            
-            $offersCount = \App\Models\JobOffer::whereHas('metier', function($q) use ($s) {
-                $q->where('code', 'LIKE', $s->code . '%');
-            })->count();
-            
-            return [
-                'id' => $referentiel ? $referentiel->id : null,
-                'code' => $s->code,
-                'title' => $s->title,
-                'reason' => $s->reason,
-                'type' => $s->type,
-                'status' => $parentStatus,
-                'is_favorite' => $isParentFavorite,
-                'is_refused' => $isParentRefused,
-                'variants' => $variants,
-                'offers_count' => $offersCount
-            ];
-        });
+
+                $offersCount = 0;
+                foreach ($variantsGrouped[$s->code] ?? [] as $v) {
+                    $offersCount += $offersCountQuery->get($v->id) ?? 0;
+                }
+
+                return [
+                    'id' => $referentiel ? $referentiel->id : null,
+                    'code' => $s->code,
+                    'title' => $s->title,
+                    'reason' => $s->reason,
+                    'type' => $s->type,
+                    'status' => $parentStatus,
+                    'is_favorite' => $isParentFavorite,
+                    'is_refused' => $isParentRefused,
+                    'variants' => $variants,
+                    'offers_count' => $offersCount
+                ];
+            });
+        }
 
         $savedReferentiels = $user->preferredReferentielMetiers()
             ->get(['referentiel_metiers.id', 'code', 'title'])
