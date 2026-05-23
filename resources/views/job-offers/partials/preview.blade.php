@@ -424,15 +424,15 @@
                                     </span>
                                     
                                     <div class="flex items-center gap-1 bg-white/50 p-1 rounded-xl border border-slate-100 transition-opacity duration-300" 
-                                         :class="status !== 'none' ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'">
+                                         :class="status !== 'none' ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'">
                                         <button @click.stop="updateStatus('active')" 
-                                                class="p-1 rounded-lg transition-all"
+                                                class="p-1 rounded-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
                                                 title="Valider cette compétence"
                                                 :class="status === 'active' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-300 hover:text-emerald-500 hover:bg-emerald-50'">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
                                         </button>
                                         <button @click.stop="updateStatus('refused')" 
-                                                class="p-1 rounded-lg transition-all"
+                                                class="p-1 rounded-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
                                                 title="Refuser/Écarter cette compétence"
                                                 :class="status === 'refused' ? 'bg-rose-500 text-white shadow-sm' : 'text-slate-300 hover:text-rose-500 hover:bg-rose-50'">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>
