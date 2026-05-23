@@ -22,7 +22,11 @@ class MobilityController extends Controller
         $userPermitIds = $user->permits()->pluck('permits.id')->toArray();
         
         // Liste des types de contrat disponibles (depuis JobOffer)
-        $allContractTypes = \App\Models\JobOffer::distinct()->whereNotNull('contract_type')->pluck('contract_type')->sort()->values()->toArray();
+        // ⚡ BOLT OPTIMIZATION: Cache distinct contract types to prevent expensive full-table scans
+        // IMPACT: Eliminates an O(N) database distinct operation on large tables for every profile view
+        $allContractTypes = Cache::remember('all_contract_types', 3600, function () {
+            return \App\Models\JobOffer::distinct()->whereNotNull('contract_type')->pluck('contract_type')->sort()->values()->toArray();
+        });
         $userContractPreferences = $user->contract_preferences ?? [];
 
         return view('profile.mobility.index', compact('user', 'allPermits', 'userPermitIds', 'allContractTypes', 'userContractPreferences'));
