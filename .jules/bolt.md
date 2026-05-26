@@ -1,0 +1,3 @@
+## 2026-05-26 - Taxonomy Caching Consistency Optimization
+**Learning:** Taxonomy datasets (like Languages) are cached to avoid N+1 queries during profile editing/viewing. However, different controllers (`ProfileController` and `ProfileChatController`) fetched slightly different columns and used different cache keys (`all_languages` vs `all_languages_ordered`). This caused redundant database queries and memory duplication.
+**Action:** Always verify other cache implementations of the same taxonomy across controllers, standardize the required columns (`['id', 'label', 'code']`), ensure consistent ordering, and unify the cache key (e.g. `all_languages_ordered`) to maximize cache hits and reduce DB load.
