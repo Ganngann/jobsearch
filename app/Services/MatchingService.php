@@ -379,7 +379,8 @@ class MatchingService
      */
     public function triggerRomeMatch(User $user, string $romeCode): void
     {
-        JobOffer::whereHas('metier', function($q) use ($romeCode) {
+        JobOffer::select('id')
+            ->whereHas('metier', function($q) use ($romeCode) {
                 $q->where('code', 'LIKE', $romeCode . '%');
             })
             ->where('status', 'active')
@@ -395,7 +396,8 @@ class MatchingService
      */
     public function triggerMetierMatch(User $user, int $metierId): void
     {
-        JobOffer::where('metier_id', $metierId)
+        JobOffer::select('id')
+            ->where('metier_id', $metierId)
             ->where('status', 'active')
             ->where('is_detailed', true)
             ->chunkById(100, function($offers, $index) use ($user) {
@@ -475,7 +477,8 @@ class MatchingService
      */
     public function triggerSkillMatch(User $user, \App\Models\Skill $skill): void
     {
-        JobOffer::whereHas('skills', function($q) use ($skill) {
+        JobOffer::select('id')
+            ->whereHas('skills', function($q) use ($skill) {
                 $q->where('skills.id', $skill->id);
             })
             ->where('status', 'active')
@@ -491,7 +494,8 @@ class MatchingService
      */
     public function triggerTopAiAnalysis(User $user): void
     {
-        $topMatches = UserMatch::where('user_id', $user->id)
+        $topMatches = UserMatch::with('jobOffer')
+            ->where('user_id', $user->id)
             ->whereNull('analyzed_at')
             ->where('ai_status', 'pending')
             ->orderBy('final_score', 'desc')
