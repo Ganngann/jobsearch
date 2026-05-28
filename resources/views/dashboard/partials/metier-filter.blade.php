@@ -8,6 +8,7 @@
             type="text" 
             x-model="metierSearch" 
             placeholder="Filtrer un métier..." 
+            aria-label="Filtrer un métier"
             class="w-full bg-slate-50 border-0 rounded-xl px-4 py-2 text-[11px] font-bold text-slate-600 focus:ring-1 focus:ring-indigo-500 transition-all"
         >
     </div>
@@ -25,7 +26,7 @@
         <template x-if="filters.rome">
             <div class="px-4 py-3 bg-violet-100 text-violet-700 rounded-xl text-xs font-black flex items-center justify-between group">
                 <span>DÉCOUVERTE : <span x-text="filters.rome"></span></span>
-                <button @click="setMetier(null)" class="opacity-50 hover:opacity-100">
+                <button @click="setMetier(null)" class="opacity-50 hover:opacity-100" aria-label="Retirer le filtre ROME">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>
