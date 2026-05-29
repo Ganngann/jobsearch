@@ -1,3 +1,7 @@
 ## 2024-05-19 - Keyboard Accessibility for Hover-Revealed Actions
 **Learning:** In the CV components, there are many action buttons (e.g., delete, add) that are hidden by default using `opacity-0` and revealed on hover using `group-hover:opacity-100`. This hides the actions from keyboard users (tabbing) because the elements don't become visible when focused.
 **Action:** When hiding elements visually with Tailwind's `opacity-0 group-hover:opacity-100`, always pair it with `focus-within:opacity-100` (on the parent group) or `focus:opacity-100` (on the element itself) to ensure they are visible when receiving keyboard focus.
+
+## 2024-05-29 - Missing ARIA Labels on Hover-Revealed Action Buttons
+**Learning:** Across the CV builder components (e.g., facts, skills, education, experience), many icon-only buttons (like `+` to add, or `x`/trash to delete) are hidden by default using `opacity-0` and revealed on hover via `group-hover:opacity-100`. While keyboard visibility was previously addressed, these purely icon-based buttons lacked `aria-label` attributes, making them inaccessible to screen readers which would otherwise announce them purely as "button".
+**Action:** When creating icon-only buttons, especially those revealed dynamically or conditionally via hover/focus, always pair them with an explicit, localized `aria-label` (e.g., "Ajouter un fait", "Supprimer l'expérience") and ideally a matching `title` attribute for native tooltips.
