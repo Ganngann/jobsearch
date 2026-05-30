@@ -30,7 +30,9 @@ class DiscoveryController extends Controller
             $parentStatus = $pivot ? $pivot->pivot->status : 'none';
             $isParentRefused = $pivot && $pivot->pivot->status === 'refused';
 
-            $variants = Metier::where('code', 'LIKE', $s->code . '%')
+            $escapedCode = str_replace(['=', '%', '_'], ['==', '=%', '=_'], $s->code);
+
+            $variants = Metier::whereRaw("code LIKE ? ESCAPE '='", [$escapedCode . '%'])
                 ->orderBy('label')
                 ->get(['id', 'code', 'label'])
                 ->map(function($v) use ($user, $isParentFavorite) {
@@ -39,8 +41,8 @@ class DiscoveryController extends Controller
                     return $v;
                 });
             
-            $offersCount = \App\Models\JobOffer::whereHas('metier', function($q) use ($s) {
-                $q->where('code', 'LIKE', $s->code . '%');
+            $offersCount = \App\Models\JobOffer::whereHas('metier', function($q) use ($escapedCode) {
+                $q->whereRaw("code LIKE ? ESCAPE '='", [$escapedCode . '%']);
             })->count();
             
             return [
@@ -124,7 +126,9 @@ class DiscoveryController extends Controller
             $s['is_favorite'] = $isParentFavorite;
             $s['is_refused'] = $isParentRefused;
             
-            $s['variants'] = Metier::where('code', 'LIKE', $s['code'] . '%')
+            $escapedCode = str_replace(['=', '%', '_'], ['==', '=%', '=_'], $s['code']);
+
+            $s['variants'] = Metier::whereRaw("code LIKE ? ESCAPE '='", [$escapedCode . '%'])
                 ->orderBy('label')
                 ->get(['id', 'code', 'label'])
                 ->map(function($v) use ($user, $isParentFavorite) {
@@ -133,8 +137,8 @@ class DiscoveryController extends Controller
                     return $v;
                 });
 
-            $s['offers_count'] = \App\Models\JobOffer::whereHas('metier', function($q) use ($s) {
-                $q->where('code', 'LIKE', $s['code'] . '%');
+            $s['offers_count'] = \App\Models\JobOffer::whereHas('metier', function($q) use ($escapedCode) {
+                $q->whereRaw("code LIKE ? ESCAPE '='", [$escapedCode . '%']);
             })->count();
 
             return $s;
@@ -195,7 +199,9 @@ class DiscoveryController extends Controller
         $user = Auth::user();
         $isParentFavorite = $user->preferredReferentielMetiers()->where('code', $code)->exists();
 
-        $metiers = Metier::where('code', 'LIKE', $code . '%')
+        $escapedCode = str_replace(['=', '%', '_'], ['==', '=%', '=_'], $code);
+
+        $metiers = Metier::whereRaw("code LIKE ? ESCAPE '='", [$escapedCode . '%'])
             ->orderBy('label')
             ->get(['id', 'code', 'label']);
             
