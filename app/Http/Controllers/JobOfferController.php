@@ -78,18 +78,18 @@ class JobOfferController extends Controller
 
         // 2b. Filtrage par ROME (Niveau Famille)
         if ($request->filled('rome')) {
-            $escapedRome = addcslashes($request->rome, '%_\\');
+            $escapedRome = str_replace(['=', '%', '_'], ['==', '=%', '=_'], $request->rome);
             $query->whereHas('metier', function($q) use ($escapedRome) {
-                $q->where('code', 'LIKE', $escapedRome . '%');
+                $q->whereRaw("code LIKE ? ESCAPE '='", [$escapedRome . '%']);
             });
         }
         // 2c. Recherche par mot-clé (Titre ou Employeur)
         if ($request->filled('q')) {
-            $escapedQ = addcslashes($request->q, '%_\\');
+            $escapedQ = str_replace(['=', '%', '_'], ['==', '=%', '=_'], $request->q);
             $query->where(function($sq) use ($escapedQ) {
-                $sq->where('title', 'LIKE', "%{$escapedQ}%")
+                $sq->whereRaw("title LIKE ? ESCAPE '='", ["%{$escapedQ}%"])
                    ->orWhereHas('employer', function($eq) use ($escapedQ) {
-                       $eq->where('label', 'LIKE', "%{$escapedQ}%");
+                       $eq->whereRaw("label LIKE ? ESCAPE '='", ["%{$escapedQ}%"]);
                    });
             });
         }
