@@ -1,0 +1,3 @@
+## 2026-05-31 - Eloquent Caching: Selects and withCount()
+**Learning:** When trying to minimize memory usage for cached Eloquent queries that also require aggregate counts (like `withCount('relation')`), the `select()` method must be placed *before* the `withCount()` call. If placed after, or if the view relies on unselected columns, it can cause severe UI breakage or SQL errors.
+**Action:** Always verify that restricted selects in cached models still fulfill the UI requirements (e.g., Blade templates don't crash expecting a missing field), and ensure `select()` strictly precedes `withCount()`.
