@@ -140,7 +140,7 @@
 
                         <!-- Tooltip Detail Riche (Ventilé) -->
                         @if($match && $match->pre_score_details)
-                        <div class="absolute right-full top-0 mr-6 w-80 p-6 bg-slate-900 text-white rounded-[2.5rem] shadow-[0_35px_60px_-15px_rgba(0,0,0,0.6)] opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-500 z-[100] transform translate-x-4 group-hover:translate-x-0">
+                        <div class="absolute right-full top-0 mr-6 w-80 p-6 bg-slate-900 text-white rounded-[2.5rem] shadow-[0_35px_60px_-15px_rgba(0,0,0,0.6)] opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 group-focus:opacity-100 pointer-events-none transition-all duration-500 z-[100] transform translate-x-4 group-hover:translate-x-0 group-focus-within:translate-x-0 group-focus:translate-x-0">
                             <h4 class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-6 pb-2 border-b border-white/5">Ventilation du Score</h4>
                             
                             <!-- Section Ventilation -->
@@ -413,7 +413,7 @@
                                     <span class="text-xs font-bold">{{ $skill->label }}</span>
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    <span class="text-[9px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity" :class="{
+                                    <span class="text-[9px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 group-focus:opacity-100 transition-opacity" :class="{
                                         'text-emerald-600': status === 'active',
                                         'text-rose-600': status === 'refused',
                                         'text-slate-400': status === 'none'
@@ -424,7 +424,7 @@
                                     </span>
                                     
                                     <div class="flex items-center gap-1 bg-white/50 p-1 rounded-xl border border-slate-100 transition-opacity duration-300" 
-                                         :class="status !== 'none' ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'">
+                                         :class="status !== 'none' ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 group-focus:opacity-100'">
                                         <button @click.stop="updateStatus('active')" 
                                                 class="p-1 rounded-lg transition-all"
                                                 title="Valider cette compétence"
