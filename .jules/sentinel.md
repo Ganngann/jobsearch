@@ -12,3 +12,7 @@
 **Vulnerability:** Unescaped variables containing HTML content (like `$jobOffer->description`) were rendered using Blade's `{!! !!}` syntax without sanitization, leading to a Cross-Site Scripting (XSS) vulnerability if the data is maliciously crafted.
 **Learning:** While using `nl2br(e($content))` is safe for plain text, complex HTML needs proper sanitization.
 **Prevention:** Replace all unescaped `{!! $variable !!}` usages with the custom `@purify($variable)` Blade directive (which uses HTMLPurifier) when displaying external or user-generated HTML content.
+## 2026-06-04 - CSRF Bypass in vector-sync
+**Vulnerability:** The /vector-sync route used Route::match(['get', 'post']), allowing GET requests to bypass CSRF protection for state-changing operations.
+**Learning:** State-changing routes must strictly use POST/PUT/PATCH/DELETE to ensure VerifyCsrfToken middleware applies.
+**Prevention:** Never use Route::match with GET for endpoints that modify data.
