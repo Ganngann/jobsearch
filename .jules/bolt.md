@@ -1,0 +1,3 @@
+## 2026-06-04 - Prevent large data serialization in Cache::remember with targeted selects
+**Learning:** When using Eloquent with `Cache::remember()`, using `Model::all()` or omitting `select()` on complex queries (like those including `withCount`) serializes the entire model payload into the cache. This becomes a severe bottleneck when tables contain heavy `longText` columns (like `logo_base64` in `employers`), wasting memory and slowing down cache operations.
+**Action:** Always append `->select(['id', 'label', ...])` to limit the retrieved columns before calling `->get()` inside a `Cache::remember()` closure, especially for taxonomy or sidebar data that only needs a few basic fields.
