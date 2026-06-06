@@ -12,3 +12,7 @@
 **Vulnerability:** Unescaped variables containing HTML content (like `$jobOffer->description`) were rendered using Blade's `{!! !!}` syntax without sanitization, leading to a Cross-Site Scripting (XSS) vulnerability if the data is maliciously crafted.
 **Learning:** While using `nl2br(e($content))` is safe for plain text, complex HTML needs proper sanitization.
 **Prevention:** Replace all unescaped `{!! $variable !!}` usages with the custom `@purify($variable)` Blade directive (which uses HTMLPurifier) when displaying external or user-generated HTML content.
+## 2026-06-06 - CSRF Bypass via Route::match
+**Vulnerability:** State-changing routes defined with `Route::match(['get', 'post'])` allow GET requests to trigger state changes, bypassing CSRF protection.
+**Learning:** The `VerifyCsrfToken` middleware only applies to POST, PUT, PATCH, and DELETE requests, meaning any state-changing route that allows GET requests is vulnerable.
+**Prevention:** Always strictly use POST, PUT, PATCH, or DELETE methods for state-changing routes.
