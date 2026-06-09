@@ -9,3 +9,7 @@
 ## 2026-05-18 - Alpine.js aria-expanded state handling
 **Learning:** When building interactive toggles with Alpine.js (like the mobile hamburger menu), the ARIA state `aria-expanded` needs to reflect the dynamic boolean variable (e.g. `open`). However, HTML ARIA attributes require explicit string values ('true' or 'false').
 **Action:** Always dynamically bind the attribute using `:aria-expanded="open.toString()"` instead of just `open` to ensure valid ARIA string values are rendered for screen readers.
+
+## 2024-05-20 - Invisible vs Opacity for Keyboard Accessibility
+**Learning:** When elements are hidden using both `opacity-0` and `invisible`, adding focus-based opacity classes (like `group-focus-within:opacity-100`) is not enough for keyboard accessibility. The element remains `visibility: hidden` to the browser, so it will not be displayed even though it has full opacity.
+**Action:** Whenever revealing elements that use `invisible group-hover:visible`, you must strictly pair it with the corresponding focus state `group-focus-within:visible`. Similarly, apply focus variants to positional transitions like `group-hover:translate-y-0` (e.g. `group-focus-within:translate-y-0`) so elements appear in the correct location when focused.

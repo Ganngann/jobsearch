@@ -283,7 +283,7 @@
                                                     title="Écarter ce métier"
                                                 >
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
-                                                    <span class="text-[10px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">Écarter ce métier</span>
+                                                    <span class="text-[10px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">Écarter ce métier</span>
                                                 </button>
                                             </div>
                                         @endif
@@ -596,7 +596,7 @@
 
                                 <a href="https://www.leforem.be/recherche-offres/offre-detail/{{ $jobOffer->forem_id }}" target="_blank" class="group w-full py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] transition-all duration-300 shadow-2xl shadow-indigo-900/40 flex items-center justify-center gap-3">
                                     Voir sur Le Forem
-                                    <svg class="w-4 h-4 transform group-hover:translate-x-1.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
+                                    <svg class="w-4 h-4 transform group-hover:translate-x-1.5 group-focus-within:translate-x-1.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
                                 </a>
 
                             </div>

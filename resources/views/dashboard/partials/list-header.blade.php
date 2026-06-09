@@ -36,7 +36,7 @@
                 </div>
                 
                 <!-- Tooltip technique sans langue de bois -->
-                <div class="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-64 p-3 bg-slate-900 text-white text-[10px] font-bold rounded-xl opacity-0 group-hover:opacity-100 transition-all pointer-events-none z-[100] text-left shadow-2xl border border-white/10">
+                <div class="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-64 p-3 bg-slate-900 text-white text-[10px] font-bold rounded-xl opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-all pointer-events-none z-[100] text-left shadow-2xl border border-white/10">
                     <div class="absolute bottom-full left-1/2 -translate-x-1/2 border-8 border-transparent border-b-slate-900"></div>
                     <p class="text-indigo-400 uppercase tracking-widest text-[8px] mb-2 font-black">Audit Sémantique Profond</p>
                     <ul class="space-y-2 list-none p-0">
