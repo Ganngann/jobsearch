@@ -90,7 +90,7 @@
                 </svg>
             </div>
 
-            <div class="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-72 bg-white border border-gray-100 rounded-2xl shadow-2xl p-5 z-[100] invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all transform translate-y-1 group-hover:translate-y-0">
+            <div class="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-72 bg-white border border-gray-100 rounded-2xl shadow-2xl p-5 z-[100] invisible group-hover:visible group-focus-within:visible opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-all transform translate-y-1 group-hover:translate-y-0 group-focus-within:translate-y-0">
                 <div class="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-l border-t border-gray-100 rotate-45"></div>
                 <div class="relative space-y-4">
                     <h4 class="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Checklist de ton Profil</h4>
@@ -145,7 +145,7 @@
                 </svg>
             </div>
 
-            <div class="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-72 bg-white border border-gray-100 rounded-2xl shadow-2xl p-5 z-[100] invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all transform translate-y-1 group-hover:translate-y-0">
+            <div class="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-72 bg-white border border-gray-100 rounded-2xl shadow-2xl p-5 z-[100] invisible group-hover:visible group-focus-within:visible opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-all transform translate-y-1 group-hover:translate-y-0 group-focus-within:translate-y-0">
                 <div class="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-l border-t border-gray-100 rotate-45"></div>
                 <div class="relative space-y-4">
                     <h4 class="text-[10px] font-black text-purple-600 uppercase tracking-widest text-center">Checklist des Savoir-être</h4>
@@ -181,7 +181,7 @@
                 </svg>
             </div>
 
-            <div class="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-72 bg-white border border-gray-100 rounded-2xl shadow-2xl p-5 z-[100] invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all transform translate-y-1 group-hover:translate-y-0">
+            <div class="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-72 bg-white border border-gray-100 rounded-2xl shadow-2xl p-5 z-[100] invisible group-hover:visible group-focus-within:visible opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-all transform translate-y-1 group-hover:translate-y-0 group-focus-within:translate-y-0">
                 <div class="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-l border-t border-gray-100 rotate-45"></div>
                 <div class="relative space-y-4">
                     <h4 class="text-[10px] font-black text-rose-600 uppercase tracking-widest text-center">Ciblage Métier</h4>
@@ -217,7 +217,7 @@
                 </svg>
             </div>
 
-            <div class="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-72 bg-white border border-gray-100 rounded-2xl shadow-2xl p-5 z-[100] invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all transform translate-y-1 group-hover:translate-y-0">
+            <div class="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-72 bg-white border border-gray-100 rounded-2xl shadow-2xl p-5 z-[100] invisible group-hover:visible group-focus-within:visible opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-all transform translate-y-1 group-hover:translate-y-0 group-focus-within:translate-y-0">
                 <div class="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-l border-t border-gray-100 rotate-45"></div>
                 <div class="relative space-y-4">
                     <h4 class="text-[10px] font-black text-blue-600 uppercase tracking-widest text-center">Rayon de Mobilité</h4>
