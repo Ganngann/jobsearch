@@ -1,0 +1,3 @@
+## 2026-06-12 - Prevent memory bloat in Employer queries
+**Learning:** The Employer model contains a potentially massive `logo_base64` field. Calling `Employer::withCount()` without a prior `select()` fetches all columns, including the huge payload, leading to severe memory bloat, especially when cached.
+**Action:** When querying models with large unneeded text/blob fields (like `Employer`), always use targeted selects (e.g., `select(['id', 'label'])`). When combining with aggregate functions like `withCount()`, place the `select()` clause *before* `withCount()` so the aggregate subquery is correctly appended.
