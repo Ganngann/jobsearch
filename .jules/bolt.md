@@ -1,0 +1,3 @@
+## 2026-06-15 - Memory Bloat with Aggregate Subqueries
+**Learning:** When retrieving top models using aggregates like `withCount` (which appends columns) alongside large text/blob columns (like `logo_base64` in `Employer`), `Model::whereHas` loads the entire record into memory by default, including the huge fields, causing massive memory bloat before caching. Additionally, placing `select()` after `withCount()` overwrites the aggregate subquery, breaking the result.
+**Action:** Use targeted selects like `select(['id', 'label'])` BEFORE aggregate functions like `withCount()` when querying models with potentially large fields to reduce the memory payload significantly.
