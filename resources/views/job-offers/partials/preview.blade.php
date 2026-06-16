@@ -61,10 +61,10 @@
                             </div>
                         @endif
                         <div class="flex items-center gap-1 border-l ml-1 pl-1" :class="isBlacklisted ? 'border-rose-200' : 'border-indigo-200'">
-                            <button @click="toggleFavorite()" :class="isPreferred ? 'text-rose-500 bg-rose-50' : 'text-slate-400 hover:text-rose-500'" class="p-1 rounded-full transition-all" title="Ajouter aux favoris">
+                            <button @click="toggleFavorite()" :class="isPreferred ? 'text-rose-500 bg-rose-50' : 'text-slate-400 hover:text-rose-500'" class="p-1 rounded-full transition-all focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none" title="Ajouter aux favoris" :aria-label="isPreferred ? 'Retirer des favoris' : 'Ajouter aux favoris'">
                                 <svg class="w-3.5 h-3.5" :fill="isPreferred ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
                             </button>
-                            <button @click="isBlacklisted ? unblacklist() : blacklist()" :class="isBlacklisted ? 'text-rose-600 bg-rose-100' : 'text-slate-400 hover:text-rose-500'" class="p-1 rounded-full transition-all" :title="isBlacklisted ? 'Retirer du blacklist' : 'Ne plus voir ce métier'">
+                            <button @click="isBlacklisted ? unblacklist() : blacklist()" :class="isBlacklisted ? 'text-rose-600 bg-rose-100' : 'text-slate-400 hover:text-rose-500'" class="p-1 rounded-full transition-all focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none" :title="isBlacklisted ? 'Retirer du blacklist' : 'Ne plus voir ce métier'" :aria-label="isBlacklisted ? 'Retirer du blacklist' : 'Ne plus voir ce métier'">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
                             </button>
                         </div>
@@ -426,14 +426,16 @@
                                     <div class="flex items-center gap-1 bg-white/50 p-1 rounded-xl border border-slate-100 transition-opacity duration-300" 
                                          :class="status !== 'none' ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'">
                                         <button @click.stop="updateStatus('active')" 
-                                                class="p-1 rounded-lg transition-all"
+                                                class="p-1 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
                                                 title="Valider cette compétence"
+                                                :aria-label="status === 'active' ? 'Retirer la validation' : 'Valider cette compétence'"
                                                 :class="status === 'active' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-300 hover:text-emerald-500 hover:bg-emerald-50'">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
                                         </button>
                                         <button @click.stop="updateStatus('refused')" 
-                                                class="p-1 rounded-lg transition-all"
+                                                class="p-1 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
                                                 title="Refuser/Écarter cette compétence"
+                                                :aria-label="status === 'refused' ? 'Retirer le refus' : 'Refuser/Écarter cette compétence'"
                                                 :class="status === 'refused' ? 'bg-rose-500 text-white shadow-sm' : 'text-slate-300 hover:text-rose-500 hover:bg-rose-50'">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>
                                         </button>
