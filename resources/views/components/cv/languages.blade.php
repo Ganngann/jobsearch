@@ -1,7 +1,7 @@
 <div class="mt-4 group/lang">
     <div class="flex items-center justify-between mb-2">
         <div class="cv-section-title mb-0">Langues</div>
-        <button @click="startCreating('language')" class="opacity-0 group-hover/lang:opacity-100 transition-opacity text-indigo-600 hover:text-indigo-800">
+        <button @click="startCreating('language')" aria-label="Ajouter une langue" title="Ajouter une langue" class="opacity-0 group-hover/lang:opacity-100 transition-opacity text-indigo-600 hover:text-indigo-800">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
