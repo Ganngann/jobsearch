@@ -1,3 +1,6 @@
 ## 2024-05-19 - Keyboard Accessibility for Hover-Revealed Actions
 **Learning:** In the CV components, there are many action buttons (e.g., delete, add) that are hidden by default using `opacity-0` and revealed on hover using `group-hover:opacity-100`. This hides the actions from keyboard users (tabbing) because the elements don't become visible when focused.
 **Action:** When hiding elements visually with Tailwind's `opacity-0 group-hover:opacity-100`, always pair it with `focus-within:opacity-100` (on the parent group) or `focus:opacity-100` (on the element itself) to ensure they are visible when receiving keyboard focus.
+## 2025-02-18 - Missing ARIA Labels on dynamic CV creation buttons
+**Learning:** Found multiple instance of dynamic 'create' buttons across CV components that appear only on hover. These icon-only buttons rely exclusively on SVGs and lack `aria-label` attributes, making their functionality opaque to screen readers despite being accessible via keyboard using `focus-within:opacity-100`.
+**Action:** When creating icon-only action buttons, always ensure they have an explicit, descriptive `aria-label` and a `title` attribute to guarantee accessibility and context for both screen reader and mouse users.
