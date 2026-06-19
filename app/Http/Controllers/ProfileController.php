@@ -149,8 +149,8 @@ class ProfileController extends Controller
     public function edit(Request $request): View
     {
         // Cache taxonomy query to avoid N+1 and slow loading
-        $allLanguages = Cache::remember('all_languages', 3600, function () {
-            return \App\Models\Language::all();
+        $allLanguages = Cache::remember('all_languages_ordered_with_code', 3600, function () {
+            return \App\Models\Language::select(['id', 'label', 'code'])->orderBy('label')->get();
         });
 
         // allSkills and allPermits are fetched asynchronously by front-end when needed,
