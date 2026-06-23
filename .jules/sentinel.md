@@ -12,3 +12,7 @@
 **Vulnerability:** Unescaped variables containing HTML content (like `$jobOffer->description`) were rendered using Blade's `{!! !!}` syntax without sanitization, leading to a Cross-Site Scripting (XSS) vulnerability if the data is maliciously crafted.
 **Learning:** While using `nl2br(e($content))` is safe for plain text, complex HTML needs proper sanitization.
 **Prevention:** Replace all unescaped `{!! $variable !!}` usages with the custom `@purify($variable)` Blade directive (which uses HTMLPurifier) when displaying external or user-generated HTML content.
+## 2026-06-23 - [CSRF Vulnerability in Profile Match Vector Sync Route]
+**Vulnerability:** A route performing a state-changing action (calculating and syncing similarities) was accessible via a GET request (/vector-sync).
+**Learning:** This breaks RESTful principles and creates a Cross-Site Request Forgery (CSRF) vulnerability. An authenticated user could be tricked into clicking a link that triggers massive background calculations and modifies database records, because GET requests do not enforce CSRF token validation.
+**Prevention:** Always use POST, PUT, PATCH, or DELETE for state-changing routes to ensure Laravel's built-in CSRF protection is applied. Remove shortcut GET routes for these actions.
