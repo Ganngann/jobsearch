@@ -159,7 +159,10 @@ class JobOfferController extends Controller
         });
 
         $topEmployers = Cache::remember('dashboard.top_employers', 3600, function() {
-            return \App\Models\Employer::whereHas('jobOffers')
+            // Bolt Performance Optimization: Explicitly select 'id' and 'label' to prevent loading the massive
+            // 'logo_base64' (up to 1MB) field into memory. This significantly reduces memory usage and cache payload size.
+            return \App\Models\Employer::select(['id', 'label'])
+                ->whereHas('jobOffers')
                 ->withCount('jobOffers')
                 ->orderBy('job_offers_count', 'desc')
                 ->limit(50)
