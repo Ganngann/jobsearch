@@ -12,3 +12,7 @@
 **Vulnerability:** Unescaped variables containing HTML content (like `$jobOffer->description`) were rendered using Blade's `{!! !!}` syntax without sanitization, leading to a Cross-Site Scripting (XSS) vulnerability if the data is maliciously crafted.
 **Learning:** While using `nl2br(e($content))` is safe for plain text, complex HTML needs proper sanitization.
 **Prevention:** Replace all unescaped `{!! $variable !!}` usages with the custom `@purify($variable)` Blade directive (which uses HTMLPurifier) when displaying external or user-generated HTML content.
+## 2026-06-24 - State-changing routes using GET bypass CSRF
+**Vulnerability:** State-changing endpoint '/vector-sync' allowed GET requests via Route::match(['get', 'post'], ...).
+**Learning:** In Laravel, allowing GET on state-changing routes bypasses the VerifyCsrfToken middleware, leading to CSRF vulnerabilities.
+**Prevention:** Strictly enforce POST, PUT, PATCH, or DELETE methods for all state-changing endpoints.
