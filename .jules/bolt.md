@@ -1,0 +1,3 @@
+## 2026-06-25 - Targeted Selects Before Aggregates for Memory Optimization
+**Learning:** The `Employer` model contains a massive `logo_base64` field. Caching `Employer::get()` without targeted selects serializes this massive field, causing severe memory bloat and slow deserialization. Also, when combining `select()` with `withCount()`, the `select()` must be placed *before* `withCount()` so the aggregate subquery is correctly appended and not overwritten by the select clause.
+**Action:** Always use targeted selects (e.g., `select(['id', 'label'])`) *before* aggregate functions like `withCount()` when fetching models with large fields for caching or lists.
