@@ -413,7 +413,7 @@
                                     <span class="text-xs font-bold">{{ $skill->label }}</span>
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    <span class="text-[9px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity" :class="{
+                                    <span class="text-[9px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity" :class="{
                                         'text-emerald-600': status === 'active',
                                         'text-rose-600': status === 'refused',
                                         'text-slate-400': status === 'none'
@@ -424,18 +424,20 @@
                                     </span>
                                     
                                     <div class="flex items-center gap-1 bg-white/50 p-1 rounded-xl border border-slate-100 transition-opacity duration-300" 
-                                         :class="status !== 'none' ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'">
+                                         :class="status !== 'none' ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100 group-focus-within:opacity-100'">
                                         <button @click.stop="updateStatus('active')" 
-                                                class="p-1 rounded-lg transition-all"
+                                                class="p-1 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
                                                 title="Valider cette compétence"
+                                                aria-label="Valider cette compétence"
                                                 :class="status === 'active' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-300 hover:text-emerald-500 hover:bg-emerald-50'">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                            <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
                                         </button>
                                         <button @click.stop="updateStatus('refused')" 
-                                                class="p-1 rounded-lg transition-all"
+                                                class="p-1 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:outline-none"
                                                 title="Refuser/Écarter cette compétence"
+                                                aria-label="Refuser/Écarter cette compétence"
                                                 :class="status === 'refused' ? 'bg-rose-500 text-white shadow-sm' : 'text-slate-300 hover:text-rose-500 hover:bg-rose-50'">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                            <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>
                                         </button>
                                     </div>
                                 </div>
