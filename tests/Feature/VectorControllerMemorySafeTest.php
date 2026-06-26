@@ -13,6 +13,16 @@ class VectorControllerMemorySafeTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_sync_similarities_rejects_get_request()
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $response = $this->getJson(route('matching.vector-sync'));
+
+        $response->assertStatus(405);
+    }
+
     public function test_sync_similarities_uses_memory_safe_chunking()
     {
         $user = User::factory()->create([
