@@ -1,0 +1,3 @@
+## 2024-06-26 - Targeted Selects with Caching
+**Learning:** `App\Models\Employer` contains a massive `logo_base64` field. Doing a full `select(*)` via `App\Models\Employer::whereHas('jobOffers')->withCount('jobOffers')->get()` fetches these huge payloads, causing memory bloat and large serialized cache sizes when cached via `Cache::remember()`.
+**Action:** Always combine targeted selects (e.g. `->select(['id', 'label'])`) with aggregate queries like `withCount()` to minimize payload, especially before caching. Place the `select()` clause *before* `withCount()` to ensure the subquery is appended correctly.
