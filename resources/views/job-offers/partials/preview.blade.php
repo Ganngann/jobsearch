@@ -61,11 +61,11 @@
                             </div>
                         @endif
                         <div class="flex items-center gap-1 border-l ml-1 pl-1" :class="isBlacklisted ? 'border-rose-200' : 'border-indigo-200'">
-                            <button @click="toggleFavorite()" :class="isPreferred ? 'text-rose-500 bg-rose-50' : 'text-slate-400 hover:text-rose-500'" class="p-1 rounded-full transition-all" title="Ajouter aux favoris">
-                                <svg class="w-3.5 h-3.5" :fill="isPreferred ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                            <button @click="toggleFavorite()" :class="isPreferred ? 'text-rose-500 bg-rose-50' : 'text-slate-400 hover:text-rose-500'" class="p-1 rounded-full transition-all focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none" :title="isPreferred ? 'Retirer des favoris' : 'Ajouter aux favoris'" :aria-label="isPreferred ? 'Retirer des favoris' : 'Ajouter aux favoris'">
+                                <svg aria-hidden="true" class="w-3.5 h-3.5" :fill="isPreferred ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
                             </button>
-                            <button @click="isBlacklisted ? unblacklist() : blacklist()" :class="isBlacklisted ? 'text-rose-600 bg-rose-100' : 'text-slate-400 hover:text-rose-500'" class="p-1 rounded-full transition-all" :title="isBlacklisted ? 'Retirer du blacklist' : 'Ne plus voir ce métier'">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
+                            <button @click="isBlacklisted ? unblacklist() : blacklist()" :class="isBlacklisted ? 'text-rose-600 bg-rose-100' : 'text-slate-400 hover:text-rose-500'" class="p-1 rounded-full transition-all focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none" :title="isBlacklisted ? 'Retirer du blacklist' : 'Ne plus voir ce métier'" :aria-label="isBlacklisted ? 'Retirer du blacklist' : 'Ne plus voir ce métier'">
+                                <svg aria-hidden="true" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
                             </button>
                         </div>
                     </div>
@@ -125,9 +125,9 @@
                         $isAiStale = $match && $match->ai_status === 'processing' && $match->updated_at->lt(now()->subMinutes(10));
                     @endphp
                     <!-- Score Unique avec Ventilation dans le Tooltip -->
-                    <div class="relative group cursor-help">
+                    <div class="relative group cursor-help focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-2xl" tabindex="0">
                         
-                        <div class="text-center p-4 bg-white rounded-2xl border-2 border-slate-100 shadow-xl min-w-[140px] hover:border-indigo-400 transition-all duration-300 transform group-hover:-translate-y-1">
+                        <div class="text-center p-4 bg-white rounded-2xl border-2 border-slate-100 shadow-xl min-w-[140px] hover:border-indigo-400 transition-all duration-300 transform group-hover:-translate-y-1 group-focus-within:-translate-y-1">
                             @if($match->exists)
                                 <p class="text-4xl font-black {{ $scoreColorClass }} leading-none">
                                     {{ $displayScore }}<span class="text-sm">%</span>
@@ -140,7 +140,7 @@
 
                         <!-- Tooltip Detail Riche (Ventilé) -->
                         @if($match && $match->pre_score_details)
-                        <div class="absolute right-full top-0 mr-6 w-80 p-6 bg-slate-900 text-white rounded-[2.5rem] shadow-[0_35px_60px_-15px_rgba(0,0,0,0.6)] opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-500 z-[100] transform translate-x-4 group-hover:translate-x-0">
+                        <div class="absolute right-full top-0 mr-6 w-80 p-6 bg-slate-900 text-white rounded-[2.5rem] shadow-[0_35px_60px_-15px_rgba(0,0,0,0.6)] opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none transition-all duration-500 z-[100] transform translate-x-4 group-hover:translate-x-0 group-focus-within:translate-x-0">
                             <h4 class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-6 pb-2 border-b border-white/5">Ventilation du Score</h4>
                             
                             <!-- Section Ventilation -->
@@ -413,7 +413,7 @@
                                     <span class="text-xs font-bold">{{ $skill->label }}</span>
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    <span class="text-[9px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity" :class="{
+                                    <span class="text-[9px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity" :class="{
                                         'text-emerald-600': status === 'active',
                                         'text-rose-600': status === 'refused',
                                         'text-slate-400': status === 'none'
@@ -424,18 +424,20 @@
                                     </span>
                                     
                                     <div class="flex items-center gap-1 bg-white/50 p-1 rounded-xl border border-slate-100 transition-opacity duration-300" 
-                                         :class="status !== 'none' ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'">
+                                         :class="status !== 'none' ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'">
                                         <button @click.stop="updateStatus('active')" 
-                                                class="p-1 rounded-lg transition-all"
-                                                title="Valider cette compétence"
+                                                class="p-1 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
+                                                aria-label="Valider cette compétence"
+                                                :title="status === 'active' ? 'Compétence validée' : 'Valider cette compétence'"
                                                 :class="status === 'active' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-300 hover:text-emerald-500 hover:bg-emerald-50'">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                            <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
                                         </button>
                                         <button @click.stop="updateStatus('refused')" 
-                                                class="p-1 rounded-lg transition-all"
-                                                title="Refuser/Écarter cette compétence"
+                                                class="p-1 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
+                                                aria-label="Refuser/Écarter cette compétence"
+                                                :title="status === 'refused' ? 'Compétence refusée' : 'Refuser/Écarter cette compétence'"
                                                 :class="status === 'refused' ? 'bg-rose-500 text-white shadow-sm' : 'text-slate-300 hover:text-rose-500 hover:bg-rose-50'">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                            <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>
                                         </button>
                                     </div>
                                 </div>
