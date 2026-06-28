@@ -148,18 +148,23 @@ class JobOfferController extends Controller
             return view('job-offers.partials.list-items', compact('jobOffers', 'favoriteRomeCodes'));
         }
 
-        // Données pour les filtres de la sidebar
         // Données pour les filtres de la sidebar : Mise en cache pour 1h
+        // Bolt Optimization: Added select(['id', 'label']) to reduce memory footprint
+        // by avoiding hydration/serialization of heavy columns (e.g. logo_base64)
         $topMetiers = Cache::remember('dashboard.top_metiers', 3600, function() {
-            return \App\Models\Metier::whereHas('jobOffers')
+            return \App\Models\Metier::select(['id', 'label'])
+                ->whereHas('jobOffers')
                 ->withCount('jobOffers')
                 ->orderBy('job_offers_count', 'desc')
                 ->limit(100)
                 ->get();
         });
 
+        // Bolt Optimization: Added select(['id', 'label']) to significantly reduce
+        // peak PHP memory usage by skipping longText columns when caching the top 50
         $topEmployers = Cache::remember('dashboard.top_employers', 3600, function() {
-            return \App\Models\Employer::whereHas('jobOffers')
+            return \App\Models\Employer::select(['id', 'label'])
+                ->whereHas('jobOffers')
                 ->withCount('jobOffers')
                 ->orderBy('job_offers_count', 'desc')
                 ->limit(50)
