@@ -9,6 +9,9 @@
         @click="open = !open" 
         class="flex items-center justify-center w-14 h-14 bg-indigo-600 text-white rounded-full shadow-2xl hover:bg-indigo-500 hover:scale-110 transition-all group relative"
         title="Donne ton avis"
+        :aria-expanded="open.toString()"
+        aria-controls="feedback-panel"
+        :aria-label="open ? 'Fermer' : 'Donne ton avis'"
     >
         <svg x-show="!open" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
@@ -24,6 +27,7 @@
 
     <!-- Panneau de Feedback -->
     <div 
+        id="feedback-panel"
         x-show="open" 
         x-transition:enter="transition ease-out duration-300"
         x-transition:enter-start="opacity-0 translate-y-4 scale-95"
