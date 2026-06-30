@@ -42,8 +42,8 @@
                     <div class="flex items-center gap-1 bg-white p-1 rounded shadow-sm border border-indigo-100">
                         <input type="text" x-model="editingData.name" @keyup.enter="saveManualEdit()"
                                class="text-[9px] font-bold uppercase border-gray-200 rounded-full px-2 py-0.5 w-32">
-                        <button @click="deleteItem('interest', interest.id)" class="p-1 text-red-400 hover:text-red-600" title="Supprimer">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        <button @click="deleteItem('interest', interest.id)" class="p-1 text-red-400 hover:text-red-600" title="Supprimer" aria-label="Supprimer">
+                            <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                         </button>
                         <button @click="cancelEdit()" class="text-[8px] text-gray-400 font-bold px-1">X</button>
                     </div>
