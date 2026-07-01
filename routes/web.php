@@ -55,7 +55,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile/skills/soft', [\App\Http\Controllers\ProfileSkillController::class, 'softSkills'])->name('profile.skills.soft');
     
     // Route de synchronisation (accessible sans 'verified')
-    Route::match(['get', 'post'], '/vector-sync', [\App\Http\Controllers\VectorController::class, 'syncSimilarities'])->name('matching.vector-sync');
+    // Security: Only POST is allowed to enforce CSRF validation for this state-changing action.
+    Route::post('/vector-sync', [\App\Http\Controllers\VectorController::class, 'syncSimilarities'])->name('matching.vector-sync');
 
     Route::post('/profile/publish', [ProfileController::class, 'publish'])->name('profile.publish');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
