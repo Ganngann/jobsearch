@@ -152,6 +152,9 @@ class JobOfferController extends Controller
         // Données pour les filtres de la sidebar : Mise en cache pour 1h
         $topMetiers = Cache::remember('dashboard.top_metiers', 3600, function() {
             return \App\Models\Metier::whereHas('jobOffers')
+                // ⚡ Bolt: Select only necessary columns before withCount to drastically reduce memory usage and cache size.
+                // 📊 Impact: Prevents serializing massive unnecessary model data (timestamps, etc) for 100 rows.
+                ->select(['id', 'label'])
                 ->withCount('jobOffers')
                 ->orderBy('job_offers_count', 'desc')
                 ->limit(100)
@@ -160,6 +163,9 @@ class JobOfferController extends Controller
 
         $topEmployers = Cache::remember('dashboard.top_employers', 3600, function() {
             return \App\Models\Employer::whereHas('jobOffers')
+                // ⚡ Bolt: Select only necessary columns before withCount to drastically reduce memory usage and cache size.
+                // 📊 Impact: Prevents serializing massive unnecessary model data (like longtext logo_base64) for 50 rows.
+                ->select(['id', 'label'])
                 ->withCount('jobOffers')
                 ->orderBy('job_offers_count', 'desc')
                 ->limit(50)
