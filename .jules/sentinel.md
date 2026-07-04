@@ -12,3 +12,7 @@
 **Vulnerability:** Unescaped variables containing HTML content (like `$jobOffer->description`) were rendered using Blade's `{!! !!}` syntax without sanitization, leading to a Cross-Site Scripting (XSS) vulnerability if the data is maliciously crafted.
 **Learning:** While using `nl2br(e($content))` is safe for plain text, complex HTML needs proper sanitization.
 **Prevention:** Replace all unescaped `{!! $variable !!}` usages with the custom `@purify($variable)` Blade directive (which uses HTMLPurifier) when displaying external or user-generated HTML content.
+## 2026-07-04 - XSS via addslashes in Alpine bindings
+**Vulnerability:** XSS occurs when passing data to Alpine.js bindings using `addslashes` instead of proper JSON encoding.
+**Learning:** `addslashes` does not escape HTML entities or single quotes correctly within unquoted contexts or when decoded by the browser, allowing XSS payload execution.
+**Prevention:** Always use Laravel's `@js()` directive for passing PHP variables to JavaScript/Alpine.js. Additionally, ensure the HTML attribute containing `@js()` is wrapped in single quotes (e.g., `x-data='...'`) to prevent premature attribute termination.
