@@ -7,13 +7,15 @@
     <!-- Bouton Flottant -->
     <button 
         @click="open = !open" 
-        class="flex items-center justify-center w-14 h-14 bg-indigo-600 text-white rounded-full shadow-2xl hover:bg-indigo-500 hover:scale-110 transition-all group relative"
-        title="Donne ton avis"
+        class="flex items-center justify-center w-14 h-14 bg-indigo-600 text-white rounded-full shadow-2xl hover:bg-indigo-500 hover:scale-110 transition-all group relative focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
+        :title="open ? 'Fermer le panneau de feedback' : 'Donne ton avis'"
+        :aria-label="open ? 'Fermer le panneau de feedback' : 'Donne ton avis'"
+        :aria-expanded="open.toString()"
     >
-        <svg x-show="!open" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg aria-hidden="true" x-show="!open" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
         </svg>
-        <svg x-show="open" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" x-cloak>
+        <svg aria-hidden="true" x-show="open" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" x-cloak>
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
         </svg>
         <span class="absolute -top-1 -right-1 flex h-3 w-3" x-show="!hasInteracted">
@@ -40,10 +42,10 @@
             <p class="text-xs text-slate-400 mb-6">Un bug ? Une idée ? Dis-moi tout, c'est comme ça que j'améliore l'outil.</p>
 
             <div class="space-y-4">
-                <div class="flex gap-2">
-                    <button @click="type = 'feedback'" :class="type === 'feedback' ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-slate-50 border-transparent text-slate-400'" class="flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all">Avis</button>
-                    <button @click="type = 'bug'" :class="type === 'bug' ? 'bg-rose-50 border-rose-200 text-rose-600' : 'bg-slate-50 border-transparent text-slate-400'" class="flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all">Bug</button>
-                    <button @click="type = 'idea'" :class="type === 'idea' ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-slate-50 border-transparent text-slate-400'" class="flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all">Idée</button>
+                <div class="flex gap-2" role="group" aria-label="Type de retour">
+                    <button @click="type = 'feedback'" :aria-pressed="type === 'feedback'" :class="type === 'feedback' ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-slate-50 border-transparent text-slate-400'" class="flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none">Avis</button>
+                    <button @click="type = 'bug'" :aria-pressed="type === 'bug'" :class="type === 'bug' ? 'bg-rose-50 border-rose-200 text-rose-600' : 'bg-slate-50 border-transparent text-slate-400'" class="flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none">Bug</button>
+                    <button @click="type = 'idea'" :aria-pressed="type === 'idea'" :class="type === 'idea' ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-slate-50 border-transparent text-slate-400'" class="flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none">Idée</button>
                 </div>
 
                 <textarea 
@@ -55,11 +57,11 @@
                 <button 
                     @click="sendFeedback()" 
                     :disabled="loading || message.length < 5"
-                    class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold text-sm shadow-xl shadow-indigo-100 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold text-sm shadow-xl shadow-indigo-100 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
                 >
                     <span x-show="!loading">Envoyer mon retour</span>
                     <span x-show="loading" class="flex items-center justify-center gap-2">
-                        <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        <svg aria-hidden="true" class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                         Envoi...
                     </span>
                 </button>
@@ -68,11 +70,11 @@
 
         <div x-show="sent" class="py-8 text-center" x-cloak>
             <div class="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg class="w-8 h-8 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                <svg aria-hidden="true" class="w-8 h-8 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
             </div>
             <h3 class="text-lg font-black text-slate-900 mb-1">C'est envoyé !</h3>
             <p class="text-sm text-slate-400 mb-6">Merci beaucoup pour ton aide. Je regarde ça très vite.</p>
-            <button @click="open = false; setTimeout(() => sent = false, 500)" class="text-sm font-bold text-indigo-600 hover:text-indigo-700">Fermer</button>
+            <button @click="open = false; setTimeout(() => sent = false, 500)" class="text-sm font-bold text-indigo-600 hover:text-indigo-700 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none rounded-md px-2 py-1">Fermer</button>
         </div>
     </div>
 </div>
