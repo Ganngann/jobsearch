@@ -2,7 +2,9 @@
     <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Top Employeurs</h3>
     
     <div class="mb-4">
+        <label for="employer-search" class="sr-only">Filtrer un employeur</label>
         <input 
+            id="employer-search"
             type="text" 
             x-model="employerSearch" 
             placeholder="Filtrer un employeur..." 

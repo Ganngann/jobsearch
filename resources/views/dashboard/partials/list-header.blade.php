@@ -6,7 +6,9 @@
         </div>
         <div class="flex items-center gap-3">
             <div class="relative group">
+                <label for="global-search" class="sr-only">Rechercher</label>
                 <input 
+                    id="global-search"
                     type="text" 
                     x-model="filters.q" 
                     @input.debounce.500ms="refreshList()"
