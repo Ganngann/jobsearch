@@ -1,0 +1,3 @@
+## 2025-02-28 - Targeted Selects with Aggregates
+**Learning:** When using targeted selects (e.g., select(['id', 'label'])) alongside aggregate functions like withCount() on Eloquent models, placing select() after withCount() overwrites the aggregate subquery. Additionally, omitting targeted selects entirely causes massive memory bloat, especially with fields like Employer's logo_base64, which heavily impacts caching performance.
+**Action:** Always place the select() clause before withCount() to ensure aggregate subqueries are correctly appended, and explicitly select only required columns (like id and label) when fetching models with large data payloads.
