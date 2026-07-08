@@ -1,0 +1,3 @@
+## 2026-07-08 - Prevent Memory Bloat in Cache Queries
+**Learning:** Eloquent models like Employer can contain massive fields like logo_base64. Caching these models entirely leads to severe memory bloat and large cache serialization sizes. Also, when combining targeted selects with aggregate functions like withCount(), the select() clause must be placed before withCount() to ensure the aggregate subquery is correctly appended rather than overwritten.
+**Action:** Always use targeted selects (e.g., select(['id', 'label'])) before withCount() when fetching records for lists or caching to prevent loading unnecessary columns.
