@@ -9,3 +9,7 @@
 ## 2026-05-18 - Alpine.js aria-expanded state handling
 **Learning:** When building interactive toggles with Alpine.js (like the mobile hamburger menu), the ARIA state `aria-expanded` needs to reflect the dynamic boolean variable (e.g. `open`). However, HTML ARIA attributes require explicit string values ('true' or 'false').
 **Action:** Always dynamically bind the attribute using `:aria-expanded="open.toString()"` instead of just `open` to ensure valid ARIA string values are rendered for screen readers.
+
+## 2024-07-08 - Missing Screen Reader Labels on Filter Inputs
+**Learning:** The dashboard uses raw inputs for dynamic filtering without providing screen-reader labels via `sr-only` classes, breaking context for AT users. Furthermore, interactive clear filter icons lacked focus-visible states and aria labels, breaking keyboard accessibility.
+**Action:** When working on form inputs without visual labels, ensure a `<label class="sr-only">` is linked via `id`. Apply `focus-visible:ring` states and `aria-label` to interactive icon buttons.

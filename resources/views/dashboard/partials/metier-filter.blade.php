@@ -4,7 +4,9 @@
     </div>
     
     <div class="mb-4">
+        <label for="metierSearch" class="sr-only">Filtrer un métier</label>
         <input 
+            id="metierSearch"
             type="text" 
             x-model="metierSearch" 
             placeholder="Filtrer un métier..." 
@@ -25,8 +27,8 @@
         <template x-if="filters.rome">
             <div class="px-4 py-3 bg-violet-100 text-violet-700 rounded-xl text-xs font-black flex items-center justify-between group">
                 <span>DÉCOUVERTE : <span x-text="filters.rome"></span></span>
-                <button @click="setMetier(null)" class="opacity-50 hover:opacity-100">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                <button @click="setMetier(null)" aria-label="Effacer le filtre métier" class="opacity-50 hover:opacity-100 focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:outline-none focus-visible:opacity-100 rounded">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>
         </template>
