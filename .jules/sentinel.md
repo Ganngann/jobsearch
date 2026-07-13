@@ -12,3 +12,8 @@
 **Vulnerability:** Unescaped variables containing HTML content (like `$jobOffer->description`) were rendered using Blade's `{!! !!}` syntax without sanitization, leading to a Cross-Site Scripting (XSS) vulnerability if the data is maliciously crafted.
 **Learning:** While using `nl2br(e($content))` is safe for plain text, complex HTML needs proper sanitization.
 **Prevention:** Replace all unescaped `{!! $variable !!}` usages with the custom `@purify($variable)` Blade directive (which uses HTMLPurifier) when displaying external or user-generated HTML content.
+
+## 2026-07-13 - CSRF Pattern Due to Route Fallback Methods
+**Vulnerability:** The `/vector-sync` route performing a state-changing action (calculating and upserting user vector similarities) was defined with `Route::match(['get', 'post']...)`. While frontend fetch calls used POST, external actors could craft a GET request (like a rogue image tag) to trigger heavy background processing and database writes on behalf of an authenticated user.
+**Learning:** Using `Route::match` or `Route::any` as a fallback or convenience method for API endpoints exposes state-changing logic to GET requests, which entirely bypasses Laravel's CSRF token validation. This allows Cross-Site Request Forgery and potential Denial of Service via unexpected heavy load.
+**Prevention:** Strictly separate read (`GET`) and write (`POST/PUT/DELETE`) endpoints. State-changing routes in Laravel must strictly use methods protected by the `VerifyCsrfToken` middleware.
