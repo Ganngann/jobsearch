@@ -232,9 +232,10 @@
                             <td class="px-6 py-4">
                                 <form action="{{ route('admin.users.update-limit', $user) }}" method="POST" class="flex gap-2 items-center" @click.stop>
                                     @csrf
-                                    <input type="number" name="daily_ai_limit" value="{{ $user->daily_ai_limit }}" class="w-16 px-2 py-1 bg-slate-100 border-none rounded-lg text-xs font-bold text-center">
-                                    <button type="submit" class="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-600 hover:text-white transition-all shadow-sm">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                                    <label for="daily_limit_{{ $user->id }}" class="sr-only">Limite IA quotidienne</label>
+                                    <input type="number" id="daily_limit_{{ $user->id }}" name="daily_ai_limit" value="{{ $user->daily_ai_limit }}" class="w-16 px-2 py-1 bg-slate-100 border-none rounded-lg text-xs font-bold text-center">
+                                    <button type="submit" class="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-600 hover:text-white focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:outline-none transition-all shadow-sm" aria-label="Enregistrer la limite" title="Enregistrer">
+                                        <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
                                     </button>
                                 </form>
                             </td>
@@ -282,9 +283,10 @@
                                                         <form action="{{ route('admin.users.update-limit', $user) }}" method="POST" class="flex gap-2 items-center justify-end" @click.stop>
                                                             @csrf
                                                             <input type="hidden" name="model" value="{{ $detail->model }}">
-                                                            <input type="number" name="limit" value="{{ $user->daily_ai_limits[$detail->model] ?? $modelLimit }}" class="w-16 px-2 py-1 bg-slate-50 border border-slate-100 rounded-lg text-[10px] font-bold text-center">
-                                                            <button type="submit" class="p-1 bg-indigo-50 text-indigo-600 rounded hover:bg-indigo-600 hover:text-white transition-all">
-                                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                                            <label for="limit_{{ $user->id }}_{{ $detail->model }}" class="sr-only">Limite pour ce modèle</label>
+                                                            <input type="number" id="limit_{{ $user->id }}_{{ $detail->model }}" name="limit" value="{{ $user->daily_ai_limits[$detail->model] ?? $modelLimit }}" class="w-16 px-2 py-1 bg-slate-50 border border-slate-100 rounded-lg text-[10px] font-bold text-center">
+                                                            <button type="submit" class="p-1 bg-indigo-50 text-indigo-600 rounded hover:bg-indigo-600 hover:text-white focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:outline-none transition-all" aria-label="Enregistrer la limite du modèle" title="Enregistrer">
+                                                                <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
                                                             </button>
                                                         </form>
                                                     </td>
