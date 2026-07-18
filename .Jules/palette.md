@@ -9,3 +9,6 @@
 ## 2026-05-18 - Alpine.js aria-expanded state handling
 **Learning:** When building interactive toggles with Alpine.js (like the mobile hamburger menu), the ARIA state `aria-expanded` needs to reflect the dynamic boolean variable (e.g. `open`). However, HTML ARIA attributes require explicit string values ('true' or 'false').
 **Action:** Always dynamically bind the attribute using `:aria-expanded="open.toString()"` instead of just `open` to ensure valid ARIA string values are rendered for screen readers.
+## 2024-05-20 - Semantic Roles for Custom Interactive Elements
+**Learning:** Turning a non-interactive element (like a `<span>`) into an interactive one via Alpine (e.g. `@dblclick`) requires more than just a `tabindex`. Without a keyboard event handler (like `@keydown.enter`) and a `role="button"`, screen reader users won't know it's actionable and keyboard users cannot trigger it. Also, applying `tabindex="0"` to generic parent containers simply to activate `focus-within` styles creates a confusing dual-focus experience for keyboard navigation.
+**Action:** When making custom interactive elements, always include the semantic `role="button"`, `tabindex="0"`, and equivalent keyboard listeners (`@keydown.enter`/Space). Ensure focus rings are applied directly to the interactive element, not to purely structural parent wrappers.
