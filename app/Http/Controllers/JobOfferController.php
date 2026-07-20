@@ -151,7 +151,9 @@ class JobOfferController extends Controller
         // Données pour les filtres de la sidebar
         // Données pour les filtres de la sidebar : Mise en cache pour 1h
         $topMetiers = Cache::remember('dashboard.top_metiers', 3600, function() {
-            return \App\Models\Metier::whereHas('jobOffers')
+            // ⚡ Bolt: Use targeted select to prevent memory bloat, views only need id, label and count
+            // 📊 Impact: Significantly reduces cache size and memory usage during query
+            return \App\Models\Metier::select(['id', 'label'])->whereHas('jobOffers')
                 ->withCount('jobOffers')
                 ->orderBy('job_offers_count', 'desc')
                 ->limit(100)
@@ -159,7 +161,9 @@ class JobOfferController extends Controller
         });
 
         $topEmployers = Cache::remember('dashboard.top_employers', 3600, function() {
-            return \App\Models\Employer::whereHas('jobOffers')
+            // ⚡ Bolt: Use targeted select to avoid loading massive logo_base64 into memory
+            // 📊 Impact: Prevents severe memory bloat and keeps cache lightweight
+            return \App\Models\Employer::select(['id', 'label'])->whereHas('jobOffers')
                 ->withCount('jobOffers')
                 ->orderBy('job_offers_count', 'desc')
                 ->limit(50)
