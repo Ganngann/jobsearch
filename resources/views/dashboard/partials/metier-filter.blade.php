@@ -39,7 +39,7 @@
                 $isDiscovery = !in_array($metier->id, $preferredIds);
             @endphp
             <button 
-                x-show="metierSearch === '' || '{{ strtolower(addslashes($metier->label)) }}'.includes(metierSearch.toLowerCase())"
+                x-show='metierSearch === "" || @js(strtolower($metier->label)) /* Security: Enforce proper JS escaping */.includes(metierSearch.toLowerCase())'
                 @click="setMetier({{ $metier->id }})"
                 :class="filters.metier_id == {{ $metier->id }} ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'text-slate-600 hover:bg-slate-50'"
                 class="w-full text-left px-4 py-3 rounded-xl transition-all group relative"
