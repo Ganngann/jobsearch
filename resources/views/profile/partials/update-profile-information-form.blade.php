@@ -14,11 +14,11 @@
     </form>
 
     <form method="post" action="{{ route('profile.update') }}" class="mt-6 space-y-6" 
-          x-data="{ 
+          x-data='{
             isMagicFilling: false,
-            headline: '{{ addslashes($user->headline) }}',
+            headline: {{ Js::from($user->headline ?? "") }},
 
-          }">
+          }'> {{-- Security: Use Js::from to prevent XSS --}}
         @csrf
         @method('patch')
 
