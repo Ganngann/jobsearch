@@ -21,7 +21,7 @@
         </button>
         @foreach($topEmployers as $employer)
             <button 
-                x-show="employerSearch === '' || '{{ strtolower(addslashes($employer->label)) }}'.includes(employerSearch.toLowerCase())"
+                x-show='employerSearch === "" || @js(strtolower($employer->label)).includes(employerSearch.toLowerCase())'
                 @click="setEmployer({{ $employer->id }})"
                 :class="filters.employer_id == {{ $employer->id }} ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'text-slate-600 hover:bg-slate-50'"
                 class="w-full text-left px-4 py-3 rounded-xl transition-all group relative"
