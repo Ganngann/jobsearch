@@ -7,13 +7,17 @@
     <!-- Bouton Flottant -->
     <button 
         @click="open = !open" 
-        class="flex items-center justify-center w-14 h-14 bg-indigo-600 text-white rounded-full shadow-2xl hover:bg-indigo-500 hover:scale-110 transition-all group relative"
+        type="button"
+        aria-label="Donne ton avis"
+        :aria-expanded="open.toString()"
+        aria-controls="feedback-panel"
+        class="flex items-center justify-center w-14 h-14 bg-indigo-600 text-white rounded-full shadow-2xl hover:bg-indigo-500 hover:scale-110 transition-all group relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
         title="Donne ton avis"
     >
-        <svg x-show="!open" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg x-show="!open" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
         </svg>
-        <svg x-show="open" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" x-cloak>
+        <svg x-show="open" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" x-cloak aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
         </svg>
         <span class="absolute -top-1 -right-1 flex h-3 w-3" x-show="!hasInteracted">
@@ -24,6 +28,7 @@
 
     <!-- Panneau de Feedback -->
     <div 
+        id="feedback-panel"
         x-show="open" 
         x-transition:enter="transition ease-out duration-300"
         x-transition:enter-start="opacity-0 translate-y-4 scale-95"
@@ -41,9 +46,9 @@
 
             <div class="space-y-4">
                 <div class="flex gap-2">
-                    <button @click="type = 'feedback'" :class="type === 'feedback' ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-slate-50 border-transparent text-slate-400'" class="flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all">Avis</button>
-                    <button @click="type = 'bug'" :class="type === 'bug' ? 'bg-rose-50 border-rose-200 text-rose-600' : 'bg-slate-50 border-transparent text-slate-400'" class="flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all">Bug</button>
-                    <button @click="type = 'idea'" :class="type === 'idea' ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-slate-50 border-transparent text-slate-400'" class="flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all">Idée</button>
+                    <button type="button" @click="type = 'feedback'" :aria-pressed="type === 'feedback'" :class="type === 'feedback' ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-slate-50 border-transparent text-slate-400'" class="flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">Avis</button>
+                    <button type="button" @click="type = 'bug'" :aria-pressed="type === 'bug'" :class="type === 'bug' ? 'bg-rose-50 border-rose-200 text-rose-600' : 'bg-slate-50 border-transparent text-slate-400'" class="flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">Bug</button>
+                    <button type="button" @click="type = 'idea'" :aria-pressed="type === 'idea'" :class="type === 'idea' ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-slate-50 border-transparent text-slate-400'" class="flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">Idée</button>
                 </div>
 
                 <textarea 
